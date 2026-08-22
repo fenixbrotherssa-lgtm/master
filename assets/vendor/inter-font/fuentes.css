@@ -1,0 +1,13 @@
+/* assets/vendor/inter-font/fuentes.css */
+@font-face {
+  font-family: 'Inter';
+  src: url('./Inter-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

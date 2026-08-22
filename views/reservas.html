@@ -1,0 +1,194 @@
+<style>
+    :root {
+        --blue:#1a365d; --gold:#c5a059; --bg:#e0e0e4;
+        --sd:#bebebe; --sl:#ffffff; --green:#27ae60; --red:#e74c3c; --orange:#f39c12; --grey:#718096;
+    }
+    .modulo-container { padding:30px; color:#2c3e50; }
+
+    .btn-neo { padding:10px 22px; border:none; border-radius:14px; background:var(--bg);
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        cursor:pointer; transition:all .3s; font-weight:800; color:var(--blue);
+        display:inline-flex; align-items:center; gap:8px; font-size:.82rem; }
+    .btn-neo:hover { box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl); transform:translateY(-1px); }
+    .btn-neo:active { box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl); }
+    .btn-back   { width:45px; height:45px; padding:0; justify-content:center; border-radius:50%; color:var(--gold); }
+    .btn-prim   { background:var(--blue); color:#fff; }
+    .btn-gold   { background:var(--gold); color:#fff; }
+    .btn-danger { background:var(--red);  color:#fff; }
+    .btn-sm     { padding:6px 12px; font-size:.72rem; border-radius:10px; }
+
+    .input-neo { padding:10px 14px; border:none; border-radius:12px; background:var(--bg);
+        box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl);
+        color:#2c3e50; font-weight:700; outline:none; font-size:.85rem; width:100%; box-sizing:border-box; }
+
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-header h2 { font-size:1.4rem; color:var(--blue); margin:0; }
+
+    .filtros-card { background:var(--bg); border-radius:18px; padding:18px 22px; margin-bottom:20px;
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl); }
+    .filtros-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:14px; align-items:end; }
+    .field-label { font-size:.72rem; font-weight:800; color:var(--grey); text-transform:uppercase; margin-bottom:5px; display:block; }
+
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .stat-card { background:var(--bg); border-radius:16px; padding:18px 12px;
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl); text-align:center; }
+    .stat-num { font-size:2rem; font-weight:900; }
+    .stat-lbl { font-size:.68rem; font-weight:800; color:var(--grey); text-transform:uppercase; margin-top:4px; }
+
+    .tabla-wrap { background:var(--bg); border-radius:22px; padding:22px;
+        box-shadow:10px 10px 20px var(--sd),-10px -10px 20px var(--sl); overflow-x:auto; }
+    .rv-table { width:100%; border-collapse:separate; border-spacing:0 10px; min-width:750px; }
+    .rv-table th { padding:10px 14px; font-size:.68rem; font-weight:900; color:var(--grey); text-transform:uppercase; letter-spacing:1px; text-align:left; }
+    .rv-table td { padding:13px 14px; background:#f1f3f5; font-size:.82rem; }
+    .rv-table td:first-child { border-radius:14px 0 0 14px; font-weight:800; }
+    .rv-table td:last-child  { border-radius:0 14px 14px 0; }
+    .rv-table tr.row-atrasada td { background:#fff3cd !important; }
+
+    .badge { padding:4px 10px; border-radius:20px; font-size:.65rem; font-weight:900; text-transform:uppercase; white-space:nowrap; }
+    .badge-pendiente  { background:#fff3cd; color:#856404; border:1px solid #f39c12; }
+    .badge-confirmada { background:#d4edda; color:#155724; border:1px solid #27ae60; }
+    .badge-cancelada  { background:#f8d7da; color:#721c24; border:1px solid #e74c3c; }
+    .badge-noshow     { background:#e2e8f0; color:#4a5568; border:1px solid #718096; }
+
+    .origen-badge { padding:3px 8px; border-radius:8px; font-size:.62rem; font-weight:800; background:#e2e8f0; color:#4a5568; }
+
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000;
+        justify-content:center; align-items:center; }
+    .overlay.visible { display:flex; }
+    .modal-card { background:var(--bg); border-radius:24px; padding:30px; width:min(540px,95vw);
+        box-shadow:12px 12px 24px var(--sd),-12px -12px 24px var(--sl); max-height:92vh; overflow-y:auto; }
+    .modal-card h3 { color:var(--blue); margin:0 0 22px; font-size:1.1rem; }
+    .form-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .span2 { grid-column:1/-1; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+</style>
+
+<div class="modulo-container">
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:15px;">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard','viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2><i class="fas fa-calendar-check" style="color:var(--gold)"></i> Gestión de Reservas</h2>
+                <p style="margin:4px 0 0;color:var(--grey);font-size:.8rem;">Portal web · Teléfono · Channel Manager</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <span id="rv-badge-pendiente" style="display:none;background:var(--orange);color:white;border-radius:20px;padding:5px 14px;font-size:.75rem;font-weight:900;"></span>
+            <button class="btn-neo btn-gold" onclick="ReservasModule.abrirModal()">
+                <i class="fas fa-plus"></i> Nueva Reserva
+            </button>
+        </div>
+    </div>
+
+    <div class="filtros-card">
+        <div class="filtros-grid">
+            <div>
+                <span class="field-label">DESDE</span>
+                <input type="date" id="rv-desde" class="input-neo">
+            </div>
+            <div>
+                <span class="field-label">HASTA</span>
+                <input type="date" id="rv-hasta" class="input-neo">
+            </div>
+            <div>
+                <span class="field-label">ESTADO</span>
+                <select id="rv-estado" class="input-neo">
+                    <option value="">Todos</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                    <option value="NOSHOW">No-Show</option>
+                </select>
+            </div>
+            <button class="btn-neo btn-prim" onclick="ReservasModule.cargarReservas()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-num" id="rv-cnt-pendiente" style="color:var(--orange)">—</div>
+            <div class="stat-lbl">Pendientes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="rv-cnt-confirmada" style="color:var(--green)">—</div>
+            <div class="stat-lbl">Confirmadas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="rv-cnt-hoy" style="color:var(--blue)">—</div>
+            <div class="stat-lbl">Llegan Hoy</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="rv-cnt-total" style="color:var(--grey)">—</div>
+            <div class="stat-lbl">En el período</div>
+        </div>
+    </div>
+
+    <div class="tabla-wrap">
+        <div id="rv-tabla">
+            <div style="text-align:center;padding:40px;color:var(--grey);font-size:.85rem;">
+                <i class="fas fa-spinner fa-spin"></i> Cargando reservas...
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="overlay" id="rv-overlay">
+    <div class="modal-card">
+        <h3><i class="fas fa-calendar-plus" style="color:var(--gold)"></i> Nueva Reserva Interna</h3>
+        <div class="form-grid2">
+            <div class="form-group span2">
+                <span class="field-label">HUÉSPED</span>
+                <input id="rv-form-nombre" class="input-neo" type="text" placeholder="Nombre completo">
+            </div>
+            <div class="form-group">
+                <span class="field-label">TELÉFONO</span>
+                <input id="rv-form-tel" class="input-neo" type="text" placeholder="0999...">
+            </div>
+            <div class="form-group">
+                <span class="field-label">CORREO (opcional)</span>
+                <input id="rv-form-correo" class="input-neo" type="email" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group span2">
+                <span class="field-label">TIPO DE HABITACIÓN</span>
+                <select id="rv-form-tipo" class="input-neo"></select>
+            </div>
+            <div class="form-group">
+                <span class="field-label">LLEGADA</span>
+                <input id="rv-form-llegada" class="input-neo" type="date">
+            </div>
+            <div class="form-group">
+                <span class="field-label">SALIDA</span>
+                <input id="rv-form-salida" class="input-neo" type="date">
+            </div>
+            <div class="form-group">
+                <span class="field-label">ORIGEN</span>
+                <select id="rv-form-origen" class="input-neo">
+                    <option value="TELEFONO">📞 Teléfono</option>
+                    <option value="WHATSAPP">💬 WhatsApp</option>
+                    <option value="DIRECTO">🚶 Walk-in Futuro</option>
+                    <option value="WEB">🌐 Web</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <span class="field-label">ANTICIPO ($)</span>
+                <input id="rv-form-anticipo" class="input-neo" type="number" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="form-group span2">
+                <span class="field-label">NOTAS (opcional)</span>
+                <input id="rv-form-notas" class="input-neo" type="text" placeholder="Observaciones, pedidos especiales...">
+            </div>
+        </div>
+        <div id="rv-form-disponibilidad" style="display:none;margin-top:12px;padding:10px 14px;border-radius:12px;font-size:.78rem;font-weight:700;"></div>
+        <div class="modal-footer">
+            <button class="btn-neo" onclick="ReservasModule.cerrarModal()">Cancelar</button>
+            <button class="btn-neo btn-gold" onclick="ReservasModule.guardarReserva()">
+                <i class="fas fa-save"></i> Registrar Reserva
+            </button>
+        </div>
+    </div>
+</div>

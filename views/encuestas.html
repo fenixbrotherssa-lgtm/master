@@ -1,0 +1,119 @@
+<style>
+    :root { --blue:#1a365d; --gold:#c5a059; --bg:#e0e0e4; --sd:#bebebe; --sl:#ffffff; }
+    .modulo-container { padding:30px; color:#2c3e50; }
+    .btn-neo { padding:10px 22px; border:none; border-radius:14px; background:var(--bg);
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        cursor:pointer; transition:all .3s; font-weight:800; color:var(--blue);
+        display:inline-flex; align-items:center; gap:8px; font-size:.82rem; }
+    .btn-neo:hover { box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl); transform:translateY(-1px); }
+    .btn-sm { padding:6px 12px; font-size:.72rem; border-radius:10px; }
+    .btn-prim   { background:var(--blue); color:#fff; }
+    .btn-gold   { background:var(--gold); color:#fff; }
+    .input-neo  { padding:10px 14px; border:none; border-radius:12px; background:var(--bg);
+        box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl);
+        color:#2c3e50; font-weight:700; outline:none; font-size:.85rem; }
+    .btn-back { width:45px; height:45px; padding:0; justify-content:center; border-radius:50%; color:var(--gold); }
+
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-header h2 { font-size:1.4rem; color:var(--blue); margin:0; }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-card { background:var(--bg); border-radius:18px; padding:18px 16px; text-align:center;
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl); }
+    .stat-card .st-val { font-size:2rem; font-weight:900; color:var(--blue); }
+    .stat-card .st-lbl { font-size:.68rem; font-weight:800; color:#718096; text-transform:uppercase; margin-top:4px; }
+    .star-val { color:#c5a059; }
+
+    .stars-display { font-size:1.1rem; color:#c5a059; letter-spacing:1px; }
+
+    .tabla-wrap { background:var(--bg); border-radius:22px; padding:22px;
+        box-shadow:10px 10px 20px var(--sd),-10px -10px 20px var(--sl); overflow-x:auto; }
+    .enc-table { width:100%; border-collapse:separate; border-spacing:0 8px; min-width:700px; }
+    .enc-table th { padding:10px 14px; font-size:.65rem; font-weight:900; color:#718096; text-transform:uppercase; letter-spacing:1px; text-align:left; }
+    .enc-table td { padding:11px 14px; background:#f1f3f5; font-size:.8rem; }
+    .enc-table td:first-child { border-radius:12px 0 0 12px; font-weight:800; }
+    .enc-table td:last-child  { border-radius:0 12px 12px 0; }
+
+    .badge { padding:3px 10px; border-radius:20px; font-size:.62rem; font-weight:900; text-transform:uppercase; }
+    .badge-ok      { background:#d5f5e3; color:#1e8449; }
+    .badge-pending { background:#fef9c3; color:#b7950b; }
+
+    .filters-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:18px; }
+    .field-label { font-size:.68rem; font-weight:800; color:#718096; text-transform:uppercase; display:block; margin-bottom:3px; }
+
+    .comentario-cell { max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        cursor:pointer; color:#3498db; }
+    .comentario-cell:hover { text-decoration:underline; }
+</style>
+
+<div class="modulo-container">
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:15px;">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard','viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2><i class="fas fa-star" style="color:var(--gold)"></i> Encuestas Post-Estadía</h2>
+                <p style="margin:4px 0 0;color:#718096;font-size:.8rem;">Satisfacción y calificaciones de huéspedes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="stats-grid" id="enc-stats-grid">
+        <div class="stat-card">
+            <div class="st-val" id="enc-st-total">—</div>
+            <div class="st-lbl">Encuestas Enviadas</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val" id="enc-st-completadas">—</div>
+            <div class="st-lbl">Completadas</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val star-val" id="enc-st-hab">—</div>
+            <div class="st-lbl">★ Habitación</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val star-val" id="enc-st-limp">—</div>
+            <div class="st-lbl">★ Limpieza</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val star-val" id="enc-st-aten">—</div>
+            <div class="st-lbl">★ Atención</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val star-val" id="enc-st-cal">—</div>
+            <div class="st-lbl">★ Calidad/Precio</div>
+        </div>
+        <div class="stat-card">
+            <div class="st-val star-val" id="enc-st-gen">—</div>
+            <div class="st-lbl">★ Recomendaría</div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-row">
+        <div>
+            <span class="field-label">DESDE</span>
+            <input type="date" id="enc-desde" class="input-neo" style="width:150px">
+        </div>
+        <div>
+            <span class="field-label">HASTA</span>
+            <input type="date" id="enc-hasta" class="input-neo" style="width:150px">
+        </div>
+        <button class="btn-neo btn-prim btn-sm" onclick="EncuestasModule.cargar()">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <button class="btn-neo btn-sm" onclick="EncuestasModule.limpiarFiltros()">
+            <i class="fas fa-times"></i> Limpiar
+        </button>
+    </div>
+
+    <div class="tabla-wrap">
+        <div id="enc-tabla-contenido">
+            <div style="text-align:center;padding:40px;color:#718096;font-size:.85rem;">
+                <i class="fas fa-spinner fa-spin"></i> Cargando encuestas...
+            </div>
+        </div>
+    </div>
+</div>

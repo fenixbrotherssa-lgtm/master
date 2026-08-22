@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body>
+
+<div class="crm-wrapper">
+
+    <!-- Encabezado -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button onclick="App.renderView('dashboard','viewport')" title="REGRESAR"
+                style="background:#e0e0e4; border:none; width:45px; height:45px; padding:0; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#c5a059; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff; font-size:1.1rem;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2 style="margin:0; color:#1a365d; font-weight:900; letter-spacing:2px; font-size:1.1rem;">
+                    <i class="fas fa-users" style="color:#c5a059;"></i> CRM DE HU&Eacute;SPEDES
+                </h2>
+                <small style="color:#718096; font-size:0.7rem;">Historial, fidelización y seguimiento de clientes</small>
+            </div>
+        </div>
+        <div id="crm-total-badge" style="background:#1a365d; color:white; border-radius:20px; padding:6px 16px; font-size:0.75rem; font-weight:900;">
+            Cargando...
+        </div>
+    </div>
+
+    <!-- Métricas rápidas -->
+    <div class="crm-metrics">
+        <div class="metric-card">
+            <div class="metric-icon" style="color:#1a365d;"><i class="fas fa-users"></i></div>
+            <div><p>Total Clientes</p><h3 id="sv-total">--</h3></div>
+        </div>
+        <div class="metric-card gold">
+            <div class="metric-icon" style="color:#c5a059;"><i class="fas fa-crown"></i></div>
+            <div><p>Clientes VIP</p><h3 id="sv-vip">--</h3></div>
+        </div>
+        <div class="metric-card blue">
+            <div class="metric-icon" style="color:#3498db;"><i class="fas fa-user-plus"></i></div>
+            <div><p>Nuevos este mes</p><h3 id="sv-nuevos">--</h3></div>
+        </div>
+        <div class="metric-card pink">
+            <div class="metric-icon" style="color:#e91e8c;"><i class="fas fa-birthday-cake"></i></div>
+            <div><p>Cumplea&ntilde;os esta semana</p><h3 id="sv-cumple">--</h3></div>
+        </div>
+    </div>
+
+    <!-- Barra herramientas: tabs + búsqueda -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:15px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px;">
+            <button class="tab-crm active" id="tab-btn-clientes" onclick="CRM.switchTab('clientes', this)">
+                <i class="fas fa-list"></i> Clientes
+            </button>
+            <button class="tab-crm" id="tab-btn-cumpleanos" onclick="CRM.switchTab('cumpleanos', this)">
+                <i class="fas fa-birthday-cake"></i> Cumplea&ntilde;os pr&oacute;ximos
+            </button>
+        </div>
+        <div id="crm-searchbar" style="display:flex; align-items:center; gap:10px; background:#e0e0e4; padding:10px 18px; border-radius:12px; box-shadow:inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff; flex:1; max-width:420px;">
+            <i class="fas fa-search" style="color:#718096;"></i>
+            <input type="text" id="crm-buscar" placeholder="Buscar por nombre, cédula o teléfono..."
+                oninput="CRM.onSearch(this.value)"
+                style="border:none; outline:none; background:transparent; font-size:0.88rem; width:100%; color:#2d3748;">
+        </div>
+    </div>
+
+    <!-- Pestaña clientes -->
+    <div id="tab-clientes">
+        <div id="crm-grid" class="crm-grid">
+            <div class="crm-empty"><i class="fas fa-spinner fa-spin"></i> Cargando clientes...</div>
+        </div>
+    </div>
+
+    <!-- Pestaña cumpleaños -->
+    <div id="tab-cumpleanos" style="display:none;">
+        <div id="crm-cumple-lista" style="display:flex; flex-direction:column; gap:12px;">
+            <div class="crm-empty"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL PERFIL CLIENTE
+═══════════════════════════════════════════════════════════ -->
+<div id="crm-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;"
+    onclick="CRM.cerrarModal(event)">
+
+    <div class="crm-modal" onclick="event.stopPropagation()">
+
+        <!-- Cabecera modal -->
+        <div class="modal-top">
+            <div class="modal-avatar" id="m-avatar">A</div>
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <h3 id="m-nombre" style="margin:0; color:white; font-size:1.1rem; font-weight:900;"></h3>
+                    <span id="m-badge" class="clasif-badge"></span>
+                </div>
+                <p id="m-doc-tel" style="margin:5px 0 0; color:rgba(255,255,255,0.7); font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></p>
+            </div>
+            <div style="display:flex; gap:8px; flex-shrink:0;">
+                <button class="btn-modal" onclick="CRM.toggleEdit()"><i class="fas fa-edit"></i> Editar</button>
+                <button class="btn-modal btn-modal-email" id="m-btn-email" style="display:none;" onclick="CRM.abrirEnvioEmail()">
+                    <i class="fas fa-envelope"></i> Correo
+                </button>
+                <button class="btn-modal btn-modal-close" onclick="CRM.cerrarModal()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <!-- KPIs del cliente -->
+        <div id="m-kpis" class="modal-kpis"></div>
+
+        <!-- Formulario de edición (oculto por defecto) -->
+        <div id="m-edit-form" style="display:none; padding:18px 25px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+                <div>
+                    <label class="field-lbl">Nombre Completo</label>
+                    <input type="text"  id="e-nombre"      class="field-input" placeholder="Nombre completo">
+                </div>
+                <div>
+                    <label class="field-lbl">Tel&eacute;fono</label>
+                    <input type="text"  id="e-telefono"    class="field-input" placeholder="0987654321">
+                </div>
+                <div>
+                    <label class="field-lbl">Correo</label>
+                    <input type="email" id="e-correo"      class="field-input" placeholder="correo@ejemplo.com">
+                </div>
+                <div>
+                    <label class="field-lbl">Procedencia</label>
+                    <input type="text"  id="e-procedencia" class="field-input" placeholder="Ciudad / País">
+                </div>
+                <div>
+                    <label class="field-lbl">Fecha de Nacimiento</label>
+                    <input type="date"  id="e-fnac"        class="field-input">
+                </div>
+                <div>
+                    <label class="field-lbl">Dirección</label>
+                    <input type="text"  id="e-direccion"   class="field-input" placeholder="Dirección del cliente">
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                <button class="btn-modal-action" onclick="CRM.cancelarEdit()">Cancelar</button>
+                <button class="btn-modal-action primary" onclick="CRM.guardarCliente()">
+                    <i class="fas fa-save"></i> Guardar cambios
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs internas -->
+        <div style="display:flex; border-bottom:2px solid #f1f5f9;">
+            <button class="mtab active" id="mtab-historial" onclick="CRM.switchModalTab('historial', this)">
+                <i class="fas fa-history"></i> Historial de Estad&iacute;as
+            </button>
+            <button class="mtab" id="mtab-notas" onclick="CRM.switchModalTab('notas', this)">
+                <i class="fas fa-sticky-note"></i> Notas <span id="m-notas-count" style="font-weight:400; opacity:0.7;"></span>
+            </button>
+        </div>
+
+        <!-- Tab: Historial -->
+        <div id="mt-historial" style="overflow-x:auto; padding:15px 20px;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.81rem;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th class="th">Entrada</th>
+                        <th class="th">Salida</th>
+                        <th class="th">Hab.</th>
+                        <th class="th">Tipo</th>
+                        <th class="th">Modalidad</th>
+                        <th class="th">Total</th>
+                        <th class="th">Pago</th>
+                        <th class="th">Sede</th>
+                    </tr>
+                </thead>
+                <tbody id="m-historial-body">
+                    <tr><td colspan="8" style="text-align:center; padding:25px; color:#718096;">Sin estadías registradas.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Notas -->
+        <div id="mt-notas" style="display:none;">
+            <div style="display:flex; gap:10px; padding:15px 20px; border-bottom:1px solid #f1f5f9; align-items:flex-start;">
+                <textarea id="nota-input" rows="2"
+                    placeholder="Agregar observación sobre este cliente (preferencias, incidentes, peticiones)..."
+                    style="flex:1; resize:none; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-family:'Segoe UI',sans-serif; outline:none;"></textarea>
+                <button class="btn-modal-action primary" onclick="CRM.agregarNota()" style="white-space:nowrap;">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+            <div id="notas-lista" style="padding:15px 20px; display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;">
+                <p style="color:#718096; text-align:center; font-size:0.85rem;">Sin notas registradas.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══════════════ ESTILOS ═══════════════ -->
+<style>
+.crm-wrapper {
+    padding: 25px 35px; background: #e0e0e4; min-height: 100%;
+    font-family: 'Segoe UI', sans-serif; overflow-y: auto; box-sizing: border-box;
+}
+
+/* Métricas */
+.crm-metrics {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 15px; margin-bottom: 22px;
+}
+.metric-card {
+    background: #e0e0e4; border-radius: 15px; padding: 18px 20px;
+    box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+    display: flex; align-items: center; gap: 15px;
+}
+.metric-card.gold  { border-left: 4px solid #c5a059; }
+.metric-card.blue  { border-left: 4px solid #3498db; }
+.metric-card.pink  { border-left: 4px solid #e91e8c; }
+.metric-icon { font-size: 1.8rem; }
+.metric-card p { margin: 0; font-size: 0.72rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+.metric-card h3 { margin: 4px 0 0; font-size: 1.9rem; font-weight: 900; color: #1a365d; }
+
+/* Tabs */
+.tab-crm {
+    padding: 9px 18px; border: none; border-radius: 10px; cursor: pointer;
+    font-weight: 700; font-size: 0.83rem; background: #e0e0e4; color: #718096;
+    box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; transition: all 0.2s;
+}
+.tab-crm.active {
+    background: #1a365d; color: white;
+    box-shadow: inset 3px 3px 6px rgba(0,0,0,0.3);
+}
+
+/* Grid de clientes */
+.crm-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(275px,1fr)); gap: 15px;
+}
+.crm-empty { text-align: center; padding: 40px; color: #718096; grid-column: 1/-1; font-size: 0.9rem; }
+
+/* Card cliente */
+.cliente-card {
+    background: #e0e0e4; border-radius: 15px; padding: 18px; cursor: pointer;
+    box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+    border: 2px solid transparent; transition: all 0.25s;
+}
+.cliente-card:hover {
+    border-color: #c5a059; transform: translateY(-3px);
+    box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+.card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.card-avatar {
+    width: 44px; height: 44px; border-radius: 50%; background: #1a365d;
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.1rem; flex-shrink: 0;
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+}
+.card-nombre { flex: 1; min-width: 0; }
+.card-nombre h4 { margin: 0; font-size: 0.88rem; font-weight: 800; color: #1a365d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-nombre p  { margin: 2px 0 0; font-size: 0.72rem; color: #718096; }
+.card-footer { display: flex; justify-content: space-between; }
+.c-stat { text-align: center; }
+.c-stat span   { display: block; font-size: 0.62rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+.c-stat strong { font-size: 0.92rem; color: #1a365d; font-weight: 900; }
+.c-sep { width: 1px; background: #ccc; margin: 0 5px; }
+
+/* Badges clasificación */
+.clasif-badge { font-size: 0.62rem; font-weight: 800; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.badge-VIP          { background: #fef3cd; color: #856404; border: 1px solid #c5a059; }
+.badge-FRECUENTE    { background: #dbeafe; color: #1e40af; }
+.badge-REGULAR      { background: #dcfce7; color: #166534; }
+.badge-NUEVO        { background: #ede9fe; color: #6d28d9; }
+.badge-SIN_ACTIVIDAD{ background: #f1f5f9; color: #64748b; }
+
+/* Tarjetas cumpleaños */
+.cumple-card {
+    background: #e0e0e4; border-radius: 14px; padding: 16px 20px;
+    box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+    display: flex; align-items: center; gap: 16px; cursor: pointer;
+    border-left: 4px solid #e91e8c; transition: all 0.2s;
+}
+.cumple-card:hover { transform: translateX(4px); }
+.cumple-dias { min-width: 58px; text-align: center; background: #fff0f6; border-radius: 10px; padding: 8px 6px; }
+.cumple-dias .num { font-size: 1.5rem; font-weight: 900; color: #e91e8c; display: block; line-height: 1; }
+.cumple-dias .lbl { font-size: 0.58rem; font-weight: 800; color: #e91e8c; text-transform: uppercase; }
+.cumple-info h4 { margin: 0; color: #1a365d; font-weight: 800; font-size: 0.95rem; }
+.cumple-info p  { margin: 3px 0 0; font-size: 0.78rem; color: #718096; }
+.cumple-hoy { background: #e91e8c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; margin-left: auto; flex-shrink: 0; }
+
+/* Modal */
+.crm-modal {
+    background: white; border-radius: 18px; width: 100%; max-width: 880px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column;
+}
+.modal-top {
+    display: flex; align-items: center; gap: 15px; padding: 20px 25px;
+    background: #1a365d; border-radius: 18px 18px 0 0; flex-shrink: 0;
+}
+.modal-avatar {
+    width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.3rem; flex-shrink: 0;
+}
+.modal-kpis {
+    display: grid; grid-template-columns: repeat(4,1fr); flex-shrink: 0;
+    border-bottom: 2px solid #f1f5f9;
+}
+.kpi-cell { padding: 14px; text-align: center; border-right: 1px solid #f1f5f9; }
+.kpi-cell:last-child { border-right: none; }
+.kpi-cell span   { display: block; font-size: 0.68rem; font-weight: 700; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
+.kpi-cell strong { font-size: 1.05rem; font-weight: 900; color: #1a365d; }
+
+/* Tabs modal */
+.mtab {
+    padding: 12px 22px; border: none; background: none; cursor: pointer;
+    font-weight: 700; font-size: 0.83rem; color: #718096;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+}
+.mtab.active { color: #1a365d; border-bottom-color: #1a365d; }
+
+/* Table */
+.th { padding: 9px 12px; text-align: left; font-weight: 800; color: #718096; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; }
+
+/* Botones modal */
+.btn-modal {
+    padding: 7px 14px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px;
+    cursor: pointer; font-weight: 700; font-size: 0.78rem;
+    background: rgba(255,255,255,0.12); color: white; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-modal:hover { background: rgba(255,255,255,0.25); }
+.btn-modal-close { padding: 7px 10px; }
+.btn-modal-email { background: rgba(197,160,89,0.25); border-color: rgba(197,160,89,0.6); }
+.btn-modal-email:hover { background: rgba(197,160,89,0.4); }
+.btn-modal-action {
+    padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;
+    font-weight: 700; font-size: 0.8rem; background: white; color: #1a365d;
+    display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+}
+.btn-modal-action.primary { background: #1a365d; color: white; border-color: #1a365d; }
+.btn-modal-action.primary:hover { background: #2a4a7f; }
+.field-lbl { display: block; font-size: 0.72rem; font-weight: 700; color: #718096; margin-bottom: 4px; text-transform: uppercase; }
+.field-input { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.88rem; box-sizing: border-box; outline: none; font-family: 'Segoe UI', sans-serif; }
+.field-input:focus { border-color: #1a365d; }
+
+/* Notas */
+.nota-item { background: #fffbf0; border-left: 3px solid #c5a059; border-radius: 8px; padding: 10px 14px; }
+.nota-item p { margin: 0; font-size: 0.85rem; color: #2d3748; }
+.nota-meta { font-size: 0.71rem !important; color: #718096 !important; margin-top: 6px !important; }
+
+@media (max-width: 768px) {
+    .crm-wrapper { padding: 15px; }
+    .crm-metrics { grid-template-columns: repeat(2,1fr); }
+    .modal-kpis  { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</body>
+</html>

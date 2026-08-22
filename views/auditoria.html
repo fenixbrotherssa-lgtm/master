@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body>
+
+<div style="box-sizing:border-box; width:100%; min-height:100%; padding:25px 35px; background:#e0e0e4; font-family:'Segoe UI',sans-serif;">
+
+    <!-- Encabezado -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button onclick="App.renderView('dashboard','viewport')" title="REGRESAR"
+                style="background:#e0e0e4; border:none; width:45px; height:45px; padding:0; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#c5a059; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff; font-size:1.1rem;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2 style="margin:0; color:#1a365d; font-weight:900; letter-spacing:2px; font-size:1.1rem;">
+                    <i class="fas fa-shield-alt" style="color:#e74c3c;"></i> LOG DE AUDITORÍA
+                </h2>
+                <small style="color:#718096; font-size:0.7rem;">Registro de acciones críticas del sistema</small>
+            </div>
+        </div>
+        <div id="audit-badge" style="background:#e74c3c; color:white; border-radius:20px; padding:6px 16px; font-size:0.75rem; font-weight:900;">
+            0 registros
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div style="background:#e0e0e4; border-radius:20px; padding:20px 25px; margin-bottom:20px; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:15px; align-items:end;">
+            <div>
+                <label style="font-size:0.65rem; font-weight:900; color:#718096; text-transform:uppercase; display:block; margin-bottom:6px;">Desde</label>
+                <input type="date" id="audit-fecha-inicio" class="input-neo" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label style="font-size:0.65rem; font-weight:900; color:#718096; text-transform:uppercase; display:block; margin-bottom:6px;">Hasta</label>
+                <input type="date" id="audit-fecha-fin" class="input-neo" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label style="font-size:0.65rem; font-weight:900; color:#718096; text-transform:uppercase; display:block; margin-bottom:6px;">Módulo</label>
+                <select id="audit-modulo" class="input-neo" style="margin-bottom:0;">
+                    <option value="">Todos los módulos</option>
+                    <option value="AUTH">Auth / Login</option>
+                    <option value="CAJA">Caja</option>
+                    <option value="RECEPCION">Recepción</option>
+                    <option value="FACTURACION">Facturación</option>
+                    <option value="ADMIN">Administración</option>
+                </select>
+            </div>
+            <div id="audit-sede-selector"></div>
+            <button onclick="AuditoriaModule.cargarLogs()"
+                style="background:#1a365d; color:white; border:none; padding:12px 22px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:700; box-shadow:4px 4px 8px #bebebe; white-space:nowrap;">
+                <i class="fas fa-search"></i> BUSCAR
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div style="background:#e0e0e4; border-radius:20px; padding:20px; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff; overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+            <thead>
+                <tr style="border-bottom:2px solid #c8c8cc;">
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900; white-space:nowrap;">Fecha / Hora</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">Usuario</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">Sede</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">Módulo</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">Acción</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">Descripción</th>
+                    <th style="text-align:left; padding:10px 12px; color:#718096; font-size:0.65rem; text-transform:uppercase; font-weight:900;">IP</th>
+                </tr>
+            </thead>
+            <tbody id="audit-tabla-body">
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color:#a0aec0;">
+                        <i class="fas fa-filter" style="font-size:2rem; display:block; margin-bottom:10px;"></i>
+                        Aplica los filtros y presiona BUSCAR
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

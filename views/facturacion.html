@@ -1,0 +1,863 @@
+<style>
+    :root {
+        --hotel-blue: #1a365d;
+        --hotel-gold: #c5a059;
+        --hotel-bg: #e0e0e4;
+        --hotel-shadow-dark: #bebebe;
+        --hotel-shadow-light: #ffffff;
+        --hotel-danger: #e74c3c;
+        --hotel-success: #27ae60;
+        --hotel-warning: #f39c12;
+    }
+
+    .modulo-container { padding: 40px; color: #2c3e50; animation: fadeIn 0.4s ease-out; }
+    
+    .header-modulo { 
+        display: flex; justify-content: space-between; align-items: center; 
+        margin-bottom: 35px; gap: 20px; 
+    }
+    
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    
+    .header-modulo h2 { 
+        font-size: 1.5rem; color: var(--hotel-blue); letter-spacing: 2px; 
+        font-weight: 900; text-transform: uppercase; margin: 0; 
+    }
+    
+    .btn-neo {
+        padding: 12px 25px; border: none; border-radius: 15px; background: var(--hotel-bg);
+        box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light);
+        cursor: pointer; transition: all 0.3s ease; font-weight: 800; color: var(--hotel-blue);
+        display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.85rem;
+    }
+    .btn-neo i { font-size: 1.1rem; }
+    .btn-neo:hover { box-shadow: 2px 2px 5px var(--hotel-shadow-dark), -2px -2px 5px var(--hotel-shadow-light); transform: translateY(-1px); }
+    .btn-neo:active { box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light); transform: translateY(0); }
+    
+    .btn-back { width: 45px; height: 45px; padding: 0; border-radius: 50%; color: var(--hotel-gold); }
+    .btn-save { background: var(--hotel-blue); color: white; }
+    .btn-danger { background: var(--hotel-danger); color: white; }
+
+    .input-neo {
+        width: 100%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 15px; background: var(--hotel-bg);
+        box-shadow: inset 5px 5px 10px var(--hotel-shadow-dark), inset -5px -5px 10px var(--hotel-shadow-light);
+        color: #2c3e50; font-weight: 600; outline: none; box-sizing: border-box;
+    }
+
+    .label-hint { font-size: 0.65rem; font-weight: 900; color: #718096; margin-left: 5px; margin-bottom: 5px; display: block; text-transform: uppercase; }
+    .hidden { display: none !important; }
+
+    .tabs-wrapper { display: flex; gap: 20px; margin-bottom: 30px; padding: 5px; }
+    .tab-btn {
+        padding: 12px 25px; border-radius: 12px; border: none; background: var(--hotel-bg);
+        box-shadow: 4px 4px 8px var(--hotel-shadow-dark), -4px -4px 8px var(--hotel-shadow-light);
+        color: var(--hotel-blue); font-weight: 900; cursor: pointer; font-size: 0.75rem; transition: 0.3s;
+    }
+    .tab-btn.active {
+        box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light);
+        color: var(--hotel-gold);
+    }
+
+    .tabla-container-neo {
+        background: var(--hotel-bg); border-radius: 25px; padding: 25px;
+        box-shadow: 10px 10px 20px var(--hotel-shadow-dark), -10px -10px 20px var(--hotel-shadow-light);
+    }
+    .tabla-neo { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
+    .tabla-neo th { padding: 15px; font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 1px; }
+    .tabla-neo td { padding: 15px; background: #f1f3f5; color: #2c3e50; font-weight: 700; font-size: 0.85rem; }
+    .tabla-neo tr td:first-child { border-radius: 15px 0 0 15px; }
+    .tabla-neo tr td:last-child { border-radius: 0 15px 15px 0; text-align: center; }
+
+    .badge-sri { padding: 6px 12px; border-radius: 10px; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; display: inline-block; }
+    .badge-autorizado { background: #e8f8f5; color: var(--hotel-success); box-shadow: 0 0 5px rgba(39,174,96,0.2); }
+    .badge-firmado { background: #fef9e7; color: #d35400; }
+    .badge-pendiente { background: #ebf5fb; color: #2980b9; }
+    .badge-rechazado { background: #fdf2f2; color: var(--hotel-danger); }
+
+    .panel-config-firma { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 10px; }
+    .panel-manual { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-top: 10px; }
+    .card-firma-status {
+        background: var(--hotel-bg); padding: 35px; border-radius: 30px;
+        box-shadow: inset 4px 4px 10px var(--hotel-shadow-dark), inset -4px -4px 10px var(--hotel-shadow-light);
+        display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    }
+    
+    .totales-box {
+        background: var(--hotel-blue); color: white; padding: 20px; border-radius: 20px;
+        margin-top: 20px; text-align: right; box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    }
+    .totales-box h4 { margin: 5px 0; font-size: 1rem; font-weight: 400; }
+    .totales-box h2 { margin: 10px 0 0 0; font-size: 1.8rem; color: var(--hotel-gold); }
+</style>
+
+<div class="modulo-container animate__animated animate__fadeIn">
+    <div class="header-modulo">
+        <div class="header-left">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2>Facturación Electrónica <span style="font-weight: 300;">| SRI Ecuador</span></h2>
+                <div id="sedeSelectorFacturacion" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+        <div>
+            <button class="btn-neo" onclick="FacturacionModule.sincronizarEmisiones()">
+                <i class="fas fa-sync-alt"></i> SINCRONIZAR EMISIONES
+            </button>
+        </div>
+    </div>
+
+    <div class="tabs-wrapper">
+        <button class="tab-btn active" id="btnTabHistorial" onclick="FacturacionModule.switchTab('historial')">COMPROBANTES EMITIDOS</button>
+        <button class="tab-btn" id="btnTabManual" onclick="FacturacionModule.switchTab('manual')">FACTURA MANUAL</button>
+        <button class="tab-btn" id="btnTabNotaCredito" onclick="FacturacionModule.switchTab('notacredito')">NOTAS DE CRÉDITO</button>
+        <button class="tab-btn" id="btnTabNotaDebito" onclick="FacturacionModule.switchTab('notadebito')">NOTAS DE DÉBITO</button>
+        <button class="tab-btn" id="btnTabRetenciones" onclick="FacturacionModule.switchTab('retenciones')">RETENCIONES / COMPRAS</button>
+        <button class="tab-btn" id="btnTabConfig" onclick="FacturacionModule.switchTab('config')">FIRMA DIGITAL & AMBIENTE</button>
+    </div>
+
+    <div id="tabHistorial">
+        <div class="tabla-container-neo">
+            <label class="label-hint">Buscar por cliente o secuencial</label>
+            <input type="text" id="histFacturaBuscar" class="input-neo" placeholder="Nombre, cédula/RUC o secuencial..." onkeyup="FacturacionModule.renderHistorial()">
+            <table class="tabla-neo">
+                <thead>
+                    <tr>
+                        <th>Secuencial</th>
+                        <th>Cliente</th>
+                        <th>Fecha Emisión</th>
+                        <th>Clave de Acceso SRI</th>
+                        <th>Ambiente</th>
+                        <th>Estado SRI</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaFacturasBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tabManual" class="hidden">
+        <div class="panel-manual">
+            <div>
+                <div class="tabla-container-neo" style="margin-bottom: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-user-tie"></i> Datos del Cliente
+                    </h3>
+                    <label class="label-hint">Cédula o RUC</label>
+                    <input type="text" id="manDocCliente" class="input-neo" placeholder="Ej: 1712345678" required>
+                    
+                    <label class="label-hint">Razón Social / Nombre Completo</label>
+                    <input type="text" id="manNomCliente" class="input-neo" placeholder="Ej: Juan Pérez" required>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label class="label-hint">Correo Electrónico</label>
+                            <input type="email" id="manCorreoCliente" class="input-neo" placeholder="cliente@correo.com">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint">Teléfono</label>
+                            <input type="text" id="manTelCliente" class="input-neo" placeholder="0999999999">
+                        </div>
+                    </div>
+
+                    <label class="label-hint">Dirección</label>
+                    <input type="text" id="manDirCliente" class="input-neo" placeholder="Dirección del cliente">
+
+                    <label class="label-hint">Forma de Pago</label>
+                    <select id="manFormaPago" class="input-neo">
+                        <option value="01">01 - EFECTIVO (Sin utilización Sist. Financiero)</option>
+                        <option value="20" selected>20 - TRANSFERENCIA/DEPOSITO (Con utilización Sist. Financiero)</option>
+                        <option value="19">19 - TARJETA DE CRÉDITO</option>
+                        <option value="16">16 - TARJETA DE DÉBITO</option>
+                    </select>
+                </div>
+
+                <div class="tabla-container-neo">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-box"></i> Agregar Detalle
+                    </h3>
+                    <label class="label-hint">Descripción del Servicio/Producto</label>
+                    <input type="text" id="manDetDesc" class="input-neo" placeholder="Ej: Servicio de Alojamiento">
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label class="label-hint">Cantidad</label>
+                            <input type="number" id="manDetCant" class="input-neo" value="1" min="1">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint">P. Unitario ($)</label>
+                            <input type="number" id="manDetPrecio" class="input-neo" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn-neo btn-save" style="width: 100%; margin-top: 10px;" onclick="FacturacionModule.agregarDetalleManual()">
+                        <i class="fas fa-plus"></i> AGREGAR A LA FACTURA
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div class="tabla-container-neo">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-file-invoice-dollar"></i> Detalle a Facturar
+                    </h3>
+                    <table class="tabla-neo">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Cant.</th>
+                                <th>V. Unitario</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaDetallesManual">
+                            <tr><td colspan="5" style="text-align: center; opacity: 0.5;">No hay ítems agregados</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="totales-box">
+                        <h4>Subtotal 0%: $<span id="manSubCero">0.00</span></h4>
+                        <h4>Subtotal IVA: $<span id="manSubIva">0.00</span></h4>
+                        <h4>IVA: $<span id="manTotalIva">0.00</span></h4>
+                        <hr style="border-color: rgba(255,255,255,0.2); margin: 10px 0;">
+                        <h2>TOTAL: $<span id="manTotalGeneral">0.00</span></h2>
+                    </div>
+
+                    <button type="button" class="btn-neo" style="width: 100%; margin-top: 20px; padding: 20px; background: var(--hotel-success); color: white;" onclick="FacturacionModule.emitirFacturaManualUI()">
+                        <i class="fas fa-paper-plane"></i> GENERAR Y FIRMAR FACTURA SRI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tabNotaCredito" class="hidden">
+        <div class="panel-manual">
+            <div>
+                <div class="tabla-container-neo" style="margin-bottom: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-search"></i> Buscar Factura a Modificar
+                    </h3>
+                    <label class="label-hint">Secuencial o Clave de Acceso</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="ncBuscarFactura" class="input-neo" placeholder="Ej: 000001500" style="margin-bottom:0;">
+                        <button type="button" class="btn-neo" style="white-space:nowrap;" onclick="NotasCreditoModule.buscarFacturas()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div id="ncResultadosFacturas" style="margin-top: 15px; max-height: 260px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="tabla-container-neo" id="ncPanelSeleccion" style="display:none;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 15px; font-weight: 900; text-transform: uppercase; font-size: 0.9rem;">
+                        <i class="fas fa-file-invoice"></i> Factura Seleccionada
+                    </h3>
+                    <p style="font-size:0.8rem; color:#718096; margin: 4px 0;">Cliente: <strong id="ncClienteNombre" style="color:#2c3e50;">--</strong></p>
+                    <p style="font-size:0.8rem; color:#718096; margin: 4px 0;">Secuencial: <strong id="ncSecuencialFactura" style="color:#2c3e50;">--</strong></p>
+                    <p style="font-size:0.8rem; color:#718096; margin: 4px 0;">Total factura: <strong id="ncTotalFactura" style="color:#2c3e50;">--</strong></p>
+
+                    <label class="label-hint" style="margin-top:15px;">Motivo (obligatorio)</label>
+                    <textarea id="ncMotivo" class="input-neo" rows="3" placeholder="Ej: Devolución parcial por error de cobro"></textarea>
+                </div>
+            </div>
+
+            <div>
+                <div class="tabla-container-neo">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-box-open"></i> Ítems a Acreditar
+                    </h3>
+                    <p id="ncSinFactura" style="text-align:center; opacity:0.5; padding: 30px 0;">Seleccione una factura de la izquierda para continuar.</p>
+                    <table class="tabla-neo hidden" id="ncTablaItems">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Cant.</th>
+                                <th>V. Unitario</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ncTablaItemsBody"></tbody>
+                    </table>
+
+                    <div class="totales-box hidden" id="ncTotalesBox">
+                        <h4>Subtotal: $<span id="ncSubtotal">0.00</span></h4>
+                        <h4>IVA: $<span id="ncIva">0.00</span></h4>
+                        <hr style="border-color: rgba(255,255,255,0.2); margin: 10px 0;">
+                        <h2>TOTAL A ACREDITAR: $<span id="ncTotalGeneral">0.00</span></h2>
+                    </div>
+
+                    <button type="button" class="btn-neo hidden" id="ncBtnEmitir" style="width: 100%; margin-top: 20px; padding: 20px; background: var(--hotel-success); color: white;" onclick="NotasCreditoModule.emitir()">
+                        <i class="fas fa-paper-plane"></i> EMITIR NOTA DE CRÉDITO
+                    </button>
+                </div>
+
+                <div class="tabla-container-neo" style="margin-top: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-history"></i> Historial de Notas de Crédito
+                    </h3>
+                    <input type="text" id="ncHistorialBuscar" class="input-neo" placeholder="Buscar por cliente, documento o secuencial..." onkeyup="NotasCreditoModule.renderHistorial()">
+                    <table class="tabla-neo">
+                        <thead>
+                            <tr>
+                                <th>Secuencial</th>
+                                <th>Cliente</th>
+                                <th>Factura Ref.</th>
+                                <th>Total</th>
+                                <th>Estado SRI</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ncTablaHistorialBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tabNotaDebito" class="hidden">
+        <div class="panel-manual">
+            <div>
+                <div class="tabla-container-neo" style="margin-bottom: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-search"></i> Buscar Factura a Recargar
+                    </h3>
+                    <label class="label-hint">Secuencial o Clave de Acceso</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="ndBuscarFactura" class="input-neo" placeholder="Ej: 000001500" style="margin-bottom:0;">
+                        <button type="button" class="btn-neo" style="white-space:nowrap;" onclick="NotasDebitoModule.buscarFacturas()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div id="ndResultadosFacturas" style="margin-top: 15px; max-height: 260px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="tabla-container-neo" id="ndPanelSeleccion" style="display:none;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 15px; font-weight: 900; text-transform: uppercase; font-size: 0.9rem;">
+                        <i class="fas fa-file-invoice"></i> Factura Seleccionada
+                    </h3>
+                    <p style="font-size:0.8rem; color:#718096; margin: 4px 0;">Cliente: <strong id="ndClienteNombre" style="color:#2c3e50;">--</strong></p>
+                    <p style="font-size:0.8rem; color:#718096; margin: 4px 0;">Secuencial: <strong id="ndSecuencialFactura" style="color:#2c3e50;">--</strong></p>
+
+                    <label class="label-hint" style="margin-top:15px;">Forma de Pago</label>
+                    <select id="ndFormaPago" class="input-neo">
+                        <option value="01">01 - EFECTIVO (Sin utilización Sist. Financiero)</option>
+                        <option value="20" selected>20 - TRANSFERENCIA/DEPOSITO (Con utilización Sist. Financiero)</option>
+                        <option value="19">19 - TARJETA DE CRÉDITO</option>
+                        <option value="16">16 - TARJETA DE DÉBITO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <div class="tabla-container-neo">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-plus-circle"></i> Motivos del Recargo
+                    </h3>
+                    <p id="ndSinFactura" style="text-align:center; opacity:0.5; padding: 30px 0;">Seleccione una factura de la izquierda para continuar.</p>
+
+                    <div id="ndFormMotivo" class="hidden">
+                        <label class="label-hint">Razón (Ej: Interés por mora)</label>
+                        <input type="text" id="ndDetRazon" class="input-neo" placeholder="Razón del recargo">
+                        <label class="label-hint">Valor ($, IVA incluido)</label>
+                        <input type="number" id="ndDetValor" class="input-neo" placeholder="0.00" step="0.01">
+                        <button type="button" class="btn-neo btn-save" style="width: 100%; margin-top: 10px;" onclick="NotasDebitoModule.agregarMotivo()">
+                            <i class="fas fa-plus"></i> AGREGAR MOTIVO
+                        </button>
+                    </div>
+
+                    <table class="tabla-neo hidden" id="ndTablaMotivos" style="margin-top: 20px;">
+                        <thead>
+                            <tr><th>Razón</th><th>Valor</th><th></th></tr>
+                        </thead>
+                        <tbody id="ndTablaMotivosBody"></tbody>
+                    </table>
+
+                    <div class="totales-box hidden" id="ndTotalesBox">
+                        <h2>TOTAL RECARGO: $<span id="ndTotalGeneral">0.00</span></h2>
+                    </div>
+
+                    <button type="button" class="btn-neo hidden" id="ndBtnEmitir" style="width: 100%; margin-top: 20px; padding: 20px; background: var(--hotel-success); color: white;" onclick="NotasDebitoModule.emitir()">
+                        <i class="fas fa-paper-plane"></i> EMITIR NOTA DE DÉBITO
+                    </button>
+                </div>
+
+                <div class="tabla-container-neo" style="margin-top: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-history"></i> Historial de Notas de Débito
+                    </h3>
+                    <input type="text" id="ndHistorialBuscar" class="input-neo" placeholder="Buscar por cliente, documento o secuencial..." onkeyup="NotasDebitoModule.renderHistorial()">
+                    <table class="tabla-neo">
+                        <thead>
+                            <tr>
+                                <th>Secuencial</th>
+                                <th>Cliente</th>
+                                <th>Factura Ref.</th>
+                                <th>Total</th>
+                                <th>Estado SRI</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ndTablaHistorialBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tabRetenciones" class="hidden">
+        <div class="tabs-wrapper">
+            <button class="tab-btn active" id="retBtnTabEmitir" onclick="RetencionesModule.switchTab('emitir')">EMITIR RETENCIÓN</button>
+            <button class="tab-btn" id="retBtnTabHistorial" onclick="RetencionesModule.switchTab('historial')">HISTORIAL RETENCIONES</button>
+            <button class="tab-btn" id="retBtnTabCompras" onclick="RetencionesModule.switchTab('compras')">COMPRAS</button>
+            <button class="tab-btn" id="retBtnTabLiquidacion" onclick="RetencionesModule.switchTab('liquidacion')">LIQUIDACIÓN DE COMPRA</button>
+            <button class="tab-btn" id="retBtnTabProveedores" onclick="RetencionesModule.switchTab('proveedores')">PROVEEDORES</button>
+            <button class="tab-btn" id="retBtnTabCodigos" onclick="RetencionesModule.switchTab('codigos')">CÓDIGOS DE RETENCIÓN</button>
+        </div>
+
+        <div id="retTabEmitir">
+            <div class="panel-manual">
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-truck"></i> Datos del Proveedor
+                        </h3>
+                        <label class="label-hint">Proveedor Registrado</label>
+                        <select id="retProvSelect" class="input-neo" onchange="RetencionesModule.seleccionarProveedor('ret', this.value)">
+                            <option value="">-- Nuevo proveedor (ingrese los datos abajo) --</option>
+                        </select>
+
+                        <label class="label-hint">Cédula o RUC</label>
+                        <input type="text" id="retProvDocumento" class="input-neo" placeholder="Ej: 1712345678001" onblur="RetencionesModule.autoLlenarProveedorPorDocumento('ret')">
+
+                        <label class="label-hint">Razón Social</label>
+                        <input type="text" id="retProvRazonSocial" class="input-neo" placeholder="Nombre del proveedor">
+
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Correo</label>
+                                <input type="email" id="retProvCorreo" class="input-neo" placeholder="correo@ejemplo.com">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Teléfono</label>
+                                <input type="text" id="retProvTelefono" class="input-neo" placeholder="0999999999">
+                            </div>
+                        </div>
+
+                        <label class="label-hint">Período Fiscal (MM/YYYY)</label>
+                        <input type="text" id="retPeriodoFiscal" class="input-neo" placeholder="Ej: 08/2026">
+
+                        <label class="label-hint">Nro. Factura del Proveedor (documento sustento)</label>
+                        <input type="text" id="retNumDocSustento" class="input-neo" placeholder="Ej: 001-001-000012345">
+
+                        <label class="label-hint">Fecha de la Factura del Proveedor</label>
+                        <input type="date" id="retFechaDocSustento" class="input-neo">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-percentage"></i> Impuestos a Retener
+                        </h3>
+
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Código de Retención</label>
+                                <select id="retSelectCodigo" class="input-neo" onchange="RetencionesModule.autoLlenarCodigo()">
+                                    <option value="">-- Seleccionar --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Base Imponible ($)</label>
+                                <input type="number" id="retDetBase" class="input-neo" placeholder="0.00" step="0.01">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">% a Retener</label>
+                                <input type="number" id="retDetPct" class="input-neo" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-neo btn-save" style="width:100%; margin-top:10px;" onclick="RetencionesModule.agregarImpuesto()">
+                            <i class="fas fa-plus"></i> AGREGAR IMPUESTO
+                        </button>
+
+                        <table class="tabla-neo" style="margin-top:20px;">
+                            <thead>
+                                <tr><th>Tipo</th><th>Código</th><th>Base</th><th>%</th><th>Retenido</th><th></th></tr>
+                            </thead>
+                            <tbody id="retTablaImpuestosBody">
+                                <tr><td colspan="6" style="text-align:center; opacity:0.5;">Sin impuestos agregados</td></tr>
+                            </tbody>
+                        </table>
+
+                        <div class="totales-box">
+                            <h2>TOTAL A RETENER: $<span id="retTotalGeneral">0.00</span></h2>
+                        </div>
+
+                        <button type="button" class="btn-neo" style="width:100%; margin-top:20px; padding:20px; background: var(--hotel-success); color:white;" onclick="RetencionesModule.emitir()">
+                            <i class="fas fa-paper-plane"></i> EMITIR COMPROBANTE DE RETENCIÓN
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="retTabHistorial" class="hidden">
+            <div class="tabla-container-neo">
+                <input type="text" id="retHistorialBuscar" class="input-neo" placeholder="Buscar por proveedor, documento o secuencial..." onkeyup="RetencionesModule.renderHistorial()">
+                <table class="tabla-neo">
+                    <thead>
+                        <tr>
+                            <th>Secuencial</th>
+                            <th>Proveedor</th>
+                            <th>Período</th>
+                            <th>Total Retenido</th>
+                            <th>Estado SRI</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="retTablaHistorialBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="retTabCompras" class="hidden">
+            <div class="panel-manual">
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-shopping-cart"></i> Registrar Compra / Gasto
+                        </h3>
+                        <label class="label-hint">Proveedor Registrado</label>
+                        <select id="cpProvSelect" class="input-neo" onchange="RetencionesModule.seleccionarProveedor('cp', this.value)">
+                            <option value="">-- Nuevo proveedor (ingrese los datos abajo) --</option>
+                        </select>
+
+                        <label class="label-hint">Cédula o RUC del Proveedor</label>
+                        <input type="text" id="cpProvDocumento" class="input-neo" placeholder="Ej: 1712345678001" onblur="RetencionesModule.autoLlenarProveedorPorDocumento('cp')">
+
+                        <label class="label-hint">Razón Social</label>
+                        <input type="text" id="cpProvRazonSocial" class="input-neo" placeholder="Nombre del proveedor">
+
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Tipo Comprobante</label>
+                                <select id="cpTipoComprobante" class="input-neo">
+                                    <option value="01">01 - Factura</option>
+                                    <option value="03">03 - Liquidación de Compra</option>
+                                    <option value="04">04 - Nota de Crédito</option>
+                                    <option value="05">05 - Nota de Débito</option>
+                                    <option value="41">41 - Comprobante de Retención</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Sustento Tributario</label>
+                                <select id="cpSustento" class="input-neo">
+                                    <option value="01">01 - Crédito Tributario</option>
+                                    <option value="02">02 - Costo o Gasto</option>
+                                    <option value="04">04 - Activo Fijo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <label class="label-hint">Nro. Comprobante (Ej: 001-001-000000555)</label>
+                        <input type="text" id="cpNumeroComprobante" class="input-neo" placeholder="001-001-000000555">
+
+                        <label class="label-hint">Nro. de Autorización SRI (48-49 dígitos)</label>
+                        <input type="text" id="cpAutorizacion" class="input-neo" placeholder="Déjelo vacío si es un gasto sin comprobante electrónico">
+                        <p style="font-size:0.65rem; color:#718096; margin:-10px 0 15px; font-weight:700;">
+                            <i class="fas fa-info-circle"></i> Sin este número la compra NO se declara en el ATS (evita crédito tributario sin respaldo) — igual queda registrada como gasto interno.
+                        </p>
+
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Fecha de Emisión</label>
+                                <input type="date" id="cpFechaEmision" class="input-neo">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Forma de Pago</label>
+                                <select id="cpFormaPago" class="input-neo">
+                                    <option value="01">01 - Sin utilización del sistema financiero</option>
+                                    <option value="20">20 - Transferencia / Depósito</option>
+                                    <option value="19">19 - Tarjeta de Crédito</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Base Imponible (Gravada IVA)</label>
+                                <input type="number" id="cpBaseImponible" class="input-neo" placeholder="0.00" step="0.01" oninput="RetencionesModule.calcularTotalCompra()">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Base 0% / No Objeto</label>
+                                <input type="number" id="cpBaseImponible0" class="input-neo" placeholder="0.00" step="0.01" oninput="RetencionesModule.calcularTotalCompra()">
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">IVA</label>
+                                <input type="number" id="cpIva" class="input-neo" placeholder="0.00" step="0.01" oninput="RetencionesModule.calcularTotalCompra()">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Retención IVA (Ref.)</label>
+                                <input type="number" id="cpRetIva" class="input-neo" placeholder="0.00" step="0.01">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">Retención Renta (Ref.)</label>
+                                <input type="number" id="cpRetRenta" class="input-neo" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="totales-box">
+                            <h2>TOTAL: $<span id="cpTotal">0.00</span></h2>
+                        </div>
+
+                        <div style="background:#f1f3f5; border-radius:15px; padding:15px; margin-top:15px;">
+                            <label style="display:flex; align-items:center; gap:10px; font-weight:900; font-size:0.8rem; color:var(--hotel-blue); cursor:pointer;">
+                                <input type="checkbox" id="cpRegistrarPago" checked onchange="RetencionesModule.togglePagoCompra()" style="width:18px; height:18px;">
+                                <i class="fas fa-money-bill-wave"></i> ¿Ya se pagó? Registrar salida de dinero
+                            </label>
+                            <div id="cpPagoCampos" style="display:flex; gap:15px; margin-top:15px;">
+                                <div style="flex:1;">
+                                    <label class="label-hint">¿De dónde salió el dinero?</label>
+                                    <select id="cpMetodoPago" class="input-neo" style="margin-bottom:0;"></select>
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="label-hint">Rubro Contable</label>
+                                    <select id="cpRubro" class="input-neo" style="margin-bottom:0;"></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-neo btn-save" style="width:100%; margin-top:20px; padding:18px;" onclick="RetencionesModule.registrarCompra()">
+                            <i class="fas fa-save"></i> REGISTRAR COMPRA
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <div class="tabla-container-neo">
+                        <label class="label-hint">Buscar por proveedor o documento</label>
+                        <input type="text" id="cpBuscar" class="input-neo" placeholder="Nombre o documento" onkeyup="RetencionesModule.cargarCompras()">
+                        <table class="tabla-neo">
+                            <thead><tr><th>Proveedor</th><th>Comprobante</th><th>Fecha</th><th>Total</th><th>ATS</th><th>Pago</th><th></th></tr></thead>
+                            <tbody id="cpTablaBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="retTabLiquidacion" class="hidden">
+            <p style="color:#718096; font-size:0.8rem; margin-bottom:15px;">
+                <i class="fas fa-info-circle"></i> Úsala cuando le compras a alguien que <strong>no puede emitir su propia factura</strong> (vendedor informal, persona sin RUC, etc). El hotel emite y firma este comprobante ante el SRI — se refleja automáticamente en la pestaña Compras.
+            </p>
+            <div class="panel-manual">
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-user-tag"></i> Datos del Proveedor
+                        </h3>
+                        <label class="label-hint">Proveedor Registrado</label>
+                        <select id="lcProvSelect" class="input-neo" onchange="RetencionesModule.seleccionarProveedor('lc', this.value)">
+                            <option value="">-- Nuevo proveedor (ingrese los datos abajo) --</option>
+                        </select>
+
+                        <label class="label-hint">Cédula o RUC</label>
+                        <input type="text" id="lcProvDocumento" class="input-neo" placeholder="Ej: 1712345678" onblur="RetencionesModule.autoLlenarProveedorPorDocumento('lc')">
+
+                        <label class="label-hint">Razón Social / Nombre</label>
+                        <input type="text" id="lcProvRazonSocial" class="input-neo" placeholder="Nombre del proveedor">
+
+                        <label class="label-hint">Forma de Pago</label>
+                        <select id="lcFormaPago" class="input-neo">
+                            <option value="01">01 - Sin utilización del sistema financiero</option>
+                            <option value="20">20 - Transferencia / Depósito</option>
+                            <option value="19">19 - Tarjeta de Crédito</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-box"></i> Ítems Comprados
+                        </h3>
+                        <label class="label-hint">Descripción</label>
+                        <input type="text" id="lcDetDesc" class="input-neo" placeholder="Ej: Artesanías, insumos agrícolas...">
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label class="label-hint">Cantidad</label>
+                                <input type="number" id="lcDetCant" class="input-neo" value="1" min="0.000001" step="0.000001">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">P. Unitario ($, IVA incl.)</label>
+                                <input type="number" id="lcDetPrecio" class="input-neo" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-neo btn-save" style="width:100%; margin-top:10px;" onclick="RetencionesModule.agregarItemLiquidacion()">
+                            <i class="fas fa-plus"></i> AGREGAR ÍTEM
+                        </button>
+
+                        <table class="tabla-neo" style="margin-top:20px;">
+                            <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th><th></th></tr></thead>
+                            <tbody id="lcTablaItemsBody">
+                                <tr><td colspan="5" style="text-align:center; opacity:0.5;">Sin ítems agregados</td></tr>
+                            </tbody>
+                        </table>
+
+                        <div class="totales-box">
+                            <h2>TOTAL: $<span id="lcTotalGeneral">0.00</span></h2>
+                        </div>
+
+                        <button type="button" class="btn-neo" style="width:100%; margin-top:20px; padding:20px; background: var(--hotel-success); color:white;" onclick="RetencionesModule.emitirLiquidacion()">
+                            <i class="fas fa-paper-plane"></i> EMITIR LIQUIDACIÓN DE COMPRA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabla-container-neo" style="margin-top:25px;">
+                <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                    <i class="fas fa-history"></i> Historial de Liquidaciones de Compra
+                </h3>
+                <input type="text" id="lcHistorialBuscar" class="input-neo" placeholder="Buscar por proveedor, documento o secuencial..." onkeyup="RetencionesModule.renderHistorialLiquidacion()">
+                <table class="tabla-neo">
+                    <thead>
+                        <tr><th>Secuencial</th><th>Proveedor</th><th>Total</th><th>Estado SRI</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="lcTablaHistorialBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="retTabProveedores" class="hidden">
+            <div class="panel-manual">
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-user-plus"></i> Nuevo Proveedor
+                        </h3>
+                        <label class="label-hint">Documento</label>
+                        <input type="text" id="pvDocumento" class="input-neo" placeholder="Cédula o RUC">
+                        <label class="label-hint">Razón Social</label>
+                        <input type="text" id="pvRazonSocial" class="input-neo" placeholder="Nombre del proveedor">
+                        <label class="label-hint">Correo</label>
+                        <input type="email" id="pvCorreo" class="input-neo" placeholder="correo@ejemplo.com">
+                        <label class="label-hint">Teléfono</label>
+                        <input type="text" id="pvTelefono" class="input-neo" placeholder="0999999999">
+                        <label class="label-hint">Dirección</label>
+                        <input type="text" id="pvDireccion" class="input-neo" placeholder="Dirección">
+                        <button type="button" class="btn-neo btn-save" style="width:100%;" onclick="RetencionesModule.crearProveedor()">
+                            <i class="fas fa-save"></i> GUARDAR PROVEEDOR
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <div class="tabla-container-neo">
+                        <label class="label-hint">Buscar</label>
+                        <input type="text" id="pvBuscar" class="input-neo" placeholder="Nombre o documento" onkeyup="RetencionesModule.buscarProveedores()">
+                        <table class="tabla-neo">
+                            <thead><tr><th>Documento</th><th>Razón Social</th><th>Contacto</th><th></th></tr></thead>
+                            <tbody id="pvTablaBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="retTabCodigos" class="hidden">
+            <div class="panel-manual">
+                <div>
+                    <div class="tabla-container-neo">
+                        <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                            <i class="fas fa-plus"></i> Nuevo Código
+                        </h3>
+                        <label class="label-hint">Tipo</label>
+                        <select id="crTipo" class="input-neo">
+                            <option value="RENTA">RENTA</option>
+                            <option value="IVA">IVA</option>
+                        </select>
+                        <label class="label-hint">Código SRI</label>
+                        <input type="text" id="crCodigo" class="input-neo" placeholder="Ej: 303">
+                        <label class="label-hint">Descripción</label>
+                        <input type="text" id="crDescripcion" class="input-neo" placeholder="Ej: Honorarios profesionales">
+                        <label class="label-hint">Porcentaje por defecto</label>
+                        <input type="number" id="crPorcentaje" class="input-neo" placeholder="0.00" step="0.01">
+                        <button type="button" class="btn-neo btn-save" style="width:100%;" onclick="RetencionesModule.crearCodigo()">
+                            <i class="fas fa-save"></i> AGREGAR CÓDIGO
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <div class="tabla-container-neo">
+                        <table class="tabla-neo">
+                            <thead><tr><th>Tipo</th><th>Código</th><th>Descripción</th><th>%</th><th></th></tr></thead>
+                            <tbody id="crTablaBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tabConfig" class="hidden">
+        <div class="panel-config-firma">
+            <div>
+                <div class="tabla-container-neo" style="margin-bottom: 25px;">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 25px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-key"></i> Certificado Digital
+                    </h3>
+                    
+                    <form id="formCertificadoSRI">
+                        <label class="label-hint">Archivo de Firma (.p12)</label>
+                        <input type="file" id="fileP12" class="input-neo" accept=".p12" required style="padding-top: 12px;">
+                        
+                        <label class="label-hint">Contraseña del Certificado</label>
+                        <input type="password" id="passP12" class="input-neo" placeholder="••••••••••••" required>
+
+                        <label class="label-hint">Ambiente de Operación SRI</label>
+                        <select id="cfgAmbiente" class="input-neo">
+                            <option value="1">1 - PRUEBAS (HOMOLOGACIÓN)</option>
+                            <option value="2">2 - PRODUCCIÓN (REAL)</option>
+                        </select>
+                        
+                        <button type="submit" class="btn-neo btn-save" style="width: 100%; margin-top: 15px; padding: 15px;">
+                            <i class="fas fa-cloud-upload-alt"></i> VINCULAR FIRMA ELECTRÓNICA
+                        </button>
+                    </form>
+                </div>
+
+                <div class="tabla-container-neo">
+                    <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
+                        <i class="fas fa-list-ol"></i> Secuencial de Facturación
+                    </h3>
+                    <div style="display: flex; gap: 15px; align-items: flex-end;">
+                        <div style="flex: 1;">
+                            <label class="label-hint">Próximo Número a Emitir</label>
+                            <input type="number" id="inSecuencial" class="input-neo" placeholder="Ej: 1500" min="1" style="margin-bottom: 0;">
+                        </div>
+                        <button type="button" class="btn-neo btn-save" onclick="FacturacionModule.guardarSecuencial()" style="height: 50px;">
+                            <i class="fas fa-save"></i> GUARDAR
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-firma-status">
+                <div id="iconCertStatus" style="font-size: 3.5rem; margin-bottom: 15px;">
+                    <i class="fas fa-certificate" style="color: #718096;"></i>
+                </div>
+                <h3 id="lblCertSede" style="margin: 0; color: var(--hotel-blue); font-weight: 900; text-transform: uppercase; font-size: 1.1rem;">Verificando Credenciales...</h3>
+                <p id="lblCertVencimiento" style="font-size: 0.75rem; font-weight: 800; color: #718096; text-transform: uppercase; margin-top: 8px; margin-bottom: 0;"></p>
+                <div id="badgeCertEstado" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+</div>

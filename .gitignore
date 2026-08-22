@@ -1,0 +1,23 @@
+node_modules/
+dist/
+dist_src/
+
+# App movil (Capacitor/Android) - fuera de alcance de este repo (solo build de escritorio macOS)
+android/
+www/
+app-mobile.js
+index-mobile.html
+views-mobile/
+build_mobile.js
+capacitor.config.json
+
+# Instalador Windows (Inno Setup) - fuera de alcance de este repo
+installer_frontend.iss
+assets/wizard.bmp
+assets/wizard_small.bmp
+Setup_MasterHotel_Cliente_*.exe
+
+.DS_Store
+Thumbs.db
+*.log
+_test_*

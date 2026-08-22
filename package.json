@@ -1,0 +1,70 @@
+{
+  "name": "masterhotel-frontend",
+  "version": "2.0.0",
+  "description": "Terminal de Escritorio MasterHotel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Juan Jose Castillo Romero CasRodsoft",
+  "license": "ISC",
+  "build": {
+    "appId": "com.casrodsoft.masterhotel",
+    "productName": "MasterHotel",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icono.icns",
+      "category": "public.app-category.business"
+    },
+    "files": [
+      "**/*",
+      "!dist/*",
+      "!dist_src/*",
+      "!node_modules/*",
+      "!android/*",
+      "!www/*",
+      "!app-mobile.js",
+      "!index-mobile.html",
+      "!views-mobile/*",
+      "!build_mobile.js",
+      "!capacitor.config.json",
+      "!config.js",
+      "!installer_frontend.iss",
+      "!Setup_MasterHotel_Cliente_*.exe",
+      "!.github/*"
+    ],
+    "extraResources": [
+      {
+        "from": "config.js",
+        "to": "config.js"
+      }
+    ],
+    "asar": true
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/camera": "^8.2.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "axios": "^1.14.0",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2",
+    "electron-reload": "^2.0.0-alpha.1",
+    "javascript-obfuscator": "^5.4.2"
+  }
+}

@@ -1,0 +1,51 @@
+<div class="login-page-wrapper" style="height: 100vh; display: flex; justify-content: center; align-items: center; 
+    background: #caced3; font-family: 'Segoe UI', system-ui, sans-serif; position: relative; overflow: hidden;">
+    
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMiIgdmlld0JveD0iMCAwIDIwIDIyIj48ZyBmaWxsPSIjYThhZGI0IiBmaWxsLW9wYWNpdHk9IjAuMTUiPjxwYXRoIGQ9Ik0wIDEwaDF2Mkgwdi0ybTAtOGgxYTMgMyAwIDAgMSAzIDN2MUgwVjRtMTkgMTUuMzlhMyAzIDAgMCAxLTIuNjEgMS42MUgwVjIwaDE2LjM5YTMgMyAwIDAgMCAyLjYxLTEuNjFabS0xLjM5LTIuNThhMyAzIDAgMCAxLTItMy40NVYwSDIwdjUuMzlhMyAzIDAgMCAxLTIgMy40NVYyMGgtMi42MWMtLjU2LS42My0xLTIuMDUtMS0yLjU4Wk0xIDJ2MmgyVjJIMVptMTcgMGgyVjJIMThtaC0yYTMgMyAwIDAgMC0zIDN2MUgxMlY0aDEuMzlhMyAzIDAgMCAxIDMtM1pNMCAxNWgyVjEzaDJ2Mkgwdi0ybTItMnYyaDZWMTNoMnYySDJ2LTJtMi0yVjdIMnYySDRWNWgyVjdINnYySDRWNW0xMSA4VjhIMTN2NWgxM3YtM2gtMnYzaDJ2LTNNMyAxOWgxVjE3SDNWMTltMTUgMGgxVjE3SDE4VjE5Wk04IDE2aDF2Mkg4di0ybTAgLTRoMXYySDh2LTJtMC00aDF2Mkg4di0ybTAtNGgxdjJIOHYtMm00IDhoMXYySDEydi0ybTAgLTRoMXYySDEydi0ybTAgLTRoMXYySDEydi0ybTAgLTRoMXYySDEydi0ybTYgMTJoMXYySDE4di0ybTAgLTRoMXYySDE4di0ybTAgLTRoMXYySDE4di0ybTAgLTRoMXYySDE4di0ybTItNEgxN3YySDIwdi0yWk0xNyAyVjJIMTVWMmgxN3YySDIwdjJ6Ii8+PC9nPjwvc3ZnPg==');
+        opacity: 0.2;"></div>
+
+    <div style="width: 440px; padding: 60px 50px; background: #e0e5ea; border-radius: 40px; text-align: center;
+        position: relative; z-index: 10; box-shadow: 25px 25px 70px #9eaab6, -25px -25px 70px #ffffff;
+        border: 1px solid rgba(255,255,255,0.7);">
+        
+        <div style="height: 100px; display: flex; justify-content: center; align-items: center; margin-bottom: 45px; position: relative;">
+             <img src="assets/logo.png" alt="Logo SystemCore" 
+                style="width: 450px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                filter: drop-shadow(5px 5px 15px rgba(0,0,0,0.2)); pointer-events: none;">
+        </div>
+
+        <h2 style="color: #2c3e50; letter-spacing: 5px; font-weight: 800; margin-bottom: 50px; font-size: 1.1rem; text-transform: uppercase;">
+            ACCESO AL SISTEMA
+        </h2>
+        
+        <form id="login-form">
+            <div style="margin-bottom: 25px; position: relative; text-align: left;">
+                <i class="fas fa-user" style="position: absolute; left: 20px; top: 22px; color: #7f8c8d; font-size: 1rem;"></i>
+                <input type="text" id="login-usuario" placeholder="Identificador" required
+                    style="width: 100%; padding: 22px 20px 22px 60px; border: 2px solid transparent; border-radius: 18px; 
+                    background: #e0e5ea; color: #2c3e50; outline: none; font-size: 1rem;
+                    font-weight: 700; box-shadow: inset 8px 8px 16px #9eaab6, inset -8px -8px 16px #ffffff; transition: 0.3s;">
+            </div>
+
+            <div style="margin-bottom: 55px; position: relative; text-align: left;">
+                <i class="fas fa-key" style="position: absolute; left: 20px; top: 22px; color: #7f8c8d; font-size: 1rem;"></i>
+                <input type="password" id="login-password" placeholder="Clave de acceso" required
+                    style="width: 100%; padding: 22px 20px 22px 60px; border: 2px solid transparent; border-radius: 18px; 
+                    background: #e0e5ea; color: #2c3e50; outline: none; font-size: 1rem;
+                    font-weight: 700; box-shadow: inset 8px 8px 16px #9eaab6, inset -8px -8px 16px #ffffff; transition: 0.3s;">
+            </div>
+
+            <button type="button" id="btn-login-submit" 
+                style="width: 100%; padding: 22px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); 
+                color: white; border: none; border-radius: 18px; font-weight: 800; cursor: pointer; 
+                letter-spacing: 3px; text-transform: uppercase; font-size: 1.1rem;
+                box-shadow: 0 5px 0 #004494, 0 10px 30px rgba(0, 123, 255, 0.3); transition: 0.2s;">
+                INGRESAR
+            </button>
+        </form>
+        
+        <div id="login-error" style="margin-top: 30px; font-size: 0.95rem; font-weight: 800; min-height: 25px; opacity: 0; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: translateY(10px);"></div>
+    </div>
+</div>
+

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MASTERHOTEL PRO | FULL SYSTEM ARCHITECTURE</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #161b22;
+            --border: #30363d;
+            --accent: #2f81f7;
+            --success: #238636;
+            --warning: #d29922;
+            --danger: #f85149;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 20px; line-height: 1.5; }
+        .container { max-width: 1200px; margin: auto; border: 1px solid var(--border); background: var(--surface); padding: 30px; border-radius: 12px; }
+        .header { border-bottom: 2px solid var(--accent); padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .header h1 { margin: 0; font-size: 1.8rem; letter-spacing: 2px; }
+        
+        .section-title { color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; margin: 25px 0 15px 0; display: flex; align-items: center; }
+        .section-title::after { content: ""; height: 1px; background: var(--border); flex-grow: 1; margin-left: 15px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .module-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 20px; border-radius: 8px; }
+        .module-card h3 { margin-top: 0; font-size: 1rem; color: #fff; display: flex; justify-content: space-between; }
+        
+        .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag-ready { background: var(--success); color: #fff; }
+        .tag-pending { background: var(--danger); color: #fff; }
+        .tag-dev { background: var(--warning); color: #000; }
+
+        ul { padding-left: 18px; margin-bottom: 0; }
+        li { font-size: 0.85rem; margin-bottom: 8px; color: var(--text-dim); }
+        li strong { color: var(--text-main); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85rem; }
+        th { text-align: left; background: rgba(255,255,255,0.05); padding: 12px; color: var(--accent); border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+
+        .priority-high { color: var(--danger); font-weight: bold; }
+        .footer { margin-top: 40px; text-align: center; font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>MASTERHOTEL <span style="font-weight: 300;">PRO</span></h1>
+                <small style="color: var(--text-dim);">SISTEMA DE GESTIÓN HOTELERA INTEGRAL | ECUADOR V1.5</small>
+            </div>
+            <div style="text-align: right;">
+                <span class="tag tag-ready">MSSQL Server 2025</span><br>
+                <span class="tag tag-ready">On-Premise Node.js</span>
+            </div>
+        </div>
+
+        <div class="section-title">Módulos de Operación Crítica</div>
+        <div class="grid">
+            <div class="module-card">
+                <h3>Front Desk <span class="tag tag-pending">Falta Logic</span></h3>
+                <ul>
+                    <li><strong>Check-In / Check-Out:</strong> Registro de huéspedes y liberación de llaves.</li>
+                    <li><strong>Tarifario Dinámico:</strong> Gestión de precios por temporada/momento.</li>
+                    <li><strong>Grid de Ocupación:</strong> Vista visual de disponibilidad (Gantt).</li>
+                </ul>
+            </div>
+            <div class="module-card">
+                <h3>Cajas y Arqueos <span class="tag tag-pending">Falta Logic</span></h3>
+                <ul>
+                    <li><strong>Apertura/Cierre:</strong> Control de flujo de efectivo por turno de cajero.</li>
+                    <li><strong>Arqueo de Caja:</strong> Conciliación de ventas vs efectivo real en mano.</li>
+                    <li><strong>Movimientos:</strong> Registro de egresos (gastos) e ingresos extra.</li>
+                </ul>
+            </div>
+            <div class="module-card">
+                <h3>Reportes y Auditoría <span class="tag tag-dev">En Desarrollo</span></h3>
+                <ul>
+                    <li><strong>Cierre Diario:</strong> Resumen total de la operación de las 24h.</li>
+                    <li><strong>Reporte de Cajas:</strong> Histórico de todos los arqueos de la sede.</li>
+                    <li><strong>Kardex:</strong> Trazabilidad total de productos de inventario.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section-title">Business Intelligence & KPIs</div>
+        <div class="grid">
+            <div class="module-card" style="border-color: var(--warning);">
+                <h3>Indicadores Hoteleros (KPIs)</h3>
+                <ul>
+                    <li><strong>RevPAR:</strong> Ingresos por habitación disponible.</li>
+                    <li><strong>Ocupación:</strong> Porcentaje real de habitaciones vendidas vs total.</li>
+                    <li><strong>Ticket Promedio:</strong> Gasto medio del cliente (Noche + Consumos).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section-title">Hoja de Ruta de Implementación</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fase</th>
+                    <th>Módulo / Funcionalidad</th>
+                    <th>Detalle de Ingeniería</th>
+                    <th>Prioridad</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>01</td>
+                    <td><strong>Cajas y Arqueos</strong></td>
+                    <td>Control de turnos, cierres de caja y validación de faltantes/sobrantes.</td>
+                    <td class="priority-high">INMEDIATA</td>
+                </tr>
+                <tr>
+                    <td>02</td>
+                    <td><strong>Motor de Check-In</strong></td>
+                    <td>Vínculo entre Recepción -> Habitaciones -> Caja.</td>
+                    <td class="priority-high">INMEDIATA</td>
+                </tr>
+                <tr>
+                    <td>03</td>
+                    <td><strong>Facturación Electrónica</strong></td>
+                    <td>Conexión con SRI para emisión de comprobantes autorizados.</td>
+                    <td class="priority-high">CRÍTICA</td>
+                </tr>
+                <tr>
+                    <td>04</td>
+                    <td><strong>KPI Dashboard</strong></td>
+                    <td>Visualización de métricas financieras para administración.</td>
+                    <td>ALTA</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            ADMINISTRADOR DEL SISTEMA: JUAN JOSE CASTILLO ROMERO | CASRODSOFT S.A.<br>
+            "LA CALIDAD NO SE NEGOCIA, EL CÓDIGO NO ENGAÑA."
+        </div>
+    </div>
+</body>
+</html>

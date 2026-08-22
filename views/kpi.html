@@ -1,0 +1,230 @@
+<style>
+    :root {
+        --hotel-blue: #1a365d; --hotel-gold: #c5a059; --hotel-bg: #e0e0e4;
+        --hotel-shadow-dark: #bebebe; --hotel-shadow-light: #ffffff;
+        --hotel-success: #27ae60; --hotel-warning: #f39c12; --hotel-danger: #e74c3c;
+    }
+    .modulo-container { padding: 30px; color: #2c3e50; animation: fadeIn 0.4s ease-out; }
+    .btn-neo {
+        padding: 12px 25px; border: none; border-radius: 15px; background: var(--hotel-bg);
+        box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light);
+        cursor: pointer; transition: all 0.3s; font-weight: 800; color: var(--hotel-blue);
+        display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.85rem;
+    }
+    .btn-neo:hover { box-shadow: 2px 2px 5px var(--hotel-shadow-dark), -2px -2px 5px var(--hotel-shadow-light); transform: translateY(-1px); }
+    .btn-neo:active { box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light); }
+    .btn-primary { background: var(--hotel-blue); color: white; }
+    .input-neo { padding: 12px; border: none; border-radius: 12px; background: var(--hotel-bg); box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light); color: #2c3e50; font-weight: 700; outline: none; font-size: 0.85rem; }
+    .filter-bar { display: flex; gap: 15px; align-items: center; background: var(--hotel-bg); padding: 15px 25px; border-radius: 20px; margin-bottom: 25px; box-shadow: inset 3px 3px 6px var(--hotel-shadow-dark), -3px -3px 6px var(--hotel-shadow-light); justify-content: space-between; }
+
+    /* KPI Cards — fila 1 */
+    .kpi-master-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 20px; }
+    .kpi-card { background: var(--hotel-bg); border-radius: 20px; padding: 25px 20px; box-shadow: 8px 8px 16px var(--hotel-shadow-dark), -8px -8px 16px var(--hotel-shadow-light); border-bottom: 4px solid transparent; text-align: left; position: relative; overflow: hidden; }
+    .kpi-card h4 { font-size: 0.65rem; color: #718096; text-transform: uppercase; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px; }
+    .kpi-card h2 { font-size: 1.6rem; font-weight: 900; margin: 0; }
+    .kpi-card .icon-bg { position: absolute; right: 10px; bottom: -10px; font-size: 4rem; opacity: 0.05; }
+    .card-ocup  { border-bottom-color: var(--hotel-blue); }  .card-ocup h2  { color: var(--hotel-blue); }
+    .card-revpar{ border-bottom-color: var(--hotel-gold); }  .card-revpar h2{ color: var(--hotel-gold); }
+    .card-adr   { border-bottom-color: var(--hotel-success); } .card-adr h2   { color: var(--hotel-success); }
+    .card-total { background: #2c3e50; border-bottom-color: #1a252f; box-shadow: 8px 8px 16px #bebebe; } .card-total h4 { color: #a0aec0; } .card-total h2 { color: white; }
+
+    /* KPI Cards — fila 2 */
+    .kpi-secondary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 25px; }
+    .kpi-card-sm { background: var(--hotel-bg); border-radius: 16px; padding: 18px 20px; box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light); display: flex; align-items: center; gap: 14px; }
+    .kpi-card-sm .kpi-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .kpi-card-sm p { margin: 0; font-size: 0.68rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+    .kpi-card-sm h3 { margin: 4px 0 0; font-size: 1.3rem; font-weight: 900; color: var(--hotel-blue); }
+    .variacion-pos { color: var(--hotel-success) !important; }
+    .variacion-neg { color: var(--hotel-danger)  !important; }
+
+    /* Sección de gráficas */
+    .section-title { font-size: 0.75rem; font-weight: 900; color: #718096; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px; padding-bottom: 8px; border-bottom: 2px solid rgba(0,0,0,0.06); }
+    .charts-grid-top    { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .charts-grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .charts-grid-drill  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .chart-panel { background: var(--hotel-bg); border-radius: 25px; padding: 20px; box-shadow: 10px 10px 20px var(--hotel-shadow-dark), -10px -10px 20px var(--hotel-shadow-light); }
+    .chart-title { font-size: 0.78rem; font-weight: 900; color: var(--hotel-blue); margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; }
+    .chart-click-hint { font-size: 0.62rem; font-weight: 600; color: #a0aec0; font-style: italic; text-transform: none; }
+    .chart-container    { position: relative; height: 300px; width: 100%; }
+    .chart-container-sm { position: relative; height: 250px; width: 100%; }
+    .chart-container-md { position: relative; height: 220px; width: 100%; }
+
+    /* Modal drill-down */
+    .drill-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+    .drill-modal { background: var(--hotel-bg); border-radius: 20px; width: 100%; max-width: 980px; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.4); }
+    .drill-header { background: var(--hotel-blue); padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .drill-header h3 { margin: 0; color: white; font-size: 1rem; font-weight: 900; }
+    .drill-header span { color: rgba(255,255,255,0.7); font-size: 0.78rem; margin-left: 10px; }
+    .drill-body { overflow-y: auto; padding: 20px 25px; flex: 1; }
+    .drill-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .drill-table th { background: rgba(0,0,0,0.04); padding: 10px 12px; text-align: left; font-weight: 900; color: #718096; font-size: 0.68rem; text-transform: uppercase; border-bottom: 2px solid rgba(0,0,0,0.08); white-space: nowrap; }
+    .drill-table td { padding: 9px 12px; border-bottom: 1px solid rgba(0,0,0,0.04); color: #2d3748; }
+    .drill-table tr:hover td { background: rgba(255,255,255,0.6); }
+    .drill-empty { text-align: center; padding: 40px; color: #718096; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<div class="modulo-container">
+
+    <!-- Encabezado -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button class="btn-neo" style="width:45px;height:45px;padding:0;border-radius:50%;color:var(--hotel-gold);"
+                onclick="App.renderView('dashboard','viewport')">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2 style="margin:0; font-size:1.4rem; color:var(--hotel-blue); font-weight:900;">MÉTRICAS & ANÁLISIS DE RENDIMIENTO</h2>
+                <div id="sedeSelectorKPI" style="margin-top:5px;"></div>
+            </div>
+        </div>
+        <button class="btn-neo" style="color:#e74c3c;" onclick="KpiModule.exportarPDF()">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button class="btn-neo" style="color:#27ae60;" onclick="KpiModule.exportarCSV()">
+            <i class="fas fa-file-csv"></i> CSV
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-bar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-chart-line" style="color:#718096; font-size:1.2rem;"></i>
+            <span style="font-weight:900; font-size:0.8rem; color:#2c3e50;">RANGO DE ANÁLISIS:</span>
+            <input type="date" id="fechaInicioKPI" class="input-neo" style="width:150px;">
+            <span style="color:#718096; font-weight:900;">AL</span>
+            <input type="date" id="fechaFinKPI" class="input-neo" style="width:150px;">
+            <button class="btn-neo btn-primary" onclick="KpiModule.cargarMetricas()">
+                <i class="fas fa-search"></i> CALCULAR
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Fila 1 KPIs principales ── -->
+    <p class="section-title"><i class="fas fa-hotel"></i> INDICADORES HOTELEROS PRINCIPALES</p>
+    <div class="kpi-master-grid">
+        <div class="kpi-card card-ocup">
+            <i class="fas fa-bed icon-bg"></i>
+            <h4>Ocupación Operativa</h4>
+            <h2 id="kpi-ocupacion">0.00 %</h2>
+            <div style="font-size:0.65rem;color:#718096;font-weight:bold;margin-top:5px;" id="kpi-habs-text">0 / 0 Unidades</div>
+        </div>
+        <div class="kpi-card card-adr">
+            <i class="fas fa-hand-holding-usd icon-bg"></i>
+            <h4>Tarifa Media Diaria (ADR)</h4>
+            <h2 id="kpi-adr">$ 0.00</h2>
+            <div style="font-size:0.65rem;color:#718096;font-weight:bold;margin-top:5px;">Valor medio por pernoctación</div>
+        </div>
+        <div class="kpi-card card-revpar">
+            <i class="fas fa-chart-bar icon-bg"></i>
+            <h4>RevPAR</h4>
+            <h2 id="kpi-revpar">$ 0.00</h2>
+            <div style="font-size:0.65rem;color:#718096;font-weight:bold;margin-top:5px;">Rendimiento por habitación disponible</div>
+        </div>
+        <div class="kpi-card card-total">
+            <i class="fas fa-cash-register icon-bg"></i>
+            <h4>Ingresos Hospedaje</h4>
+            <h2 id="kpi-prod-hospedaje">$ 0.00</h2>
+            <div style="font-size:0.65rem;color:#a0aec0;font-weight:bold;margin-top:5px;">Producción líquida alojamiento</div>
+        </div>
+    </div>
+
+    <!-- ── Fila 2 KPIs secundarios ── -->
+    <div class="kpi-secondary-grid">
+        <div class="kpi-card-sm">
+            <div class="kpi-icon" style="background:#eff6ff; color:#3498db;"><i class="fas fa-moon"></i></div>
+            <div><p>Estadía Promedio</p><h3 id="kpi-estadia">-- días</h3></div>
+        </div>
+        <div class="kpi-card-sm">
+            <div class="kpi-icon" style="background:#f0fdf4; color:#27ae60;"><i class="fas fa-users"></i></div>
+            <div><p>Clientes únicos período</p><h3 id="kpi-clientes-unicos">--</h3></div>
+        </div>
+        <div class="kpi-card-sm">
+            <div class="kpi-icon" style="background:#fff7ed; color:#f39c12;"><i class="fas fa-exclamation-circle"></i></div>
+            <div><p>Cartera pendiente</p><h3 id="kpi-cartera">$ --</h3></div>
+        </div>
+        <div class="kpi-card-sm">
+            <div class="kpi-icon" style="background:#fdf4ff; color:#9b59b6;"><i class="fas fa-exchange-alt"></i></div>
+            <div><p>Vs período anterior</p><h3 id="kpi-variacion">--%</h3></div>
+        </div>
+    </div>
+
+    <!-- ── Gráficas nivel 1 ── -->
+    <p class="section-title"><i class="fas fa-chart-area"></i> ANÁLISIS TEMPORAL Y DE PRODUCCIÓN</p>
+    <div class="charts-grid-top">
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-chart-area"></i> TENDENCIA DE INGRESOS</span>
+                <span class="chart-click-hint"><i class="fas fa-mouse-pointer"></i> Click en punto para ver detalle</span>
+            </div>
+            <div class="chart-container"><canvas id="chartCurvaIngresos"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-title"><span><i class="fas fa-chart-pie"></i> PARTICIPACIÓN POR ÁREAS</span></div>
+            <div class="chart-container"><canvas id="chartProduccionAreas"></canvas></div>
+        </div>
+    </div>
+
+    <div class="charts-grid-bottom">
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-shopping-cart"></i> TOP 5 PRODUCTOS</span>
+            </div>
+            <div class="chart-container-sm"><canvas id="chartTopProductos"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-clock"></i> MODALIDAD DE ALQUILER</span>
+                <span class="chart-click-hint"><i class="fas fa-mouse-pointer"></i> Click para ver detalle</span>
+            </div>
+            <div class="chart-container-sm"><canvas id="chartTiposAlquiler"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ── Gráficas nivel 2 (drill-down) ── -->
+    <p class="section-title"><i class="fas fa-search-plus"></i> ANÁLISIS DE PROFUNDIDAD — click en cualquier barra para ver registros</p>
+    <div class="charts-grid-drill">
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-bed"></i> INGRESOS POR TIPO HAB.</span>
+                <span class="chart-click-hint"><i class="fas fa-mouse-pointer"></i> Click</span>
+            </div>
+            <div class="chart-container-md"><canvas id="chartTipoHab"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-map-marker-alt"></i> PROCEDENCIA HUÉSPEDES</span>
+                <span class="chart-click-hint"><i class="fas fa-mouse-pointer"></i> Click</span>
+            </div>
+            <div class="chart-container-md"><canvas id="chartProcedencia"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-title">
+                <span><i class="fas fa-calendar-week"></i> INGRESOS POR DÍA SEMANA</span>
+                <span class="chart-click-hint"><i class="fas fa-mouse-pointer"></i> Click</span>
+            </div>
+            <div class="chart-container-md"><canvas id="chartDiaSemana"></canvas></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══ MODAL DRILL-DOWN ═══ -->
+<div id="drill-overlay" class="drill-overlay" onclick="KpiModule.cerrarDrill(event)">
+    <div class="drill-modal" onclick="event.stopPropagation()">
+        <div class="drill-header">
+            <div>
+                <h3 id="drill-titulo">Detalle</h3>
+                <span id="drill-subtitulo"></span>
+            </div>
+            <button onclick="KpiModule.cerrarDrill()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:7px 14px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.8rem;">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
+        <div class="drill-body">
+            <div id="drill-contenido">
+                <div class="drill-empty"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+            </div>
+        </div>
+    </div>
+</div>

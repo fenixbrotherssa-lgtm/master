@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MasterHotel v1.0 | SystemCore</title>
+
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' file:; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' file:; 
+        style-src 'self' 'unsafe-inline' file:; 
+        font-src 'self' data: file:; 
+        img-src 'self' data: http: https: https://*.tile.openstreetmap.org https://www.transparenttextures.com file:; 
+        connect-src 'self' http: https: file:;">
+
+    <link rel="stylesheet" href="./assets/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="./assets/vendor/inter-font/fuentes.css">
+    <link rel="stylesheet" href="./assets/vendor/leasleft/leaflet.css">
+
+    <script src="./assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="./assets/vendor/chartjs/chart.umd.js"></script>
+    <script src="./assets/vendor/leasleft/leaflet.js"></script>
+    <script src="./public/js/libs/axios.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            background-color: #e0e0e4; 
+            color: #1a1a1c; 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER GLOBAL ESTATICO */
+        #main-header {
+            width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #e0e0e4;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .nav-controls { display: flex; align-items: center; gap: 20px; }
+
+        .btn-nav-global {
+            width: 45px; height: 45px;
+            border: none; border-radius: 50%;
+            background: #e0e0e4;
+            box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+            cursor: pointer;
+            color: #c5a059;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            visibility: hidden;
+        }
+
+        .btn-nav-global:active {
+            box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+        }
+
+        .btn-nav-global i { font-size: 1.2rem; }
+
+        /* Splash Screen */
+        #app-loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #ffffff 0%, #cfcfd6 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 60px; height: 60px;
+            border: 5px solid rgba(0, 123, 255, 0.1);
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .loader-text {
+            margin-top: 25px; font-size: 0.7rem; color: #0056b3;
+            text-transform: uppercase; letter-spacing: 5px; font-weight: 800;
+        }
+
+        /* Contenedor de Modulos */
+        #app-root { 
+            flex: 1;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            overflow-y: auto;
+        }
+
+        #app-root.loaded { opacity: 1; }
+
+        /* SweetAlert Neomorfico */
+        .swal-neomorfico {
+            background: #e0e5ea !important;
+            border-radius: 25px !important;
+            box-shadow: 15px 15px 30px #bec5d0, -15px -15px 30px #ffffff !important;
+        }
+        .swal-btn-blue {
+            background: #007bff !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding: 12px 30px !important;
+            font-weight: bold !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-loader">
+        <div class="spinner"></div>
+        <p class="loader-text">Iniciando MasterHotel</p>
+    </div>
+
+    <header id="main-header">
+        <div class="nav-controls">
+            <button id="btn-global-back" class="btn-nav-global" onclick="Router.back()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="brand-logo" style="font-weight: 900; letter-spacing: 2px; color: #1a365d;">
+                MASTER<span style="color: #c5a059;">HOTEL</span>
+            </div>
+        </div>
+        <div id="user-session-info" style="font-size: 0.75rem; font-weight: 700; color: #718096;">
+            SYSTEM CORE v1.0
+        </div>
+    </header>
+
+    <div id="app-root"></div>
+
+    <script>
+        // ROUTER CENTRALIZADO
+        window.Router = {
+            btnBack: null,
+            init() { this.btnBack = document.getElementById('btn-global-back'); },
+
+            showBack(visible) {
+                if(!this.btnBack) this.init();
+                this.btnBack.style.visibility = visible ? 'visible' : 'hidden';
+            },
+
+            back() {
+                if (window.App && typeof window.App.renderView === 'function') {
+                    const destino = window.backView || 'dashboard';
+                    window.App.renderView(destino, 'viewport');
+                    this.showBack(false);
+                } else {
+                    location.reload(); 
+                }
+            }
+        };
+
+        // Inicializar objeto App global
+        window.App = window.App || {};
+
+        // URL de API inyectada desde main.js (config.js). Fallback a localhost en desarrollo.
+        const apiUrlArg = process.argv.find(a => a.startsWith('--api-url='));
+        const RESOLVED_API_URL = apiUrlArg ? apiUrlArg.split('=')[1] : 'http://localhost:4000/api';
+
+        window.AppConfig = {
+            apiUrl: RESOLVED_API_URL,
+            version: '1.0.0'
+        };
+
+        // axios global apuntando a la API resuelta (por si los modulos usan axios directo)
+        if (window.axios) {
+            window.axios.defaults.baseURL = RESOLVED_API_URL;
+        }
+
+        console.log("API URL activa:", RESOLVED_API_URL);
+
+        // Configuracion de Notificaciones Globales
+        window.Toast = Swal.mixin({
+            customClass: { popup: 'swal-neomorfico', confirmButton: 'swal-btn-blue' },
+            buttonsStyling: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    </script>
+
+    <script src="./app.js"></script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Router.init();
+            const loader = document.getElementById('app-loader');
+            const root = document.getElementById('app-root');
+
+            setTimeout(() => {
+                if(loader) loader.style.opacity = '0';
+                root.classList.add('loaded');
+                setTimeout(() => {
+                    if (loader) loader.remove();
+                }, 500);
+            }, 1200);
+        });
+    </script>
+</body>
+</html>

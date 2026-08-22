@@ -1,0 +1,321 @@
+<style>
+    :root {
+        --hotel-blue: #1a365d;
+        --hotel-gold: #c5a059;
+        --hotel-bg: #e0e0e4;
+        --hotel-shadow-dark: #bebebe;
+        --hotel-shadow-light: #ffffff;
+        --hotel-danger: #e74c3c;
+    }
+
+    .modulo-container { 
+        padding: 40px; 
+        animation: fadeIn 0.4s ease-out; 
+        min-height: 100%;
+    }
+
+    /* HEADER ESTRUCTURAL */
+    .header-modulo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 20px;
+    }
+
+    .header-left { 
+        display: flex; 
+        align-items: center; 
+        gap: 20px; 
+    }
+
+    .header-modulo h2 {
+        font-size: 1.5rem;
+        color: var(--hotel-blue);
+        letter-spacing: 2px;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 0;
+    }
+
+    /* FILTROS */
+    .toolbar-filtro {
+        display: flex; 
+        gap: 15px; 
+        margin-bottom: 25px; 
+        align-items: center; 
+        background: var(--hotel-bg); 
+        padding: 20px; 
+        border-radius: 20px; 
+        box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light);
+    }
+
+    /* BOTONES NEOMÓRFICOS */
+    .btn-neo {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 15px;
+        background: var(--hotel-bg);
+        box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 800;
+        color: var(--hotel-blue);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+    }
+
+    .btn-neo:hover {
+        box-shadow: 2px 2px 5px var(--hotel-shadow-dark), -2px -2px 5px var(--hotel-shadow-light);
+        transform: translateY(-1px);
+    }
+
+    .btn-back {
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+        color: var(--hotel-gold);
+        flex-shrink: 0;
+    }
+
+    .btn-save {
+        background: var(--hotel-blue);
+        color: white;
+    }
+
+    /* GRID Y CARDS */
+    .productos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 25px;
+        margin-top: 10px;
+    }
+
+    .prod-card {
+        background: var(--hotel-bg);
+        border-radius: 25px;
+        padding: 25px;
+        box-shadow: 10px 10px 20px var(--hotel-shadow-dark), -10px -10px 20px var(--hotel-shadow-light);
+        text-align: center;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: 0.3s ease;
+    }
+
+    .prod-card:hover { transform: translateY(-5px); }
+
+    .price-tag {
+        font-size: 1.4rem;
+        color: var(--hotel-gold);
+        font-weight: 900;
+        display: block;
+        margin: 10px 0;
+    }
+
+    .stock-badge {
+        font-size: 0.7rem;
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        background: var(--hotel-bg);
+        box-shadow: inset 3px 3px 6px var(--hotel-shadow-dark), inset -3px -3px 6px var(--hotel-shadow-light);
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    /* MODALES */
+    .modal-neo {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(224, 224, 228, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content-neo {
+        background: var(--hotel-bg);
+        padding: 40px;
+        border-radius: 30px;
+        width: 550px;
+        max-width: 95%;
+        box-shadow: 20px 20px 40px var(--hotel-shadow-dark), -20px -20px 40px var(--hotel-shadow-light);
+    }
+
+    .input-neo {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: none;
+        border-radius: 15px;
+        background: var(--hotel-bg);
+        box-shadow: inset 5px 5px 10px var(--hotel-shadow-dark), inset -5px -5px 10px var(--hotel-shadow-light);
+        color: #2c3e50;
+        font-weight: 600;
+        outline: none;
+    }
+
+    .label-hint {
+        font-size: 0.65rem;
+        font-weight: 900;
+        color: #718096;
+        margin-left: 5px;
+        margin-bottom: 5px;
+        display: block;
+        text-transform: uppercase;
+    }
+
+    #listaCategorias::-webkit-scrollbar { width: 5px; }
+    #listaCategorias::-webkit-scrollbar-thumb { background: var(--hotel-gold); border-radius: 10px; }
+
+    .hidden { display: none !important; }
+</style>
+
+<div class="modulo-container">
+    <div class="header-modulo">
+        <div class="header-left">
+            <button class="btn-neo btn-back" onclick="App.renderShell()" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2>Inventario <span style="font-weight: 300; color: var(--hotel-gold);">| Stock</span></h2>
+                <p style="font-size: 0.75rem; color: #7f8c8d; font-weight: 700; margin:0; text-transform: uppercase;">Gestión de suministros y mercadería</p>
+            </div>
+            <div id="sedeSelectorInv"></div>
+        </div>
+
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button class="btn-neo" onclick="App.renderView('activos', 'app-root')">
+                <i class="fas fa-tools"></i> ACTIVOS
+            </button>
+            <button class="btn-neo" onclick="InventarioModule.abrirModalCat()">
+                <i class="fas fa-tags"></i> CATEGORÍAS
+            </button>
+            <button class="btn-neo" onclick="InventarioModule.verDesactivados()">
+                <i class="fas fa-eye-slash"></i> DESACTIVADOS
+            </button>
+            <button class="btn-neo btn-save" onclick="InventarioModule.abrirModalProducto()">
+                <i class="fas fa-plus-circle"></i> NUEVO PRODUCTO
+            </button>
+        </div>
+    </div>
+
+    <div class="toolbar-filtro">
+        <input type="text" id="filtroTexto" class="input-neo" placeholder="🔍 Buscar producto o servicio..." style="margin-bottom: 0; flex: 2;">
+        <select id="filtroCategoria" class="input-neo" style="margin-bottom: 0; flex: 1;">
+            <option value="TODAS">Todas las Categorías</option>
+        </select>
+        <select id="filtroTipo" class="input-neo" style="margin-bottom: 0; flex: 1;">
+            <option value="TODOS">Todos los Items</option>
+            <option value="VENTA">Solo Productos</option>
+            <option value="SERVICIO">Solo Servicios</option>
+        </select>
+    </div>
+
+    <div class="productos-grid" id="gridProductos"></div>
+</div>
+
+<div id="modalProducto" class="modal-neo hidden">
+    <div class="modal-content-neo">
+        <h3 style="text-align:center; color: var(--hotel-blue); font-weight: 900; margin-bottom: 25px; border-bottom: 2px solid var(--hotel-gold); padding-bottom: 15px; text-transform: uppercase;">
+            Ficha de Producto
+        </h3>
+        
+        <form id="formProducto">
+            <input type="hidden" id="productoId">
+            
+            <label class="label-hint">Nombre del Artículo</label>
+            <input type="text" id="nombreProd" class="input-neo" required placeholder="Ej: Coca Cola 350ml">
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label class="label-hint">Categoría</label>
+                    <select id="catProdId" class="input-neo" required></select>
+                </div>
+                <div style="flex:1">
+                    <label class="label-hint">Stock Actual (Solo lectura)</label>
+                    <input type="number" id="stockProd" class="input-neo" readonly value="0">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label class="label-hint">Costo Compra ($)</label>
+                    <input type="number" step="0.01" id="costoProd" class="input-neo" required placeholder="0.00">
+                </div>
+                <div style="flex:1">
+                    <label class="label-hint">Precio Venta ($)</label>
+                    <input type="number" step="0.01" id="precioProd" class="input-neo" required placeholder="0.00">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label class="label-hint">Tipo de Item</label>
+                    <select id="tipoProd" class="input-neo" onchange="InventarioModule.toggleStockFields()">
+                        <option value="VENTA">VENTA</option>
+                        <option value="SERVICIO">SERVICIO</option>
+                        <option value="INSUMO">INSUMO</option>
+                    </select>
+                </div>
+                
+                <div id="contenedorStock" style="display:flex; gap:15px; flex:2;">
+                    <div style="flex:1">
+                        <label class="label-hint">Stock Mínimo</label>
+                        <input type="number" id="minProd" class="input-neo" value="0">
+                    </div>
+                    <div style="flex:1">
+                        <label class="label-hint">Stock Ideal</label>
+                        <input type="number" id="idealProd" class="input-neo" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <label class="label-hint">Código de Barras</label>
+            <input type="text" id="barraProd" class="input-neo" placeholder="Escanea o escribe código...">
+
+            <div style="display:flex; gap:20px; margin-top:20px;">
+                <button type="button" class="btn-neo" style="flex:1; justify-content:center;" onclick="InventarioModule.cerrarModal()">
+                    CANCELAR
+                </button>
+                <button type="submit" class="btn-neo btn-save" style="flex:1; justify-content:center;">
+                    GUARDAR FICHA
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalCategoria" class="modal-neo hidden">
+    <div class="modal-content-neo" style="width: 450px;">
+        <h3 style="text-align:center; color: var(--hotel-blue); font-weight: 900; margin-bottom: 20px; text-transform: uppercase;">
+            Categorías
+        </h3>
+        
+        <form id="formCategoria" style="margin-bottom: 25px;">
+            <label class="label-hint">Nueva Categoría</label>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <input type="text" id="nombreCat" class="input-neo" placeholder="Ej: Bebidas" required style="margin-bottom:0;">
+                <select id="tipoCat" class="input-neo" style="margin-bottom:0; min-width:140px;">
+                    <option value="ALIMENTO">🍽 Alimento</option>
+                    <option value="BEBIDA">🥤 Bebida</option>
+                    <option value="COMERCIAL">🛒 Comercial</option>
+                </select>
+                <button type="submit" class="btn-neo btn-save" style="padding: 0 20px;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </form>
+
+        <label class="label-hint">Listado Actual</label>
+        <div id="listaCategorias" style="max-height: 250px; overflow-y: auto; padding-right: 10px;">
+        </div>
+
+        <button type="button" class="btn-neo" style="width:100%; margin-top:25px; justify-content:center;" onclick="InventarioModule.cerrarModal()">
+            CERRAR GESTIÓN
+        </button>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+name: Build macOS
+
+# Solo el cliente de escritorio (DMG). El backend de MasterHotel se compila
+# y corre siempre en la máquina Windows del hotel, como siempre — este
+# workflow no toca ni empaqueta nada del backend.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias del frontend
+        run: npm ci
+
+      - name: Convertir icono.png → icono.icns (si no existe .icns)
+        working-directory: assets
+        run: |
+          if [ ! -f icono.icns ]; then
+            if [ -f icono.png ]; then
+              mkdir -p icono.iconset
+              sips -z 16   16   icono.png --out icono.iconset/icon_16x16.png
+              sips -z 32   32   icono.png --out icono.iconset/icon_16x16@2x.png
+              sips -z 32   32   icono.png --out icono.iconset/icon_32x32.png
+              sips -z 64   64   icono.png --out icono.iconset/icon_32x32@2x.png
+              sips -z 128  128  icono.png --out icono.iconset/icon_128x128.png
+              sips -z 256  256  icono.png --out icono.iconset/icon_128x128@2x.png
+              sips -z 256  256  icono.png --out icono.iconset/icon_256x256.png
+              sips -z 512  512  icono.png --out icono.iconset/icon_256x256@2x.png
+              sips -z 512  512  icono.png --out icono.iconset/icon_512x512.png
+              sips -z 1024 1024 icono.png --out icono.iconset/icon_512x512@2x.png
+              iconutil -c icns icono.iconset -o icono.icns
+              rm -rf icono.iconset
+              echo "icono.icns generado desde icono.png"
+            else
+              echo "AVISO: No se encontró icono.png ni icono.icns. El build usará el ícono por defecto de Electron."
+              sed -i '' '/"icon": "assets\/icono.icns"/d' ../package.json
+            fi
+          else
+            echo "icono.icns ya existe, se usa directamente."
+          fi
+
+      - name: Compilar DMG (x64 + arm64)
+        run: npx electron-builder --mac --publish never
+
+      - name: Subir DMG (app de escritorio)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MasterHotel-Desktop-Mac
+          path: dist/*.dmg

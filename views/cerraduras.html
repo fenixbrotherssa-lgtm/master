@@ -1,0 +1,208 @@
+<style>
+    :root {
+        --blue:#1a365d; --gold:#c5a059; --bg:#e0e0e4;
+        --sd:#bebebe; --sl:#ffffff; --green:#27ae60; --red:#e74c3c; --grey:#718096;
+    }
+    .modulo-container { padding:30px; color:#2c3e50; animation:fadeIn .4s ease-out; }
+    .btn-neo {
+        padding:10px 22px; border:none; border-radius:14px; background:var(--bg);
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        cursor:pointer; transition:all .3s; font-weight:800; color:var(--blue);
+        display:inline-flex; align-items:center; gap:8px; font-size:.82rem;
+    }
+    .btn-neo:hover { box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl); transform:translateY(-1px); }
+    .btn-neo:active { box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl); }
+    .btn-back { width:45px; height:45px; padding:0; justify-content:center; border-radius:50%; color:var(--gold); }
+    .btn-prim  { background:var(--blue); color:#fff; }
+    .btn-danger{ background:var(--red);  color:#fff; }
+    .btn-gold  { background:var(--gold); color:#fff; }
+    .input-neo { padding:10px 14px; border:none; border-radius:12px; background:var(--bg);
+        box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl);
+        color:#2c3e50; font-weight:700; outline:none; font-size:.85rem; width:100%; }
+
+    /* Header */
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+    .page-header h2 { font-size:1.5rem; color:var(--blue); margin:0; }
+
+    /* Tabs */
+    .tab-bar { display:flex; gap:10px; margin-bottom:24px; }
+    .tab-btn { padding:10px 22px; border:none; border-radius:14px; background:var(--bg);
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        cursor:pointer; font-weight:800; color:var(--grey); font-size:.85rem; }
+    .tab-btn.activo { background:var(--blue); color:#fff;
+        box-shadow:inset 3px 3px 6px rgba(0,0,0,.3),inset -3px -3px 6px rgba(255,255,255,.05); }
+
+    /* Cards de controladores */
+    .ctrl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+    .ctrl-card { background:var(--bg); border-radius:20px; padding:22px;
+        box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl); }
+    .ctrl-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .ctrl-card h4 { margin:0; color:var(--blue); font-size:1rem; }
+    .led { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .led-on  { background:var(--green); box-shadow:0 0 6px var(--green); }
+    .led-off { background:var(--grey); }
+    .ctrl-meta { font-size:.78rem; color:var(--grey); margin:4px 0; }
+    .ctrl-actions { display:flex; gap:8px; margin-top:14px; }
+
+    /* Grid de cerraduras */
+    .lock-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px; }
+    .lock-card { background:var(--bg); border-radius:18px; padding:18px;
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        border-bottom:4px solid var(--grey); position:relative; }
+    .lock-card.bloqueada { border-bottom-color:var(--green); }
+    .lock-card.desbloqueada { border-bottom-color:var(--red); }
+    .lock-card.offline { opacity:.6; }
+    .lock-hab { font-size:1.4rem; font-weight:900; color:var(--blue); }
+    .lock-modelo { font-size:.72rem; color:var(--grey); margin:2px 0 10px; }
+    .lock-status { font-size:.75rem; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-block; }
+    .status-bloqueada   { background:#d4edda; color:var(--green); }
+    .status-desbloqueada{ background:#f8d7da; color:var(--red); }
+    .status-offline     { background:#e2e8f0; color:var(--grey); }
+    .bat-bar { height:4px; border-radius:4px; margin-top:10px; background:#e2e8f0; }
+    .bat-fill { height:100%; border-radius:4px; background:var(--green); }
+    .bat-fill.low { background:var(--red); }
+    .lock-actions { display:flex; gap:6px; margin-top:12px; }
+    .btn-sm { padding:6px 12px; font-size:.72rem; border-radius:10px; }
+
+    /* Wizard de vinculación */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000;
+        justify-content:center; align-items:center; }
+    .overlay.visible { display:flex; }
+    .wizard { background:var(--bg); border-radius:24px; padding:32px; width:min(480px,95vw);
+        box-shadow:12px 12px 24px var(--sd),-12px -12px 24px var(--sl); }
+    .wizard h3 { color:var(--blue); margin:0 0 6px; font-size:1.2rem; }
+    .wizard-step { display:none; }
+    .wizard-step.activo { display:block; }
+    .step-icon { font-size:3rem; text-align:center; margin:16px 0; }
+    .step-txt  { color:var(--grey); font-size:.88rem; line-height:1.6; text-align:center; margin-bottom:20px; }
+    .countdown { font-size:2rem; font-weight:900; color:var(--gold); text-align:center; margin:10px 0; }
+    .dsk-display { font-size:1.4rem; font-weight:900; letter-spacing:4px; color:var(--blue);
+        text-align:center; background:white; padding:12px; border-radius:12px; margin:12px 0; }
+    .wizard-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+</style>
+
+<div class="modulo-container">
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:15px;">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard','viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2><i class="fas fa-lock" style="color:var(--gold)"></i> Cerraduras Inteligentes Z-Wave</h2>
+                <p style="margin:4px 0 0;color:var(--grey);font-size:.82rem;">Control centralizado — sin apps externas</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px">
+            <button class="btn-neo btn-prim btn-sm" onclick="CerradurasModule.refrescarEstados()">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+            <button class="btn-neo btn-gold" onclick="CerradurasModule.abrirWizardControlador()">
+                <i class="fas fa-plus"></i> Agregar Controlador
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn activo" id="tab-monitor"    onclick="CerradurasModule.switchTab('monitor')">
+            <i class="fas fa-th-large"></i> Monitor
+        </button>
+        <button class="tab-btn"        id="tab-controladores" onclick="CerradurasModule.switchTab('controladores')">
+            <i class="fas fa-usb"></i> Controladores
+        </button>
+        <button class="tab-btn"        id="tab-vincular"  onclick="CerradurasModule.switchTab('vincular')">
+            <i class="fas fa-link"></i> Vincular Cerradura
+        </button>
+    </div>
+
+    <!-- TAB MONITOR -->
+    <div id="panel-monitor">
+        <div id="lock-grid" class="lock-grid">
+            <div style="color:var(--grey);font-size:.85rem;padding:20px">Cargando cerraduras...</div>
+        </div>
+    </div>
+
+    <!-- TAB CONTROLADORES -->
+    <div id="panel-controladores" style="display:none">
+        <div id="ctrl-grid" class="ctrl-grid">
+            <div style="color:var(--grey);font-size:.85rem;padding:20px">Cargando controladores...</div>
+        </div>
+    </div>
+
+    <!-- TAB VINCULAR -->
+    <div id="panel-vincular" style="display:none">
+        <div style="background:var(--bg);border-radius:20px;padding:24px;max-width:500px;
+             box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl)">
+            <h4 style="margin:0 0 18px;color:var(--blue)"><i class="fas fa-link"></i> Vincular nueva cerradura</h4>
+            <label style="font-size:.78rem;font-weight:700;color:var(--grey);display:block;margin-bottom:6px">CONTROLADOR</label>
+            <select id="sel-controlador" class="input-neo" style="margin-bottom:16px"></select>
+            <label style="font-size:.78rem;font-weight:700;color:var(--grey);display:block;margin-bottom:6px">HABITACIÓN</label>
+            <select id="sel-habitacion"  class="input-neo" style="margin-bottom:20px"></select>
+            <button class="btn-neo btn-prim" style="width:100%;justify-content:center"
+                    onclick="CerradurasModule.iniciarVinculacion()">
+                <i class="fas fa-wifi"></i> Iniciar Vinculación
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- WIZARD DE INCLUSIÓN -->
+<div class="overlay" id="wizard-overlay">
+    <div class="wizard">
+        <h3><i class="fas fa-lock" style="color:var(--gold)"></i> Vinculación Z-Wave</h3>
+
+        <!-- Paso 1: esperando cerradura -->
+        <div class="wizard-step activo" id="step-esperar">
+            <div class="step-icon">📡</div>
+            <p class="step-txt">
+                El sistema está en modo inclusión.<br>
+                <strong>Ve a la habitación y presiona el botón de la cerradura 3 veces.</strong>
+            </p>
+            <div class="countdown" id="wizard-countdown">90</div>
+            <p style="text-align:center;font-size:.75rem;color:var(--grey)">segundos restantes</p>
+        </div>
+
+        <!-- Paso 2: ingresar PIN -->
+        <div class="wizard-step" id="step-pin">
+            <div class="step-icon">🔑</div>
+            <p class="step-txt">
+                Cerradura detectada.<br>
+                Ingresa el <strong>PIN de 5 dígitos</strong> que aparece en la etiqueta bajo las baterías.
+            </p>
+            <div class="dsk-display" id="wizard-dsk">- - - - -</div>
+            <p style="text-align:center;font-size:.72rem;color:var(--grey);margin-bottom:10px">
+                Confirma que coincide con la etiqueta de la cerradura
+            </p>
+            <input id="wizard-pin" class="input-neo" type="text" maxlength="5" placeholder="PIN de 5 dígitos"
+                   style="text-align:center;font-size:1.2rem;letter-spacing:6px;margin-bottom:0" />
+        </div>
+
+        <!-- Paso 3: completado -->
+        <div class="wizard-step" id="step-ok">
+            <div class="step-icon">✅</div>
+            <p class="step-txt">
+                <strong>¡Cerradura vinculada correctamente!</strong><br>
+                Desde ahora MasterHotel genera y revoca los códigos automáticamente en cada check-in / check-out.
+            </p>
+        </div>
+
+        <!-- Paso 4: error -->
+        <div class="wizard-step" id="step-error">
+            <div class="step-icon">❌</div>
+            <p class="step-txt" id="wizard-error-txt">Error desconocido.</p>
+        </div>
+
+        <div class="wizard-footer">
+            <button class="btn-neo" id="wizard-btn-cancelar" onclick="CerradurasModule.cancelarVinculacion()">
+                Cancelar
+            </button>
+            <button class="btn-neo btn-prim" id="wizard-btn-pin" style="display:none"
+                    onclick="CerradurasModule.enviarPin()">
+                Confirmar PIN
+            </button>
+            <button class="btn-neo btn-gold" id="wizard-btn-cerrar" style="display:none"
+                    onclick="CerradurasModule.cerrarWizard()">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>

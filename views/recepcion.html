@@ -1,0 +1,618 @@
+<style>
+    :root {
+        --hotel-blue: #1a365d;
+        --hotel-gold: #c5a059;
+        --hotel-bg: #e0e0e4;
+        --hotel-shadow-dark: #bebebe;
+        --hotel-shadow-light: #ffffff;
+        --hotel-danger: #e74c3c;
+        --hotel-success: #27ae60;
+        --hotel-warning: #f39c12;
+    }
+
+    /* CSS BASE NEOMÓRFICO */
+    .modulo-container { padding: 40px; color: #2c3e50; }
+    .header-modulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-modulo h2 { font-size: 1.5rem; color: var(--hotel-blue); letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    
+    .btn-neo {
+        padding: 12px 25px; border: none; border-radius: 15px; background: var(--hotel-bg);
+        box-shadow: 6px 6px 12px var(--hotel-shadow-dark), -6px -6px 12px var(--hotel-shadow-light);
+        cursor: pointer; transition: all 0.3s ease; font-weight: 800; color: var(--hotel-blue);
+        display: flex; align-items: center; gap: 10px; font-size: 0.85rem;
+    }
+    .btn-neo i { font-size: 1.1rem; }
+    .btn-neo:hover { box-shadow: 2px 2px 5px var(--hotel-shadow-dark), -2px -2px 5px var(--hotel-shadow-light); transform: translateY(-1px); }
+    .btn-neo:active { box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light); transform: translateY(0); }
+    .btn-back { width: 45px; height: 45px; padding: 0; justify-content: center; border-radius: 50%; color: var(--hotel-gold); }
+    .btn-save { background: var(--hotel-blue); color: white; }
+
+    .input-neo {
+        width: 100%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 15px; background: var(--hotel-bg);
+        box-shadow: inset 5px 5px 10px var(--hotel-shadow-dark), -5px -5px 10px var(--hotel-shadow-light);
+        color: #2c3e50; font-weight: 600; outline: none; box-sizing: border-box;
+    }
+
+    .form-row { display: flex; gap: 15px; margin-bottom: 5px; }
+    .label-hint { font-size: 0.65rem; font-weight: 900; color: #718096; margin-left: 5px; margin-bottom: 5px; display: block; text-transform: uppercase; }
+    
+    .hidden { display: none !important; }
+
+    /* TABS NEOMÓRFICAS */
+    .tabs-caja { display: flex; gap: 15px; margin-bottom: 25px; padding: 5px; }
+    .tab-btn { padding: 10px 20px; font-size: 0.85rem; font-weight: 900; cursor: pointer; transition: all 0.3s; color: #718096; }
+    .tab-btn.active { box-shadow: inset 4px 4px 8px var(--hotel-shadow-dark), inset -4px -4px 8px var(--hotel-shadow-light); color: var(--hotel-blue); }
+
+    /* MODALES NEOMÓRFICOS */
+    .modal-neo {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(224, 224, 228, 0.7); backdrop-filter: blur(15px);
+        display: flex; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-content-neo {
+        background: var(--hotel-bg); padding: 40px; border-radius: 40px; width: 550px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 30px 30px 60px var(--hotel-shadow-dark), -30px -30px 60px var(--hotel-shadow-light);
+        max-height: 95vh; overflow-y: auto; transition: width 0.3s ease;
+    }
+    .modal-wide { width: 1000px !important; max-width: 95vw; }
+    .modal-actions { display: flex; gap: 20px; margin-top: 15px; }
+
+    /* ESTILOS DEL RACK Y ANIMACIÓN DE VENCIMIENTO */
+    .rack-container { padding: 10px 0; }
+    .piso-header {
+        color: var(--hotel-blue); border-bottom: 2px solid var(--hotel-gold);
+        padding-bottom: 10px; margin: 30px 0 20px 0; font-weight: 900;
+        text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 15px;
+    }
+    .grid-habitaciones { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+    .room-card-rack {
+        background: var(--hotel-bg); border-radius: 25px; padding: 20px; position: relative;
+        cursor: pointer; transition: all 0.3s ease;
+        box-shadow: 8px 8px 16px var(--hotel-shadow-dark), -8px -8px 16px var(--hotel-shadow-light);
+        border: 2px solid transparent; overflow: hidden;
+    }
+    .room-card-rack:hover { transform: translateY(-5px); }
+    
+    .room-card-rack.disponible { border-left: 8px solid var(--hotel-success); }
+    .room-card-rack.ocupada { border-left: 8px solid var(--hotel-danger); background: #f8f9fa; }
+    .room-card-rack.limpieza { border-left: 8px solid #3498db; }
+    .room-card-rack.mantenimiento { border-left: 8px solid #f1c40f; opacity: 0.7; }
+
+    /* Animación de alerta de tiempo vencido */
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    }
+    .room-card-rack.vencida { border-left: 8px solid var(--hotel-danger) !important; animation: pulse 1.5s infinite; }
+
+    .room-number { font-size: 2rem; font-weight: 900; color: var(--hotel-blue); margin: 5px 0; }
+    .room-type { font-size: 0.65rem; font-weight: 800; color: #718096; text-transform: uppercase; }
+    .huesped-name { font-size: 0.8rem; font-weight: 700; color: var(--hotel-gold); margin-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .timer-badge { position: absolute; top: 15px; right: 15px; background: #2c3e50; color: white; padding: 4px 10px; border-radius: 10px; font-size: 0.6rem; font-weight: 800; }
+
+    /* LAYOUTS GENERALES */
+    .checkin-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .checkin-section { background: rgba(255,255,255,0.3); padding: 20px; border-radius: 20px; box-shadow: inset 2px 2px 5px var(--hotel-shadow-dark); }
+
+    /* ESTILOS DE LA TABLA DEL FOLIO */
+    .table-folio { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.85rem; }
+    .table-folio th, .table-folio td { padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .table-folio th { text-align: left; color: var(--hotel-blue); font-weight: 800; }
+    .text-right { text-align: right; font-weight: 900; }
+    .text-success { color: var(--hotel-success); }
+    .text-center { text-align: center; }
+
+    /* ====== ESTILOS NUEVOS: MÓDULO DE RESERVAS ====== */
+    .reserva-card {
+        background: var(--hotel-bg); border-radius: 22px; padding: 22px 26px; margin-bottom: 18px;
+        display: grid; grid-template-columns: 110px 1fr auto; gap: 20px; align-items: center;
+        box-shadow: 6px 6px 14px var(--hotel-shadow-dark), -6px -6px 14px var(--hotel-shadow-light);
+        border-left: 8px solid #999; transition: transform 0.2s ease;
+    }
+    .reserva-card:hover { transform: translateY(-3px); }
+    .reserva-card.estado-PENDIENTE  { border-left-color: var(--hotel-warning); }
+    .reserva-card.estado-CONFIRMADA { border-left-color: var(--hotel-success); }
+    .reserva-card.estado-CHECKIN    { border-left-color: #3498db; opacity: 0.65; }
+    .reserva-card.estado-NOSHOW,
+    .reserva-card.estado-CANCELADA  { border-left-color: var(--hotel-danger); opacity: 0.5; }
+    .reserva-card.atrasada { animation: pulse 1.6s infinite; border-left-color: var(--hotel-danger) !important; }
+
+    .reserva-cod { font-weight: 900; color: var(--hotel-gold); font-size: 1.05rem; letter-spacing: 1px; }
+    .reserva-nombre { font-weight: 900; color: var(--hotel-blue); font-size: 1.2rem; }
+    .reserva-meta { color: #718096; font-size: 0.82rem; font-weight: 700; margin-top: 6px; }
+    .reserva-contacto { color: #8a93a0; font-size: 0.78rem; margin-top: 4px; }
+    .reserva-badge { padding: 7px 16px; border-radius: 12px; font-size: 0.68rem; font-weight: 900; text-transform: uppercase; color: white; white-space: nowrap; letter-spacing: 1px; }
+    .badge-PENDIENTE  { background: var(--hotel-warning); }
+    .badge-CONFIRMADA { background: var(--hotel-success); }
+    .badge-CHECKIN    { background: #3498db; }
+    .badge-NOSHOW,
+    .badge-CANCELADA  { background: var(--hotel-danger); }
+
+    .reserva-acciones { display: flex; gap: 10px; flex-wrap: wrap; grid-column: 1 / -1; margin-top: 6px; }
+    .btn-mini {
+        padding: 11px 18px; border: none; border-radius: 13px; font-weight: 800; font-size: 0.8rem;
+        cursor: pointer; display: flex; align-items: center; gap: 7px; background: var(--hotel-bg);
+        box-shadow: 4px 4px 8px var(--hotel-shadow-dark), -4px -4px 8px var(--hotel-shadow-light);
+        transition: all 0.2s ease;
+    }
+    .btn-mini:hover { transform: translateY(-1px); }
+    .btn-mini:active { box-shadow: inset 3px 3px 6px var(--hotel-shadow-dark), inset -3px -3px 6px var(--hotel-shadow-light); }
+    .btn-mini.green { color: var(--hotel-success); }
+    .btn-mini.blue { color: var(--hotel-blue); }
+    .btn-mini.gold { color: var(--hotel-gold); }
+    .btn-mini.red { color: var(--hotel-danger); }
+    .btn-mini.solid-blue { background: var(--hotel-blue); color: #fff; }
+
+    .reservas-empty {
+        text-align: center; padding: 60px 20px; color: #9aa3ad; font-weight: 700;
+        background: var(--hotel-bg); border-radius: 22px;
+        box-shadow: inset 4px 4px 10px var(--hotel-shadow-dark), inset -4px -4px 10px var(--hotel-shadow-light);
+    }
+    .reservas-empty i { font-size: 3rem; display: block; margin-bottom: 15px; color: var(--hotel-gold); opacity: 0.6; }
+</style>
+
+<div class="modulo-container animate__animated animate__fadeIn">
+    <div class="header-modulo">
+        <div class="header-left">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2>Recepción <span style="font-weight: 300;">| Front Desk</span></h2>
+                <div id="sedeSelectorRecepcion" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs-caja">
+        <div id="tab-rack" class="btn-neo tab-btn active" onclick="RecepcionModule.switchTab('rack')"><i class="fas fa-bed"></i> RACK DE HABITACIONES</div>
+        <div id="tab-reservas" class="btn-neo tab-btn" onclick="RecepcionModule.switchTab('reservas')"><i class="fas fa-calendar-check"></i> RESERVAS</div>
+        <div id="tab-pos" class="btn-neo tab-btn" onclick="RecepcionModule.switchTab('pos')"><i class="fas fa-shopping-cart"></i> TIENDA / POS</div>
+    </div>
+
+    <div id="section-rack">
+        <div style="display: flex; justify-content: flex-end; gap: 20px; align-items: center; margin-bottom: 10px;">
+            <div style="background: var(--hotel-bg); padding: 10px 20px; border-radius: 15px; box-shadow: inset 3px 3px 6px var(--hotel-shadow-dark); text-align: center;">
+                <small class="label-hint">OCUPACIÓN</small>
+                <div id="pct-ocupacion" style="font-weight: 900; font-size: 1.2rem; color: var(--hotel-blue);">0%</div>
+            </div>
+            <button class="btn-neo" onclick="RecepcionModule.cargarRack()"><i class="fas fa-sync-alt"></i> ACTUALIZAR</button>
+        </div>
+
+        <div id="rack-viewport" class="rack-container"></div>
+    </div>
+
+    <!-- ====== SECCIÓN NUEVA: RESERVAS ====== -->
+    <div id="section-reservas" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div id="rfiltro-hoy" class="btn-neo tab-btn active" onclick="RecepcionModule.filtrarReservas('hoy')"><i class="fas fa-sun"></i> LLEGADAS HOY</div>
+                <div id="rfiltro-proximas" class="btn-neo tab-btn" onclick="RecepcionModule.filtrarReservas('proximas')"><i class="fas fa-calendar-alt"></i> PRÓXIMAS</div>
+                <div id="rfiltro-atrasadas" class="btn-neo tab-btn" onclick="RecepcionModule.filtrarReservas('atrasadas')"><i class="fas fa-exclamation-triangle"></i> NO LLEGARON</div>
+                <div id="rfiltro-todas" class="btn-neo tab-btn" onclick="RecepcionModule.filtrarReservas('todas')"><i class="fas fa-list"></i> TODAS</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-neo btn-save" onclick="RecepcionModule.abrirModalNuevaReserva()"><i class="fas fa-plus-circle"></i> NUEVA RESERVA</button>
+                <button class="btn-neo" onclick="RecepcionModule.cargarReservas()" title="Actualizar"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+
+        <div id="reservas-lista"></div>
+    </div>
+
+    <div id="section-pos" class="hidden">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+            <div>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1; position: relative;">
+                        <i class="fas fa-barcode" style="position: absolute; top: 18px; left: 20px; color: var(--hotel-blue); font-size: 1.2rem;"></i>
+                        <input type="text" id="in-buscador-pos" class="input-neo" style="padding-left: 50px; font-size: 1.1rem; font-weight: 900;" placeholder="Escanear Código de Barras (Enter) o buscar nombre...">
+                    </div>
+                </div>
+                <div id="grid-productos-pos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; max-height: 65vh; overflow-y: auto; padding: 10px;"></div>
+            </div>
+
+            <div class="checkin-section" style="display: flex; flex-direction: column; height: 75vh;">
+                <h4 style="color: var(--hotel-blue); margin-bottom: 15px; font-size: 1rem;"><i class="fas fa-shopping-basket"></i> CARRITO DE COMPRAS</h4>
+                <div id="pos-carrito-lista" style="flex: 1; overflow-y: auto; padding-right: 10px;"></div>
+                <div style="margin-top: 20px;">
+                    <div style="background: var(--hotel-blue); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                        <small style="opacity: 0.8; font-weight: 800; letter-spacing: 1px;">TOTAL VENTA</small>
+                        <h2 id="pos-total-carrito" style="font-size: 2.2rem; margin: 5px 0;">$0.00</h2>
+                    </div>
+                    <button class="btn-neo btn-save" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 18px;" onclick="RecepcionModule.abrirModalCobroPOS()">
+                        <i class="fas fa-cash-register"></i> PROCESAR COBRO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalCheckIn" class="modal-neo hidden">
+    <div class="modal-content-neo modal-wide animate__animated animate__zoomIn">
+        <h3 id="modalCheckInTitulo" style="color: var(--hotel-blue); text-align: center; margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid var(--hotel-gold); padding-bottom: 15px;">PROCESO DE ENTRADA</h3>
+        
+        <form id="formCheckIn">
+            <input type="hidden" id="in-habitacionId">
+            <input type="hidden" id="in-reservaId">
+            <div class="checkin-layout">
+                <div class="checkin-section">
+                    <h4 style="color: var(--hotel-blue); margin-bottom: 15px; font-size: 0.8rem;"><i class="fas fa-user-tag"></i> DATOS DEL TITULAR</h4>
+                    
+                    <label class="label-hint">DOCUMENTO DE IDENTIDAD (ENTER PARA BUSCAR)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="in-documento" class="input-neo" style="flex: 1;" placeholder="Ej: 1234567890" required>
+                        <button type="button" class="btn-neo" style="height: 50px; width: 50px; justify-content: center;" onclick="RecepcionModule.buscarCliente()"><i class="fas fa-search"></i></button>
+                    </div>
+
+                    <label class="label-hint">NOMBRE COMPLETO</label>
+                    <input type="text" id="in-nombre" class="input-neo" placeholder="Nombre completo" required>
+                    
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label class="label-hint">TELÉFONO</label>
+                            <input type="text" id="in-telefono" class="input-neo" placeholder="Celular">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint">PROCEDENCIA</label>
+                            <input type="text" id="in-procedencia" class="input-neo" placeholder="Ciudad/País">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label class="label-hint">CORREO ELECTRÓNICO</label>
+                            <input type="email" id="in-correo" class="input-neo" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint" style="display:flex; justify-content:space-between;">
+                                FECHA NACIMIENTO <span id="lbl-edad" style="color:var(--hotel-blue);">EDAD: --</span>
+                            </label>
+                            <input type="date" id="in-nacimiento" class="input-neo">
+                        </div>
+                    </div>
+
+                    <hr style="opacity: 0.1; margin: 15px 0;">
+                    <h4 style="color: var(--hotel-blue); margin-bottom: 10px; font-size: 0.8rem;"><i class="fas fa-users"></i> ACOMPAÑANTES</h4>
+                    
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div style="flex: 1;">
+                            <input type="text" id="in-acomp-doc" class="input-neo" placeholder="Documento" style="margin-bottom:0;">
+                        </div>
+                        <div style="flex: 2;">
+                            <input type="text" id="in-acomp-nom" class="input-neo" placeholder="Nombre Acompañante" style="margin-bottom:0;">
+                        </div>
+                        <button type="button" class="btn-neo" style="height: 50px; justify-content:center;" onclick="RecepcionModule.agregarAcompanante()"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="lista-acompanantes" style="margin-top: 10px; max-height: 100px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="checkin-section">
+                    <h4 style="color: var(--hotel-blue); margin-bottom: 15px; font-size: 0.8rem;"><i class="fas fa-suitcase-rolling"></i> DETALLES DE ESTANCIA</h4>
+                    
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label class="label-hint">TIPO ALQUILER</label>
+                            <select id="in-tipoAlquiler" class="input-neo" onchange="RecepcionModule.recalcularPrecios()">
+                                <option value="Dia">POR DÍA (24H)</option>
+                                <option value="Momento">POR MOMENTO (HORAS)</option>
+                                <option value="Periodo">POR PERIODO (MES/QUINCENA)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint" id="lbl-tiempo-dinamico">CANTIDAD (DÍAS)</label>
+                            <input type="number" id="in-tiempo" class="input-neo" value="1" min="1" oninput="RecepcionModule.recalcularPrecios()">
+                        </div>
+                    </div>
+                    
+                    <div id="box-rango-fechas" style="margin-bottom: 15px; font-size: 0.75rem; color: #0056b3; background: rgba(0,123,255,0.1); padding: 10px; border-radius: 10px; text-align: center; border: 1px dashed rgba(0,123,255,0.3);">
+                        <i class="fas fa-sign-out-alt"></i> Salida Estimada: <strong>--</strong>
+                    </div>
+
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label class="label-hint">ADULTOS</label>
+                            <input type="number" id="in-adultos" class="input-neo" value="1" min="1" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint">NIÑOS</label>
+                            <input type="number" id="in-ninos" class="input-neo" value="0" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="background: rgba(26, 54, 93, 0.05); padding: 15px; border-radius: 15px; border: 1px dashed rgba(26, 54, 93, 0.3);">
+                        <div style="flex: 1;">
+                            <label class="label-hint" style="color: var(--hotel-blue);"><i class="fas fa-car"></i> PLACA VEHÍCULO (OPCIONAL)</label>
+                            <input type="text" id="in-placa" class="input-neo" placeholder="ABC-1234" style="margin-bottom: 0;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="label-hint" style="color: var(--hotel-blue);"><i class="fas fa-parking"></i> ASIGNAR PARQUEADERO (CORTESÍA)</label>
+                            <select id="in-espacio-parqueo" class="input-neo" style="margin-bottom: 0; border: 2px solid var(--hotel-gold);">
+                                <option value="">-- NO ASIGNAR --</option>
+                                </select>
+                        </div>
+                    </div>
+
+                    <hr style="opacity: 0.1; margin: 15px 0;">
+                    <h4 style="color: var(--hotel-blue); margin-bottom: 15px; font-size: 0.8rem;"><i class="fas fa-file-invoice-dollar"></i> LIQUIDACIÓN Y PAGO</h4>
+
+                    <div style="background: rgba(243, 156, 18, 0.1); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px dashed var(--hotel-warning);">
+                        <label style="display: flex; align-items: center; gap: 15px; cursor: pointer; font-weight: 900; color: var(--hotel-warning); font-size: 0.85rem; text-transform: uppercase;">
+                            <input type="checkbox" id="in-es-migracion" style="width: 22px; height: 22px; cursor: pointer;" onchange="RecepcionModule.toggleMigracion()">
+                            <div>
+                                <div id="box-fecha-migracion" style="display: none; margin-top: 10px;">
+                                    <label class="label-hint">FECHA DE INGRESO REAL (CUÁNDO ENTRÓ AL HOTEL)</label>
+                                    <input type="date" id="in-fecha-ingreso-migracion" class="input-neo" onchange="RecepcionModule.recalcularPrecios()">
+                                </div>
+                                <i class="fas fa-history" style="margin-right: 5px;"></i> Cliente ya hospedado (Migración)
+                                <span style="display: block; font-size: 0.6rem; color: #718096; font-weight: 700; margin-top: 2px;">El pago se recibió antes de usar el sistema. Se ingresa sin afectar la caja.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="form-row">
+                        <div style="flex: 2;"></div>
+                        <div style="flex: 1;">
+                            <label class="label-hint" style="color: var(--hotel-warning);">DESCUENTO MANUAL ($)</label>
+                            <input type="number" id="in-descuento" class="input-neo" value="0" min="0" step="0.01" oninput="RecepcionModule.recalcularPrecios()" style="border: 1px solid var(--hotel-warning);">
+                        </div>
+                    </div>
+
+                    <div style="background: var(--hotel-blue); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                        <small style="opacity: 0.8; font-weight: 800; font-size: 0.6rem; letter-spacing: 1px;">VALOR TOTAL A COBRAR</small>
+                        <h2 id="ui-total-hospedaje" style="font-size: 2.2rem; margin: 5px 0;">$0.00</h2>
+                    </div>
+
+                    <div id="seccion-pago-checkin">
+                        <div class="form-row">
+                            <div style="flex: 1;">
+                                <label class="label-hint">MÉTODO PAGO</label>
+                                <select id="in-metodoPago" class="input-neo">
+                                    <option value="1">EFECTIVO</option>
+                                    <option value="2">TRANSFERENCIA</option>
+                                    <option value="3">TARJETA</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label class="label-hint">MONTO ABONO</label>
+                                <input type="number" id="in-montoAbono" step="0.01" class="input-neo" style="color: var(--hotel-success); font-weight: 900;" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <label class="label-hint">REFERENCIA DE PAGO (OPCIONAL)</label>
+                        <input type="text" id="in-referencia" class="input-neo" placeholder="Lote / Nro. Transf">
+                        
+                        <div id="container-voucher-rec" style="display: none; background: rgba(0, 123, 255, 0.05); padding: 10px 15px; border-radius: 15px; margin-bottom: 15px; border: 1px dashed #007bff;">
+                            <label class="label-hint" style="color: #007bff;"><i class="fas fa-upload"></i> Adjuntar Voucher</label>
+                            <input type="file" id="voucherFileRec" class="input-neo" accept="image/*,application/pdf" style="margin-bottom: 0; padding: 10px; background: transparent; box-shadow: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button type="button" class="btn-neo" style="flex: 1; justify-content: center;" onclick="RecepcionModule.cerrarModal()">CANCELAR</button>
+                <button type="submit" class="btn-neo btn-save" style="flex: 2; justify-content: center; font-size: 1rem;"><i class="fas fa-check-double"></i> CONFIRMAR E INGRESAR</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalPagoPOS" class="modal-neo hidden">
+    <div class="modal-content-neo animate__animated animate__zoomIn" style="width: 480px;">
+        <h3 style="color: var(--hotel-blue); text-align: center; margin-bottom: 25px; border-bottom: 2px solid var(--hotel-gold); padding-bottom: 15px; letter-spacing: 1px;">PROCESAR VENTA</h3>
+        <form id="formPagoPOS">
+            <div style="background: #f1f3f5; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;">
+                <small style="color: #718096; font-weight: 900; letter-spacing: 1px;">TOTAL A PAGAR</small>
+                <h2 id="pos-monto-cobrar" style="color: var(--hotel-blue); margin: 5px 0 0 0; font-size: 2.5rem;">$0.00</h2>
+            </div>
+            <label class="label-hint">¿DÓNDE SE CARGARÁ ESTA VENTA?</label>
+            <select id="pos-habitacion-select" class="input-neo" style="border: 2px solid var(--hotel-gold);" onchange="RecepcionModule.gestionarTipoVentaPOS()">
+                <option value="">-- VENTA EXTERNA (CLIENTE DE LOBBY) --</option>
+            </select>
+            <div id="pos-panel-pago-inmediato">
+                <hr style="opacity: 0.1; margin: 20px 0;">
+                <label class="label-hint">MÉTODO DE PAGO INMEDIATO</label>
+                <select id="pos-metodo-pago" class="input-neo" onchange="document.getElementById('pos-box-voucher').style.display = (this.value == '2' || this.value == '3') ? 'block' : 'none'">
+                    <option value="1">EFECTIVO</option>
+                    <option value="2">TRANSFERENCIA</option>
+                    <option value="3">TARJETA</option>
+                </select>
+                <div class="form-row">
+                    <div style="flex:1;">
+                        <label class="label-hint">MONTO RECIBIDO</label>
+                        <input type="number" id="pos-monto-recibido" step="0.01" class="input-neo" style="color: var(--hotel-success); font-weight: 900; font-size: 1.2rem;" required>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="label-hint">NRO. REFERENCIA</label>
+                        <input type="text" id="pos-referencia" class="input-neo" placeholder="(Opcional)">
+                    </div>
+                </div>
+                <div id="pos-box-voucher" style="display:none; margin-top:15px;">
+                    <label class="label-hint">VOUCHER / COMPROBANTE (Transferencia o Tarjeta)</label>
+                    <input type="file" id="pos-voucher" class="input-neo" accept="image/*,application/pdf">
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button type="button" class="btn-neo" style="flex: 1; justify-content: center;" onclick="RecepcionModule.cerrarModalCobroPOS()">CANCELAR</button>
+                <button type="submit" class="btn-neo btn-save" style="flex: 1; justify-content: center; font-size: 1rem;"><i class="fas fa-check-circle"></i> COBRAR</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalCheckout" class="modal-neo hidden">
+    <div class="modal-content-neo modal-wide animate__animated animate__fadeInUp">
+        <h3 id="modalCheckoutTitulo" style="color: var(--hotel-blue); text-align: center; margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid var(--hotel-gold); padding-bottom: 15px;">ESTADO DE CUENTA: HABITACIÓN --</h3>
+        
+        <form id="formCheckout">
+            <div class="checkin-layout">
+                
+                <div class="checkin-section" style="max-height: 500px; overflow-y: auto;">
+                    <p style="margin-bottom: 20px; font-size: 0.9rem; color: #718096;"><i class="fas fa-user-check"></i> <strong>Huésped:</strong> <span id="out-huesped">--</span></p>
+                    <p id="out-codigo-acceso-wrap" style="display:none; margin-top:-15px; margin-bottom: 20px; font-size: 0.9rem; color: #718096;"><i class="fas fa-key"></i> <strong>Código de acceso:</strong> <span id="out-codigo-acceso" style="font-weight:900; color: var(--hotel-blue); letter-spacing: 2px;">--</span></p>
+
+                    <h4 style="color: var(--hotel-blue); font-size: 0.8rem; margin-bottom: 10px;"><i class="fas fa-file-invoice"></i> DETALLE DE CARGOS</h4>
+                    <table class="table-folio">
+                        <thead><tr><th>Concepto</th><th class="text-right">Monto</th></tr></thead>
+                        <tbody id="tb-folio-cargos"></tbody>
+                        <tfoot><tr><th style="color:var(--hotel-danger);">TOTAL CARGOS</th><th class="text-right" style="color:var(--hotel-danger);" id="out-total-cargos">$0.00</th></tr></tfoot>
+                    </table>
+
+                    <hr style="opacity: 0.1; margin: 20px 0;">
+
+                    <h4 style="color: var(--hotel-blue); font-size: 0.8rem; margin-bottom: 10px;"><i class="fas fa-hand-holding-usd"></i> ABONOS Y PAGOS REALIZADOS</h4>
+                    <table class="table-folio">
+                        <thead><tr><th>Referencia</th><th class="text-right">Monto</th></tr></thead>
+                        <tbody id="tb-folio-abonos"></tbody>
+                        <tfoot><tr><th class="text-success">TOTAL PAGADO</th><th class="text-right text-success" id="out-total-abonos">$0.00</th></tr></tfoot>
+                    </table>
+                </div>
+
+                <div class="checkin-section">
+                    <h4 style="color: var(--hotel-blue); margin-bottom: 15px; font-size: 0.8rem;"><i class="fas fa-balance-scale"></i> RESUMEN FINAL</h4>
+                    
+                    <div style="background: var(--hotel-bg); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;">
+                        <small style="color: #718096; font-weight: 900; letter-spacing: 1px;">SALDO PENDIENTE</small>
+                        <h2 id="out-saldo-pendiente" style="font-size: 2.5rem; margin: 5px 0 10px 0; color: var(--hotel-success);">$0.00</h2>
+                        
+                        <button type="button" class="btn-neo" id="btn-abonar-cuenta" style="width: 100%; justify-content: center; font-size:0.85rem; color: var(--hotel-success);" onclick="RecepcionModule.registrarAbonoParcial()">
+                            <i class="fas fa-hand-holding-usd"></i> REGISTRAR PAGO PARCIAL (ABONO)
+                        </button>
+                    </div>
+
+                    <div id="section-pago-checkout" style="display: none;">
+                        <hr style="opacity: 0.1; margin: 20px 0;">
+                        <label class="label-hint">MÉTODO PAGO (PARA EL SALDO FINAL)</label>
+                        <select id="out-metodoPago" class="input-neo">
+                            <option value="1">EFECTIVO</option>
+                            <option value="2">TRANSFERENCIA</option>
+                            <option value="3">TARJETA</option>
+                        </select>
+
+                        <div class="form-row">
+                            <div style="flex:1;">
+                                <label class="label-hint">MONTO A COBRAR</label>
+                                <input type="number" id="out-montoAbono" step="0.01" class="input-neo" style="color: var(--hotel-danger); font-weight: 900; font-size: 1.2rem;">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="label-hint">NRO. REFERENCIA</label>
+                                <input type="text" id="out-referencia" class="input-neo" placeholder="(Opcional)">
+                            </div>
+                        </div>
+
+                        <div id="container-voucher-out" style="display: none; background: rgba(0, 123, 255, 0.05); padding: 10px 15px; border-radius: 15px; margin-bottom: 15px; border: 1px dashed #007bff;">
+                            <label class="label-hint" style="color: #007bff;"><i class="fas fa-upload"></i> Adjuntar Voucher</label>
+                            <input type="file" id="voucherFileOut" class="input-neo" accept="image/*,application/pdf" style="margin-bottom: 0; padding: 10px; background: transparent; box-shadow: none;">
+                        </div>
+                    </div>
+
+                    <hr style="opacity: 0.1; margin: 20px 0;">
+                    <div style="background: var(--hotel-bg); padding: 15px; border-radius: 15px; box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff; border-left: 5px solid #9b59b6;">
+                        <label style="display: flex; align-items: center; gap: 15px; cursor: pointer; font-weight: 900; color: var(--hotel-blue); font-size: 0.85rem; text-transform: uppercase;">
+                            <input type="checkbox" id="out-generar-factura" style="width: 22px; height: 22px; cursor: pointer;">
+                            <div>
+                                <i class="fas fa-file-signature" style="color: #9b59b6; margin-right: 5px;"></i> Emitir Factura SRI
+                                <span style="display: block; font-size: 0.6rem; color: #718096; font-weight: 700; margin-top: 2px;">Generar XML y firmar comprobante</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 20px; font-size: 0.75rem; color: #718096; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <i class="fas fa-info-circle"></i> Al procesar el check-out, la habitación pasará automáticamente a estado de <strong>LIMPIEZA</strong>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button type="button" class="btn-neo" style="flex: 1; justify-content: center;" onclick="RecepcionModule.cerrarModalCheckout()">CERRAR / CANCELAR</button>
+                <button type="submit" class="btn-neo btn-save" style="flex: 2; justify-content: center; font-size: 1rem;"><i class="fas fa-door-open"></i> PROCESAR CHECK-OUT Y LIBERAR</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ====== MODAL NUEVO: NUEVA RESERVA (manual / teléfono) ====== -->
+<div id="modalNuevaReserva" class="modal-neo hidden">
+    <div class="modal-content-neo animate__animated animate__zoomIn" style="width: 620px;">
+        <h3 style="color: var(--hotel-blue); text-align: center; margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid var(--hotel-gold); padding-bottom: 15px;"><i class="fas fa-calendar-plus"></i> NUEVA RESERVA</h3>
+
+        <form id="formNuevaReserva">
+            <h4 style="color: var(--hotel-blue); margin-bottom: 10px; font-size: 0.8rem;"><i class="fas fa-calendar-alt"></i> FECHAS DE LA ESTADÍA</h4>
+            <div class="form-row">
+                <div style="flex:1;">
+                    <label class="label-hint">LLEGADA</label>
+                    <input type="date" id="nr-llegada" class="input-neo" onchange="RecepcionModule.consultarDispReserva()">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">SALIDA</label>
+                    <input type="date" id="nr-salida" class="input-neo" onchange="RecepcionModule.consultarDispReserva()">
+                </div>
+            </div>
+
+            <label class="label-hint">TIPO DE HABITACIÓN (DISPONIBLES EN ESAS FECHAS)</label>
+            <select id="nr-tipo" class="input-neo" style="border: 2px solid var(--hotel-gold);">
+                <option value="">-- Elige las fechas primero --</option>
+            </select>
+
+            <hr style="opacity: 0.1; margin: 15px 0;">
+            <h4 style="color: var(--hotel-blue); margin-bottom: 10px; font-size: 0.8rem;"><i class="fas fa-user"></i> DATOS DE QUIEN RESERVA</h4>
+
+            <label class="label-hint">NOMBRE COMPLETO</label>
+            <input type="text" id="nr-nombre" class="input-neo" placeholder="Nombre del huésped" required>
+
+            <div class="form-row">
+                <div style="flex:1;">
+                    <label class="label-hint">TELÉFONO</label>
+                    <input type="text" id="nr-telefono" class="input-neo" placeholder="Celular para confirmar">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">DOCUMENTO (OPCIONAL)</label>
+                    <input type="text" id="nr-documento" class="input-neo" placeholder="Cédula / Pasaporte">
+                </div>
+            </div>
+
+            <label class="label-hint">CORREO (OPCIONAL)</label>
+            <input type="email" id="nr-correo" class="input-neo" placeholder="correo@ejemplo.com">
+
+            <div class="form-row">
+                <div style="flex:1;">
+                    <label class="label-hint">ADULTOS</label>
+                    <input type="number" id="nr-adultos" class="input-neo" value="1" min="1">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">NIÑOS</label>
+                    <input type="number" id="nr-ninos" class="input-neo" value="0" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">ORIGEN</label>
+                    <select id="nr-origen" class="input-neo">
+                        <option value="TELEFONO">TELÉFONO</option>
+                        <option value="WHATSAPP">WHATSAPP</option>
+                        <option value="DIRECTO">EN PERSONA</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div style="flex:2;">
+                    <label class="label-hint">NOTAS (OPCIONAL)</label>
+                    <input type="text" id="nr-notas" class="input-neo" placeholder="Ej: pidió cama extra">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint" style="color: var(--hotel-success);">ANTICIPO RECIBIDO ($)</label>
+                    <input type="number" id="nr-anticipo" class="input-neo" value="0" min="0" step="0.01" style="color: var(--hotel-success); font-weight:900;">
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button type="button" class="btn-neo" style="flex: 1; justify-content: center;" onclick="RecepcionModule.cerrarModalNuevaReserva()">CANCELAR</button>
+                <button type="submit" class="btn-neo btn-save" style="flex: 2; justify-content: center; font-size: 1rem;"><i class="fas fa-save"></i> GUARDAR RESERVA</button>
+            </div>
+        </form>
+    </div>
+</div>

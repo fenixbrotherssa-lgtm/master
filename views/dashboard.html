@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+    
+    <div class="dash-header fade-in" style="animation-delay: 0.1s;">
+        <div class="dash-welcome">
+            <img src="assets/logo.png" alt="Logo" class="dash-logo">
+            <div>
+                <h1 style="margin: 0; color: var(--hotel-blue); font-weight: 900; letter-spacing: 2px;">SISTEMA MASTER HOTEL</h1>
+                <p id="dash-user-name" style="margin: 5px 0 0 0; color: #718096; font-weight: 600; font-size: 0.9rem;">Cargando perfil...</p>
+            </div>
+        </div>
+        <div class="dash-clock" id="dash-live-clock">--:--:--</div>
+    </div>
+
+    <div class="dash-widgets fade-in" style="animation-delay: 0.2s;">
+        <div class="widget-card">
+            <div class="widget-icon" style="background: #e3f2fd; color: #3498db;"><i class="fas fa-bed"></i></div>
+            <div class="widget-info">
+                <p>Ocupaci&oacute;n Actual</p>
+                <h3 id="wg-ocupacion">--%</h3>
+            </div>
+        </div>
+        <div class="widget-card">
+            <div class="widget-icon" style="background: #fef5e7; color: #f39c12;"><i class="fas fa-sign-out-alt"></i></div>
+            <div class="widget-info">
+                <p>Salidas para Hoy</p>
+                <h3 id="wg-salidas">--</h3>
+            </div>
+        </div>
+        <div class="widget-card">
+            <div class="widget-icon" style="background: #e8f8f5; color: #27ae60;"><i class="fas fa-cash-register"></i></div>
+            <div class="widget-info">
+                <p>Estado de Caja</p>
+                <h3 id="wg-caja">Verificando...</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-main">
+        <div class="dash-nav-grid fade-in" style="animation-delay: 0.3s;">
+            <div class="neo-card" onclick="App.renderView('recepcion', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-concierge-bell" style="color: #007bff;"></i></div>
+                <h3>RECEPCI&Oacute;N</h3><span class="card-desc">Check-in / Check-out</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('habitaciones', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-bed" style="color: #27ae60;"></i></div>
+                <h3>HABITACIONES</h3><span class="card-desc">Estado de Planta</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('caja', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-cash-register" style="color: #f39c12;"></i></div>
+                <h3>CAJA CHICA</h3><span class="card-desc">Arqueos y Turnos</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('inventario', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-boxes-stacked" style="color: #e74c3c;"></i></div>
+                <h3>INVENTARIO</h3><span class="card-desc">Control de Stock</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('parqueadero', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-parking" style="color: #34495e;"></i></div>
+                <h3>PARQUEADERO</h3><span class="card-desc">Control Vehicular</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('restaurante', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-utensils" style="color: #c5a059;"></i></div>
+                <h3>RESTAURANTE</h3><span class="card-desc">Pedidos y Mesas</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('facturacion', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-file-signature" style="color: #9b59b6;"></i></div>
+                <h3>FACTURACI&Oacute;N</h3><span class="card-desc">SRI / Comprobantes</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('reportes', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-file-invoice-dollar" style="color: #8e44ad;"></i></div>
+                <h3>FINANZAS</h3><span class="card-desc">Cierres y Reportes</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('kpi', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-chart-line" style="color: #2c3e50;"></i></div>
+                <h3>KPI METRICS</h3><span class="card-desc">Indicadores Clave</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('usuarios', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-users-gear" style="color: #16a085;"></i></div>
+                <h3>USUARIOS</h3><span class="card-desc">Roles y Accesos</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('sedes', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-hotel" style="color: #d35400;"></i></div>
+                <h3>SEDES</h3><span class="card-desc">Gesti&oacute;n Multisede</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('activos', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-desktop" style="color: #e67e22;"></i></div>
+                <h3>ACTIVOS</h3><span class="card-desc">Bienes y QRs</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('auditoria', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-shield-alt" style="color: #e74c3c;"></i></div>
+                <h3>AUDITOR&Iacute;A</h3><span class="card-desc">Log de Acciones</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('crm', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-users" style="color: #c5a059;"></i></div>
+                <h3>CRM</h3><span class="card-desc">Hu&eacute;spedes y Fidelizaci&oacute;n</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('reservas', 'viewport')" style="position:relative;">
+                <span id="dash-rv-badge" style="display:none;position:absolute;top:10px;right:10px;background:#f39c12;color:white;border-radius:50%;width:20px;height:20px;font-size:.6rem;font-weight:900;display:none;align-items:center;justify-content:center;"></span>
+                <div class="neo-inner-circle"><i class="fas fa-calendar-check" style="color: #3498db;"></i></div>
+                <h3>RESERVAS</h3><span class="card-desc">Agenda y Confirmaciones</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('cerraduras', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-lock" style="color: #1a365d;"></i></div>
+                <h3>CERRADURAS</h3><span class="card-desc">Control Z-Wave</span>
+            </div>
+            <div class="neo-card" onclick="App.renderView('mantenimiento', 'viewport')" style="position:relative;">
+                <span id="dash-mt-badge" style="display:none;position:absolute;top:10px;right:10px;background:#e74c3c;color:white;border-radius:50%;width:20px;height:20px;font-size:.6rem;font-weight:900;align-items:center;justify-content:center;"></span>
+                <div class="neo-inner-circle"><i class="fas fa-tools" style="color: #e67e22;"></i></div>
+                <h3>MANTENIMIENTO</h3><span class="card-desc">Incidencias y Órdenes</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('personal', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-id-badge" style="color: #8e44ad;"></i></div>
+                <h3>PERSONAL</h3><span class="card-desc">Nómina y Adelantos</span>
+            </div>
+            <div class="neo-card admin-only" onclick="App.renderView('encuestas', 'viewport')">
+                <div class="neo-inner-circle"><i class="fas fa-star" style="color: #c5a059;"></i></div>
+                <h3>ENCUESTAS</h3><span class="card-desc">Satisfacción Post-Estadía</span>
+            </div>
+        </div>
+
+        <div class="dash-alerts fade-in" style="animation-delay: 0.4s;">
+            <div class="alerts-header">
+                <i class="fas fa-bell"></i> ALERTAS DEL SISTEMA
+            </div>
+            <div id="dash-alerts-list" class="alerts-list">
+                <div style="text-align:center; padding:20px; opacity:0.5;"><i class="fas fa-spinner fa-spin"></i> Analizando operaciones...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --hotel-blue: #1a365d;
+        --hotel-gold: #c5a059;
+        --hotel-bg: #f4f7f6;
+    }
+
+    .dashboard-wrapper {
+        box-sizing: border-box; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; 
+        padding: 25px 40px; background: var(--hotel-bg); font-family: 'Segoe UI', sans-serif;
+    }
+
+    .dash-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;
+        background: white; padding: 15px 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border-left: 5px solid var(--hotel-gold);
+    }
+    .dash-welcome { display: flex; align-items: center; gap: 15px; }
+    .dash-logo { height: 60px; object-fit: contain; }
+    .dash-clock { font-size: 1.8rem; font-weight: 900; color: var(--hotel-blue); font-family: monospace; letter-spacing: 2px; }
+
+    .dash-widgets {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;
+    }
+    .widget-card {
+        background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        display: flex; align-items: center; gap: 20px;
+    }
+    .widget-icon {
+        width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+    }
+    .widget-info p { margin: 0; font-size: 0.8rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+    .widget-info h3 { margin: 5px 0 0 0; font-size: 1.6rem; font-weight: 900; color: var(--hotel-blue); }
+
+    .dash-main {
+        display: flex; gap: 25px; align-items: flex-start;
+    }
+
+    .dash-nav-grid {
+        flex: 3; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;
+    }
+
+    .neo-card {
+        background: white; padding: 25px 15px; border-radius: 15px; text-align: center; cursor: pointer;
+        transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border: 1px solid transparent; position: relative; overflow: hidden;
+    }
+    .neo-card:hover {
+        transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: var(--hotel-gold);
+    }
+    .neo-card::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--hotel-blue);
+        transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease;
+    }
+    .neo-card:hover::before { transform: scaleX(1); }
+
+    .neo-inner-circle {
+        width: 55px; height: 55px; background: var(--hotel-bg); margin: 0 auto 15px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+    }
+    .neo-card h3 { color: var(--hotel-blue); font-size: 0.85rem; font-weight: 900; margin-bottom: 5px; }
+    .card-desc { color: #718096; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+
+    .dash-alerts {
+        flex: 1; min-width: 300px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        display: flex; flex-direction: column; max-height: 550px;
+    }
+    .alerts-header {
+        background: var(--hotel-blue); color: white; padding: 15px; border-radius: 15px 15px 0 0;
+        font-weight: 800; font-size: 0.9rem; text-align: center; letter-spacing: 1px;
+    }
+    .alerts-list {
+        padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+    }
+    .alert-item {
+        padding: 12px; border-radius: 10px; border-left: 4px solid #ccc; font-size: 0.8rem;
+        background: var(--hotel-bg); display: flex; gap: 10px; align-items: center;
+    }
+    .alert-item.danger { border-left-color: #e74c3c; }
+    .alert-item.warning { border-left-color: #f39c12; }
+    .alert-item.info { border-left-color: #3498db; }
+    .alert-item i { font-size: 1.2rem; }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { opacity: 0; animation: fadeInUp 0.5s ease-out forwards; }
+    
+    .alerts-list::-webkit-scrollbar { width: 5px; }
+    .alerts-list::-webkit-scrollbar-track { background: transparent; }
+    .alerts-list::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 5px; }
+</style>
+
+</body>
+</html>

@@ -1,0 +1,232 @@
+<style>
+    :root { --blue:#1a365d; --gold:#c5a059; --bg:#e0e0e4; --sd:#bebebe; --sl:#ffffff; }
+    .modulo-container { padding:30px; color:#2c3e50; }
+    .btn-neo { padding:10px 22px; border:none; border-radius:14px; background:var(--bg);
+        box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl);
+        cursor:pointer; transition:all .3s; font-weight:800; color:var(--blue);
+        display:inline-flex; align-items:center; gap:8px; font-size:.82rem; }
+    .btn-neo:hover { box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl); transform:translateY(-1px); }
+    .btn-neo:active { box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl); }
+    .btn-back   { width:45px; height:45px; padding:0; justify-content:center; border-radius:50%; color:var(--gold); }
+    .btn-prim   { background:var(--blue); color:#fff; }
+    .btn-gold   { background:var(--gold); color:#fff; }
+    .btn-danger { background:#e74c3c; color:#fff; }
+    .btn-green  { background:#27ae60; color:#fff; }
+    .btn-sm     { padding:6px 12px; font-size:.72rem; border-radius:10px; }
+    .input-neo  { padding:10px 14px; border:none; border-radius:12px; background:var(--bg);
+        box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl);
+        color:#2c3e50; font-weight:700; outline:none; font-size:.85rem; width:100%; box-sizing:border-box; }
+
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-header h2 { font-size:1.4rem; color:var(--blue); margin:0; }
+
+    .tabla-wrap { background:var(--bg); border-radius:22px; padding:22px;
+        box-shadow:10px 10px 20px var(--sd),-10px -10px 20px var(--sl); overflow-x:auto; margin-bottom:24px; }
+    .ps-table { width:100%; border-collapse:separate; border-spacing:0 10px; min-width:650px; }
+    .ps-table th { padding:10px 14px; font-size:.68rem; font-weight:900; color:#718096; text-transform:uppercase; letter-spacing:1px; text-align:left; }
+    .ps-table td { padding:13px 14px; background:#f1f3f5; font-size:.82rem; }
+    .ps-table td:first-child { border-radius:14px 0 0 14px; font-weight:800; }
+    .ps-table td:last-child  { border-radius:0 14px 14px 0; }
+
+    .nomina-section { background:var(--bg); border-radius:22px; padding:22px;
+        box-shadow:10px 10px 20px var(--sd),-10px -10px 20px var(--sl); }
+    .nomina-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .nomina-header h3 { font-size:1.1rem; color:var(--blue); margin:0; }
+    .nomina-table { width:100%; border-collapse:separate; border-spacing:0 8px; min-width:600px; }
+    .nomina-table th { padding:8px 14px; font-size:.65rem; font-weight:900; color:#718096; text-transform:uppercase; }
+    .nomina-table td { padding:10px 14px; background:#f1f3f5; font-size:.8rem; }
+    .nomina-table td:first-child { border-radius:12px 0 0 12px; font-weight:700; }
+    .nomina-table td:last-child  { border-radius:0 12px 12px 0; }
+    .nomina-total { font-weight:900; font-size:1.1rem; color:#27ae60; }
+
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; justify-content:center; align-items:center; }
+    .overlay.visible { display:flex; }
+    .modal-card { background:var(--bg); border-radius:24px; padding:30px; width:min(520px,95vw);
+        box-shadow:12px 12px 24px var(--sd),-12px -12px 24px var(--sl); max-height:92vh; overflow-y:auto; }
+    .modal-card h3 { color:var(--blue); margin:0 0 22px; font-size:1.1rem; }
+    .form-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .span2 { grid-column:1/-1; }
+    .field-label { font-size:.7rem; font-weight:800; color:#718096; text-transform:uppercase; margin-bottom:2px; display:block; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+</style>
+
+<div class="modulo-container">
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:15px;">
+            <button class="btn-neo btn-back" onclick="App.renderView('dashboard','viewport')" title="REGRESAR">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2><i class="fas fa-id-badge" style="color:var(--gold)"></i> Gestión de Personal</h2>
+                <p style="margin:4px 0 0;color:#718096;font-size:.8rem;">Nómina, adelantos y movimientos del equipo</p>
+            </div>
+        </div>
+        <button class="btn-neo btn-gold" onclick="PersonalModule.abrirModalEmpleado()">
+            <i class="fas fa-user-plus"></i> Nuevo Empleado
+        </button>
+    </div>
+
+    <div class="tabla-wrap">
+        <div id="ps-tabla">
+            <div style="text-align:center;padding:40px;color:#718096;font-size:.85rem;">
+                <i class="fas fa-spinner fa-spin"></i> Cargando personal...
+            </div>
+        </div>
+    </div>
+
+    <div class="nomina-section">
+        <div class="nomina-header">
+            <h3><i class="fas fa-file-invoice-dollar" style="color:var(--gold)"></i> Liquidación de Nómina</h3>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <button class="btn-neo" onclick="PersonalModule.abrirParametrosLaborales()" title="SBU y porcentajes IESS por año">
+                    <i class="fas fa-sliders-h"></i> Parámetros IESS/SBU
+                </button>
+                <button class="btn-neo" onclick="PersonalModule.verHistorialPagos()" title="Historial de pagos de nómina">
+                    <i class="fas fa-history"></i> Historial de Pagos
+                </button>
+                <div>
+                    <span class="field-label">PERÍODO (YYYY-MM)</span>
+                    <input type="month" id="ps-periodo" class="input-neo" style="width:170px">
+                </div>
+                <button class="btn-neo btn-prim" onclick="PersonalModule.generarNomina()" style="margin-top:16px;">
+                    <i class="fas fa-calculator"></i> Calcular
+                </button>
+            </div>
+        </div>
+        <div id="ps-nomina-resultado" style="overflow-x:auto;"></div>
+    </div>
+</div>
+
+<!-- Modal empleado -->
+<div class="overlay" id="ps-overlay-emp">
+    <div class="modal-card">
+        <h3 id="ps-modal-titulo"><i class="fas fa-user-edit" style="color:var(--gold)"></i> Empleado</h3>
+        <input type="hidden" id="ps-emp-id">
+        <div class="form-grid2">
+            <div class="form-group span2">
+                <span class="field-label">NOMBRE COMPLETO</span>
+                <input id="ps-emp-nombre" class="input-neo" type="text" placeholder="Apellidos y Nombres">
+            </div>
+            <div class="form-group">
+                <span class="field-label">CÉDULA</span>
+                <input id="ps-emp-cedula" class="input-neo" type="text" placeholder="0999999999">
+            </div>
+            <div class="form-group">
+                <span class="field-label">CARGO</span>
+                <input id="ps-emp-cargo" class="input-neo" type="text" placeholder="Ej: Recepcionista">
+            </div>
+            <div class="form-group">
+                <span class="field-label">SALARIO BASE ($)</span>
+                <input id="ps-emp-salario" class="input-neo" type="number" min="0" step="0.01" placeholder="450.00">
+            </div>
+            <div class="form-group">
+                <span class="field-label">FECHA DE INGRESO</span>
+                <input id="ps-emp-ingreso" class="input-neo" type="date">
+            </div>
+            <div class="form-group">
+                <span class="field-label">TELÉFONO</span>
+                <input id="ps-emp-tel" class="input-neo" type="text" placeholder="0999...">
+            </div>
+            <div class="form-group">
+                <span class="field-label">CORREO</span>
+                <input id="ps-emp-correo" class="input-neo" type="email" placeholder="correo@...">
+            </div>
+        </div>
+        <div style="background:#f1f3f5; border-radius:12px; padding:14px; margin:14px 0;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:900; font-size:0.82rem; color:var(--blue); cursor:pointer;">
+                <input type="checkbox" id="ps-emp-iess" style="width:16px; height:16px;">
+                Afiliado al IESS (se le calculará el aporte personal 9.45%)
+            </label>
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+                <span class="field-label" style="margin-bottom:8px;">BENEFICIOS MENSUALIZADOS (el empleado eligió recibirlos cada mes en vez de acumulados)</span>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.78rem; font-weight:700; margin-top:6px; cursor:pointer;">
+                    <input type="checkbox" id="ps-emp-d13" style="width:14px; height:14px;"> Décimo Tercero mensualizado
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.78rem; font-weight:700; margin-top:6px; cursor:pointer;">
+                    <input type="checkbox" id="ps-emp-d14" style="width:14px; height:14px;"> Décimo Cuarto mensualizado
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.78rem; font-weight:700; margin-top:6px; cursor:pointer;">
+                    <input type="checkbox" id="ps-emp-fr" style="width:14px; height:14px;"> Fondo de Reserva mensualizado
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-neo btn-danger btn-sm" id="ps-btn-desactivar" style="margin-right:auto;display:none" onclick="PersonalModule.desactivarEmpleado()">
+                <i class="fas fa-user-slash"></i> Desactivar
+            </button>
+            <button class="btn-neo" onclick="PersonalModule.cerrarModales()">Cancelar</button>
+            <button class="btn-neo btn-gold" onclick="PersonalModule.guardarEmpleado()">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal movimiento (adelanto / bono / descuento) -->
+<div class="overlay" id="ps-overlay-mov">
+    <div class="modal-card">
+        <h3 id="ps-mov-titulo"><i class="fas fa-exchange-alt" style="color:var(--gold)"></i> Registrar Movimiento</h3>
+        <input type="hidden" id="ps-mov-pid">
+        <div class="form-group">
+            <span class="field-label">TIPO</span>
+            <select id="ps-mov-tipo" class="input-neo" onchange="PersonalModule.toggleTipoMovimiento()">
+                <option value="ADELANTO">Adelanto de nómina</option>
+                <option value="BONO">Bono / Incentivo</option>
+                <option value="DESCUENTO">Descuento</option>
+                <option value="HORAS_SUPLEMENTARIAS">Horas suplementarias (+50%)</option>
+                <option value="HORAS_EXTRAORDINARIAS">Horas extraordinarias (+100%)</option>
+            </select>
+        </div>
+        <div class="form-group" id="ps-mov-monto-wrap">
+            <span class="field-label">MONTO ($)</span>
+            <input id="ps-mov-monto" class="input-neo" type="number" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group" id="ps-mov-horas-wrap" style="display:none;">
+            <span class="field-label">CANTIDAD DE HORAS</span>
+            <input id="ps-mov-horas" class="input-neo" type="number" min="0" step="0.5" placeholder="0" oninput="PersonalModule.calcularPreviewHoras()">
+            <div id="ps-mov-horas-preview" style="font-size:0.78rem; font-weight:800; color:var(--gold); margin-top:6px;"></div>
+        </div>
+        <div class="form-group">
+            <span class="field-label">PERÍODO (YYYY-MM)</span>
+            <input id="ps-mov-periodo" class="input-neo" type="month">
+        </div>
+        <div class="form-group">
+            <span class="field-label">DESCRIPCIÓN</span>
+            <input id="ps-mov-desc" class="input-neo" type="text" placeholder="Motivo u observación">
+        </div>
+        <div id="ps-mov-pago-wrap" style="background:#f1f3f5; border-radius:12px; padding:12px; margin-bottom:15px;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:900; font-size:0.8rem; color:#1a365d; cursor:pointer;">
+                <input type="checkbox" id="ps-mov-registrar-pago" checked onchange="PersonalModule.togglePagoCampos()" style="width:16px; height:16px;">
+                ¿Ya se entregó el dinero? Registrar salida de caja
+            </label>
+            <div id="ps-mov-pago-campos" style="display:flex; gap:12px; margin-top:10px;">
+                <div style="flex:1;">
+                    <span class="field-label">¿DE DÓNDE SALIÓ?</span>
+                    <select id="ps-mov-metodo" class="input-neo" style="margin-bottom:0;"></select>
+                </div>
+                <div style="flex:1;">
+                    <span class="field-label">RUBRO</span>
+                    <select id="ps-mov-rubro" class="input-neo" style="margin-bottom:0;"></select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-neo" onclick="PersonalModule.cerrarModales()">Cancelar</button>
+            <button class="btn-neo btn-prim" onclick="PersonalModule.guardarMovimiento()">
+                <i class="fas fa-check"></i> Registrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal historial -->
+<div class="overlay" id="ps-overlay-hist">
+    <div class="modal-card" style="width:min(600px,95vw)">
+        <h3 id="ps-hist-titulo"><i class="fas fa-history" style="color:var(--gold)"></i> Historial</h3>
+        <div id="ps-hist-contenido" style="max-height:60vh;overflow-y:auto;"></div>
+        <div class="modal-footer">
+            <button class="btn-neo" onclick="PersonalModule.cerrarModales()">Cerrar</button>
+        </div>
+    </div>
+</div>
