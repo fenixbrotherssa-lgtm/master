@@ -119,7 +119,7 @@ const CRM = {
         el.innerHTML = lista.map(c => {
             const esHoy = c.DiasRestantes === 0;
             const fecha = c.FechaNacimiento
-                ? new Date(c.FechaNacimiento).toLocaleDateString('es-EC', { day: '2-digit', month: 'long' })
+                ? new Date(c.FechaNacimiento).toLocaleDateString('es-EC', { day: '2-digit', month: 'long', timeZone: 'UTC' })
                 : '';
             return `
             <div class="cumple-card" onclick="CRM.abrirPerfil(${c.ClienteID})">
@@ -178,7 +178,7 @@ const CRM = {
             ? (perfil.PromedioHoras / 24).toFixed(1) + ' días'
             : '--';
         const fnac = perfil.FechaNacimiento
-            ? new Date(perfil.FechaNacimiento).toLocaleDateString('es-EC', { day:'2-digit', month:'long' })
+            ? new Date(perfil.FechaNacimiento).toLocaleDateString('es-EC', { day:'2-digit', month:'long', timeZone: 'UTC' })
             : '--';
         document.getElementById('m-kpis').innerHTML = `
             <div class="kpi-cell"><span>Total visitas</span><strong>${perfil.TotalVisitas}</strong></div>

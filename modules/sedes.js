@@ -11,6 +11,9 @@ const SedesModule = {
         this.listarSedes();
         this.setupForm();
         window.SedesModule = this;
+
+        window.actualizarEstadoBot();
+        window._botEstadoInterval = setInterval(window.actualizarEstadoBot, 5000);
     },
 
     async listarSedes() {
@@ -291,6 +294,76 @@ const SedesModule = {
         if (costaGalapagos.some(p => provincia.includes(p))) sel.value = 'COSTA';
         else if (sierraAmazonia.some(p => provincia.includes(p))) sel.value = 'SIERRA';
     }
+};
+
+// --- ESTADO Y REINICIO DEL BOT DE WHATSAPP ---
+// Vive acá (módulo externo, cargado una sola vez al navegar a esta vista)
+// y no en un <script> inline dentro de views/sedes.html, porque
+// App.renderView() inserta las vistas vía innerHTML — los navegadores
+// nunca ejecutan <script> insertados así.
+const BOT_ESTADOS = {
+    conectado:      { texto: 'Conectado',                dot: 'verde' },
+    iniciando:      { texto: 'Iniciando...',             dot: 'amarillo' },
+    reiniciando:    { texto: 'Reiniciando...',           dot: 'amarillo' },
+    reconectando:   { texto: 'Reconectando...',          dot: 'amarillo' },
+    esperando_qr:   { texto: 'Requiere escanear QR',      dot: 'rojo' }
+};
+
+window.actualizarEstadoBot = async function () {
+    const txtEl = document.getElementById('bot-estado-texto');
+    const dbEl = document.getElementById('bot-db-texto');
+    const qrCard = document.getElementById('bot-qr-card');
+    const qrImg = document.getElementById('bot-qr-img');
+    if (!txtEl || !dbEl) {
+        clearInterval(window._botEstadoInterval);
+        return;
+    }
+
+    try {
+        const resp = (await api.get('/whatsapp/estado')).data;
+        if (resp.status !== 'OK') return; // error puntual, se reintenta en el próximo ciclo
+
+        const info = BOT_ESTADOS[resp.estadoBot] || { texto: resp.estadoBot, dot: 'gris' };
+        txtEl.innerHTML = `<span class="bot-dot bot-dot-${info.dot}"></span> ${info.texto}`;
+        dbEl.innerHTML = resp.dbOk
+            ? '<i class="fas fa-check-circle" style="color:#22c55e"></i> Base de datos OK'
+            : '<i class="fas fa-times-circle" style="color:#ef4444"></i> Base de datos sin respuesta';
+
+        if (resp.estadoBot === 'esperando_qr' && resp.qr && qrCard && qrImg) {
+            qrImg.src = resp.qr;
+            qrCard.style.display = 'flex';
+        } else if (qrCard) {
+            qrCard.style.display = 'none';
+        }
+    } catch (e) { /* error de red puntual, se reintenta en el próximo ciclo */ }
+};
+
+window.reiniciarBotWhatsapp = function () {
+    Swal.fire({
+        title: '¿Reiniciar el bot de WhatsApp?',
+        text: 'Se cerrará y volverá a abrir la sesión. Tarda unos segundos y solo hace falta si el bot dejó de responder.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, reiniciar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#1a365d'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        const btn = document.getElementById('btn-reiniciar-bot');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reiniciando...'; }
+
+        api.post('/whatsapp/reiniciar', {}).then(res => {
+            if (res.data.status !== 'OK') {
+                Swal.fire('Error', res.data.message || 'No se pudo reiniciar el bot.', 'error');
+            }
+        }).catch(e => {
+            Swal.fire('Error', e.response?.data?.message || e.message, 'error');
+        }).finally(() => {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rotate-right"></i> Reiniciar Bot'; }
+            window.actualizarEstadoBot();
+        });
+    });
 };
 
 module.exports = SedesModule;

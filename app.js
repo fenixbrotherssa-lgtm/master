@@ -114,6 +114,44 @@ const App = {
             }
         });
 
+        window.socket.on('comprobante_reserva_recibido', (data) => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '🧾 Comprobante de pago recibido por WhatsApp',
+                    icon: 'info',
+                    timer: 8000, timerProgressBar: true,
+                    position: 'top-end', toast: true, showConfirmButton: false
+                });
+            }
+            if (window.ReservasModule && typeof window.ReservasModule.cargarReservas === 'function') {
+                window.ReservasModule.cargarReservas();
+            }
+        });
+
+        window.socket.on('whatsapp_atencion_solicitada', (data) => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '💬 Huésped pide hablar con recepción',
+                    html: `<b>${data.nombre || data.telefono}</b><br><span style="font-size:.85rem;color:#718096">${data.mensaje ? `"${data.mensaje}"` : 'Responde directamente en el WhatsApp del hotel.'}</span>`,
+                    icon: 'warning',
+                    timer: 12000, timerProgressBar: true,
+                    position: 'top-end', toast: true, showConfirmButton: false
+                });
+            }
+
+            const alertsList = document.getElementById('dash-alerts-list');
+            if (alertsList) {
+                const spinner = alertsList.querySelector('.fa-spin');
+                if (spinner) spinner.closest('div').remove();
+                const item = document.createElement('div');
+                item.className = 'alert-item warning';
+                item.innerHTML = `<i class="fab fa-whatsapp" style="color:#25D366;font-size:1.2rem"></i>
+                    <div><strong>${data.nombre || data.telefono}</strong>
+                    <div style="font-size:.7rem;color:#718096">Pidió hablar con un recepcionista · ${data.telefono || ''}</div></div>`;
+                alertsList.prepend(item);
+            }
+        });
+
         window.socket.on('cocina:pedido_pos', (data) => {
             window._pedidosPosDesktop.push(data);
             if (typeof Swal !== 'undefined') {

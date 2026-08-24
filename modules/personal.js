@@ -639,7 +639,7 @@ const PersonalModule = {
                         ${fila('Décimo Tercero', n.DecimoTerceroAcumulado, n.DecimoTerceroMensualizado)}
                         ${fila('Décimo Cuarto (SBU $' + (p.SBU || 0).toFixed(2) + '/12)', n.DecimoCuartoAcumulado, n.DecimoCuartoMensualizado)}
                         ${fila('Fondo de Reserva', n.FondoReservaAcumulado, n.FondoReservaMensualizado, n.FondoReservaAplica)}
-                        ${fila('Vacaciones', n.VacacionesAcumulado, false)}
+                        ${fila('Vacaciones', n.VacacionesAcumulado, false, n.AfiliadoIESS)}
                         ${fila('Aporte Patronal IESS', n.AportePatronalIess, false, n.AfiliadoIESS)}
                     </tbody>
                 </table>
@@ -676,11 +676,11 @@ const PersonalModule = {
         ].filter(Boolean);
 
         // Provisiones informativas: se acumulan pero NO se pagan este mes (a menos que estén mensualizadas arriba).
+        // Décimos solo se listan aquí si el empleado tiene esa mensualización configurable (checkbox) — si nunca
+        // se seleccionó, no se muestran en el recibo impreso (el detalle completo sigue disponible en "Provisiones").
         const filasProvisiones = [
-            !n.DecimoTerceroMensualizado ? ['Décimo Tercero acumulado (no pagado este mes)', `$${n.DecimoTerceroAcumulado.toFixed(2)}`] : null,
-            !n.DecimoCuartoMensualizado  ? ['Décimo Cuarto acumulado (no pagado este mes)',   `$${n.DecimoCuartoAcumulado.toFixed(2)}`]  : null,
             (n.FondoReservaAplica && !n.FondoReservaMensualizado) ? ['Fondo de Reserva acumulado (no pagado este mes)', `$${n.FondoReservaAcumulado.toFixed(2)}`] : null,
-            ['Vacaciones acumuladas',                                       `$${n.VacacionesAcumulado.toFixed(2)}`],
+            n.AfiliadoIESS ? ['Vacaciones acumuladas',                     `$${n.VacacionesAcumulado.toFixed(2)}`] : null,
             n.AfiliadoIESS ? ['Aporte Patronal IESS (a cargo del hotel, informativo)', `$${n.AportePatronalIess.toFixed(2)}`] : null,
         ].filter(Boolean);
 
