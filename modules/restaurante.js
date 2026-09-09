@@ -1,4 +1,5 @@
 const api = require('./api');
+const pt = require('./printTicket');
 
 const RestauranteModule = {
     mesas: [],
@@ -18,6 +19,9 @@ const RestauranteModule = {
             const btnCrear = document.querySelector('button[onclick="RestauranteModule.abrirModalMesa()"]');
             if (btnCrear) btnCrear.style.display = 'none';
         }
+
+        const hostFmt = document.getElementById('mb-formato-print-host');
+        if (hostFmt) hostFmt.innerHTML = pt.selectorHTML('sel-formato-restaurante');
 
         this.renderSedeSelector();
         await this.verificarCaja();
@@ -44,6 +48,7 @@ const RestauranteModule = {
             }
         });
         window.socket.on('cocina:item_listo', (data) => {
+            if (window.Alertas) window.Alertas.beep('exito');
             Swal.fire({
                 title: `🍽 LISTO PARA SERVIR`,
                 html: `<b style="font-size:1.2rem;">${data.nombreProducto}</b><br><span style="color:#718096;">Mesa ${data.nroMesa} &nbsp;|&nbsp; Pedido #${data.nroOrden || ''}</span>`,
@@ -62,6 +67,7 @@ const RestauranteModule = {
             }
         });
         window.socket.on('cocina:pedido_nuevo', () => {
+            if (window.Alertas) window.Alertas.notificar('cocina', 'Nuevo pedido en cocina');
             this.actualizarBadgeCocina();
             if (!document.getElementById('panel-cocina-desktop').classList.contains('hidden')) {
                 this.cargarDatosCocina();
@@ -708,6 +714,7 @@ const RestauranteModule = {
         } else if (tipoCobro === false) {
             if (!this.cajaId) return Swal.fire({ icon: 'error', title: 'CAJA CERRADA', text: 'Debe abrir turno de caja para cobrar en efectivo/tarjetas.' });
 
+            const subt = total;
             const { value: formPago } = await Swal.fire({
                 title: 'COBRO EN RESTAURANTE',
                 html: `
@@ -718,6 +725,14 @@ const RestauranteModule = {
                         <option value="3">TARJETA</option>
                     </select>
 
+                    <label style="display:block; text-align:left; font-weight:bold; font-size:0.8rem; margin-bottom:5px;">Propina <span style="font-weight:400; color:#718096;">(no entra a caja — la custodia el cajero)</span></label>
+                    <div style="display:flex; gap:6px; margin-bottom:8px;">
+                        <button type="button" class="swal2-styled" style="margin:0; padding:6px 10px; background:#95a5a6;" onclick="document.getElementById('res-propina').value='0.00'">Sin propina</button>
+                        <button type="button" class="swal2-styled" style="margin:0; padding:6px 10px; background:#16a085;" onclick="document.getElementById('res-propina').value=(${subt}*0.10).toFixed(2)">10%</button>
+                        <button type="button" class="swal2-styled" style="margin:0; padding:6px 10px; background:#16a085;" onclick="document.getElementById('res-propina').value=(${subt}*0.15).toFixed(2)">15%</button>
+                    </div>
+                    <input id="res-propina" type="number" step="0.01" min="0" class="swal2-input" value="0.00" style="margin-bottom:15px;">
+
                     <label style="display:block; text-align:left; font-weight:bold; font-size:0.8rem; margin-bottom:5px;">Referencia (Opcional)</label>
                     <input id="res-ref" type="text" class="swal2-input" placeholder="Lote / Nro. Comprobante" style="margin-bottom:15px;">
 
@@ -726,8 +741,8 @@ const RestauranteModule = {
                         <input id="res-voucher" type="file" class="swal2-file" accept="image/*,application/pdf">
                     </div>
                 `,
-                didOpen: () => { 
-                    document.getElementById('res-metodo').dispatchEvent(new Event('change')); 
+                didOpen: () => {
+                    document.getElementById('res-metodo').dispatchEvent(new Event('change'));
                 },
                 focusConfirm: false,
                 showCancelButton: true,
@@ -738,6 +753,7 @@ const RestauranteModule = {
                     return {
                         metodoPago: document.getElementById('res-metodo').value,
                         referencia: document.getElementById('res-ref').value,
+                        propina: parseFloat(document.getElementById('res-propina').value) || 0,
                         voucherFile: document.getElementById('res-voucher').files[0]
                     }
                 }
@@ -751,13 +767,14 @@ const RestauranteModule = {
                 formData.append('cajaId', this.cajaId);
                 formData.append('metodoPago', formPago.metodoPago);
                 formData.append('referencia', formPago.referencia);
+                formData.append('propina', (formPago.propina || 0).toFixed(2));
                 formData.append('monto', total);
-                
+
                 if (formPago.voucherFile) {
                     formData.append('voucher', formPago.voucherFile);
                 }
 
-                this.procesarCobroBackend(formData); 
+                this.procesarCobroBackend(formData);
             }
         }
     },
@@ -768,15 +785,147 @@ const RestauranteModule = {
             const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
             
             const res = await api.post('/restaurante/cobrar', payload, config);
-            
+
             if (res.data.success) {
-                await Swal.fire({ icon: 'success', title: '¡CUENTA CERRADA!', text: 'Mesa liberada e inventario descontado.', confirmButtonColor: 'var(--hotel-blue)' });
+                const comandaId = res.data.comandaId;
+                const r = await Swal.fire({
+                    icon: 'success', title: '¡CUENTA CERRADA!',
+                    html: `Mesa liberada e inventario descontado.${res.data.propina > 0 ? `<br><small>Propina $${Number(res.data.propina).toFixed(2)} — la custodia el cajero.</small>` : ''}`,
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-print"></i> IMPRIMIR RECIBO',
+                    cancelButtonText: 'LISTO',
+                    confirmButtonColor: 'var(--hotel-blue)'
+                });
+                if (r.isConfirmed && comandaId) this.imprimirReciboComanda(comandaId);
+
                 this.resetUICompleto();
                 await this.cargarMesas();
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error al cobrar', text: err.response?.data?.error || 'Error de conexión' });
         }
+    },
+
+    async imprimirReciboComanda(comandaId) {
+        try {
+            const res = await api.get(`/restaurante/comanda/${comandaId}/recibo`);
+            const d = res.data;
+            const money = n => '$' + (Number(n) || 0).toFixed(2);
+            const items = (d.items || []).map(i => `
+                <tr>
+                    <td>${i.Cantidad} x ${i.NombreProducto}</td>
+                    <td class="t-right">${money(i.Subtotal)}</td>
+                </tr>`).join('');
+            const html = `
+                <div class="t-center">
+                    <div class="t-title">${d.Sede || 'RESTAURANTE'}</div>
+                    ${d.RUC_NIT ? `<div class="t-sm">RUC/NIT: ${d.RUC_NIT}</div>` : ''}
+                    ${d.Direccion ? `<div class="t-sm">${d.Direccion}</div>` : ''}
+                    ${d.Telefono ? `<div class="t-sm">Tel: ${d.Telefono}</div>` : ''}
+                    <div class="t-b" style="margin-top:6px;">RECIBO DE CONSUMO</div>
+                    <div class="t-sm">No es documento tributario</div>
+                </div>
+                <hr class="t-hr">
+                <div class="t-row"><span>Comanda</span><span>#${d.ComandaID}</span></div>
+                <div class="t-row"><span>Mesa</span><span>${d.NroMesa || '-'}</span></div>
+                <div class="t-row"><span>Mesero</span><span>${d.Mesero || '-'}</span></div>
+                <div class="t-row"><span>Fecha</span><span>${d.FechaFmt || ''}</span></div>
+                ${d.MetodoPago ? `<div class="t-row"><span>Pago</span><span>${d.MetodoPago}</span></div>` : ''}
+                <hr class="t-hr">
+                <table>${items}</table>
+                <hr class="t-hr">
+                <table>
+                    <tr><td>Subtotal</td><td class="t-right">${money(d.Subtotal)}</td></tr>
+                    ${Number(d.Propina) > 0 ? `<tr><td>Propina</td><td class="t-right">${money(d.Propina)}</td></tr>` : ''}
+                    <tr class="t-tot"><td>TOTAL</td><td class="t-right">${money(d.Total)}</td></tr>
+                </table>
+                ${Number(d.Propina) > 0 ? `<div class="t-sm t-center" style="margin-top:6px;">Propina para ${d.MeseroPropina || d.Mesero || 'el personal'} — no ingresa a caja</div>` : ''}
+                <hr class="t-hr">
+                <div class="t-center t-sm">¡Gracias por su visita!</div>`;
+            pt.imprimir(html, { titulo: `Recibo comanda #${comandaId}` });
+        } catch (e) {
+            window.Toast.fire({ icon: 'error', title: 'No se pudo obtener el recibo' });
+        }
+    },
+
+    async abrirPropinasDia() {
+        const hoy = new Date().toISOString().slice(0, 10);
+        await Swal.fire({
+            title: 'Propinas del día',
+            width: 640,
+            html: `
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:12px;">
+                    <input type="date" id="prop-fecha" class="swal2-input" style="margin:0; width:auto;" value="${hoy}">
+                    <button type="button" class="swal2-styled" style="margin:0; background:var(--hotel-blue);" onclick="RestauranteModule._cargarPropinas()">Ver</button>
+                    <button type="button" class="swal2-styled" style="margin:0; background:#16a085;" onclick="RestauranteModule._imprimirPropinas()">Imprimir</button>
+                </div>
+                <div id="prop-resultado" style="max-height:360px; overflow:auto;"></div>`,
+            didOpen: () => this._cargarPropinas(),
+            showConfirmButton: false, showCloseButton: true, background: 'var(--hotel-bg)'
+        });
+    },
+
+    async _cargarPropinas() {
+        const fecha = document.getElementById('prop-fecha').value;
+        const cont = document.getElementById('prop-resultado');
+        cont.innerHTML = '<p style="color:#7f8c8d;">Cargando…</p>';
+        try {
+            const sedeId = localStorage.getItem('currentSedeId') || JSON.parse(localStorage.getItem('user')).SedeID;
+            const res = await api.get(`/restaurante/propinas/${sedeId}?fecha=${fecha}`);
+            this._propinasData = res.data;
+            const d = res.data;
+            const money = n => '$' + (Number(n) || 0).toFixed(2);
+            if (!d.porMesero || d.porMesero.length === 0) {
+                cont.innerHTML = '<p style="color:#94a3b8; padding:20px;">Sin propinas registradas en esta fecha.</p>';
+                return;
+            }
+            cont.innerHTML = `
+                <p style="font-weight:900; color:var(--hotel-blue); font-size:1.1rem;">Total del día: ${money(d.totalDia)}</p>
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                    <thead><tr style="background:#f2f2f2;">
+                        <th style="padding:7px 9px; text-align:left;">Mesero</th>
+                        <th style="padding:7px 9px; text-align:right;">Cuentas</th>
+                        <th style="padding:7px 9px; text-align:right;">Propina</th>
+                        <th style="padding:7px 9px; text-align:right;">%</th>
+                    </tr></thead>
+                    <tbody>
+                        ${d.porMesero.map(m => `
+                            <tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:7px 9px;">${m.Mesero || 'Mesero #' + m.MeseroID}</td>
+                                <td style="padding:7px 9px; text-align:right;">${m.Cuentas}</td>
+                                <td style="padding:7px 9px; text-align:right; font-weight:800;">${money(m.TotalPropina)}</td>
+                                <td style="padding:7px 9px; text-align:right;">${m.Porcentaje}%</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        } catch (e) {
+            cont.innerHTML = '<p style="color:red;">Error al cargar el reporte.</p>';
+        }
+    },
+
+    _imprimirPropinas() {
+        const d = this._propinasData;
+        if (!d || !d.porMesero || d.porMesero.length === 0) return window.Toast.fire({ icon: 'warning', title: 'Nada que imprimir' });
+        const money = n => '$' + (Number(n) || 0).toFixed(2);
+        const filas = d.porMesero.map(m => `
+            <tr>
+                <td>${m.Mesero || ('#' + m.MeseroID)}<div class="t-sm">${m.Cuentas} cuenta(s) · ${m.Porcentaje}%</div></td>
+                <td class="t-right t-b">${money(m.TotalPropina)}</td>
+            </tr>`).join('');
+        const html = `
+            <div class="t-center">
+                <div class="t-title">PROPINAS DEL DÍA</div>
+                <div class="t-sm">${d.fecha}</div>
+            </div>
+            <hr class="t-hr">
+            <table>${filas}</table>
+            <hr class="t-hr">
+            <table><tr class="t-tot"><td>TOTAL</td><td class="t-right">${money(d.totalDia)}</td></tr></table>
+            <hr class="t-hr">
+            <div class="t-sm">Firma responsable: _______________________</div>
+            <div class="t-sm" style="margin-top:14px;">Firma meseros:</div>
+            ${d.porMesero.map(m => `<div class="t-sm" style="margin-top:10px;">${m.Mesero || ('#' + m.MeseroID)}: _______________</div>`).join('')}`;
+        pt.imprimir(html, { titulo: `Propinas ${d.fecha}` });
     }
 };
 

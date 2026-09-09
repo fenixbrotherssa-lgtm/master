@@ -5,7 +5,23 @@ const { io } = require('socket.io-client');
 
 const App = {
     user: JSON.parse(localStorage.getItem('user')) || null,
-    sedes: [], 
+    sedes: [],
+    _sedeNombre: '',
+
+    // Nombre comercial de la sede activa (para mensajes de voz de recepción, etc.)
+    sedeNombre() { return this._sedeNombre || ''; },
+    async cargarSedeNombre() {
+        try {
+            const sid = localStorage.getItem('currentSedeId') || (this.user ? this.user.SedeID : null);
+            if (!sid) return;
+            if (this.sedes && this.sedes.length) {
+                const s = this.sedes.find(x => String(x.SedeID) === String(sid));
+                if (s && s.NombreComercial) { this._sedeNombre = s.NombreComercial; return; }
+            }
+            const res = await api.get(`/sede/${sid}`);
+            if (res && res.data && res.data.NombreComercial) this._sedeNombre = res.data.NombreComercial;
+        } catch (e) { /* silencioso */ }
+    },
 
     async init() {
         console.log("SystemCore: Iniciando...");
@@ -41,6 +57,7 @@ const App = {
 
         window.socket.on('disconnect', (reason) => {
             console.warn('🔌 Socket desconectado:', reason);
+            if (window.Alertas) Alertas.beep('error');
             const ind = document.getElementById('socket-status-indicator');
             if (ind) { ind.style.background = '#e74c3c'; ind.title = 'Sin conexión con servidor'; }
             if (typeof Swal !== 'undefined') {
@@ -55,6 +72,7 @@ const App = {
 
         window.socket.on('reconnect', (attempt) => {
             console.log(`🔌 Socket reconectado (intento ${attempt})`);
+            if (window.Alertas) Alertas.beep('exito');
             const ind = document.getElementById('socket-status-indicator');
             if (ind) { ind.style.background = '#27ae60'; ind.title = 'Conectado'; }
             if (typeof Swal !== 'undefined') {
@@ -84,6 +102,14 @@ const App = {
                 BOOKING:'🏨 Booking', EXPEDIA:'✈️ Expedia', AIRBNB:'🏠 Airbnb', DIRECTO:'🚶 Directo' };
             const origenLabel = origenLabels[data.origen] || data.origen || '📋';
             const esPendiente = data.estado === 'PENDIENTE';
+
+            if (window.Alertas) {
+                if (esPendiente) {
+                    Alertas.notificar('alerta', `Reserva pendiente de confirmar. ${data.nombre || ''}`);
+                } else {
+                    Alertas.notificar('reserva', `Nueva reserva${data.nombre ? ' de ' + data.nombre : ''}${data.llegada ? ', llegada ' + data.llegada : ''}`);
+                }
+            }
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -115,6 +141,7 @@ const App = {
         });
 
         window.socket.on('comprobante_reserva_recibido', (data) => {
+            if (window.Alertas) Alertas.notificar('whatsapp', 'Comprobante de pago recibido por WhatsApp');
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: '🧾 Comprobante de pago recibido por WhatsApp',
@@ -129,6 +156,7 @@ const App = {
         });
 
         window.socket.on('whatsapp_atencion_solicitada', (data) => {
+            if (window.Alertas) Alertas.notificar('whatsapp', 'Un huésped pide hablar con recepción');
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: '💬 Huésped pide hablar con recepción',
@@ -154,6 +182,7 @@ const App = {
 
         window.socket.on('cocina:pedido_pos', (data) => {
             window._pedidosPosDesktop.push(data);
+            if (window.Alertas) Alertas.notificar('cocina', `Nuevo pedido de room service${data.nombreProducto ? ': ' + data.nombreProducto : ''}`);
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: `🔔 ${data.origen} — ROOM SERVICE`,
@@ -216,6 +245,7 @@ const App = {
         selector.onchange = (e) => {
             const newSedeId = e.target.value;
             localStorage.setItem('currentSedeId', newSedeId);
+            this.cargarSedeNombre();
             if (callback) callback(newSedeId);
         };
     },
@@ -251,6 +281,10 @@ const App = {
                                 <span id="socket-status-indicator" style="width:10px; height:10px; border-radius:50%; background:#27ae60; display:inline-block; box-shadow:0 0 6px rgba(39,174,96,0.6); transition:background 0.3s;"></span>
                                 <span style="font-size:0.65rem; color:#718096; font-weight:700;">SERVIDOR</span>
                             </div>
+                            <button id="btn-alertas-toggle" type="button" onclick="window.Alertas && Alertas.toggle()" title="Alertas sonoras / voz"
+                                style="background:#e0e0e4; color:#27ae60; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:1rem; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;">
+                                <i class="fas fa-volume-high"></i>
+                            </button>
                             <button onclick="App.logout()"
                                 style="background:#e0e0e4; color:#e74c3c; border:none; padding:10px 20px; border-radius:15px; cursor:pointer; font-size:0.75rem; font-weight:900; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;">
                                 <i class="fas fa-power-off"></i> SALIR
@@ -261,6 +295,8 @@ const App = {
                 </main>
             </div>
         `;
+        if (window.Alertas) Alertas.refrescarBoton();
+        this.cargarSedeNombre();
         this.renderView('dashboard', 'viewport');
     },
 

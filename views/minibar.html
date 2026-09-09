@@ -1,0 +1,54 @@
+<style>
+    #seccion-minibar { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-minibar .mb-head { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+    #seccion-minibar h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-minibar .mb-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-minibar .mb-btn { padding: 11px 20px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .8rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-minibar .mb-btn.primary { background: #8e44ad; color: #fff; }
+    #seccion-minibar .mb-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-minibar input, #seccion-minibar select { padding: 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-minibar .mb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    #seccion-minibar .mb-panel { background: #e0e0e4; border-radius: 20px; padding: 18px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; }
+    #seccion-minibar .mb-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 12px; }
+    #seccion-minibar .mb-list { max-height: 430px; overflow-y: auto; }
+    #seccion-minibar .mb-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 6px; border-bottom: 1px solid rgba(0,0,0,.06); }
+    #seccion-minibar .mb-row .n { font-weight: 800; color: #1a365d; font-size: .85rem; }
+    #seccion-minibar .mb-row .m { font-size: .68rem; color: #7f8c8d; }
+    #seccion-minibar .qty { width: 62px; text-align: center; padding: 7px; }
+    #seccion-minibar .mb-empty { text-align: center; color: #94a3b8; padding: 30px 10px; font-weight: 700; font-size: .8rem; }
+</style>
+
+<div id="seccion-minibar">
+    <div class="mb-head">
+        <button class="mb-btn" onclick="App.renderView('dashboard','viewport')"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-wine-bottle"></i> Dotación de Minibar</h2>
+            <p class="mb-sub">Qué productos lleva el minibar de cada habitación · solo referencia, no descuenta stock</p>
+        </div>
+        <div id="sedeSelectorMinibar" style="margin-left:auto;"></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap;">
+        <label style="font-size:.72rem; font-weight:900; color:#1a365d; text-transform:uppercase;">Configurar:</label>
+        <select id="mb-scope" onchange="MinibarModule.cambiarScope(this.value)" style="min-width:280px;"></select>
+        <button id="mb-quitar-override" class="mb-btn danger" style="display:none;" onclick="MinibarModule.quitarOverride()">
+            <i class="fas fa-eraser"></i> Quitar personalización (usar el estándar)
+        </button>
+    </div>
+
+    <div class="mb-grid">
+        <div class="mb-panel">
+            <h3><i class="fas fa-boxes-stacked"></i> Inventario general</h3>
+            <input type="text" id="mb-buscar" placeholder="🔍 Buscar producto..." style="width:100%; margin-bottom:10px;" oninput="MinibarModule.renderCatalogo(this.value)">
+            <div id="mb-catalogo" class="mb-list"></div>
+        </div>
+
+        <div class="mb-panel">
+            <h3><i class="fas fa-list-check"></i> <span id="mb-titulo-dotacion">Dotación</span></h3>
+            <div id="mb-dotacion" class="mb-list"></div>
+            <button class="mb-btn primary" style="width:100%; justify-content:center; margin-top:14px;" onclick="MinibarModule.guardar()">
+                <i class="fas fa-save"></i> GUARDAR DOTACIÓN
+            </button>
+        </div>
+    </div>
+</div>

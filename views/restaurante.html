@@ -148,7 +148,11 @@
                 <div id="sedeSelectorRestaurante" style="margin-top: 10px;"></div>
             </div>
         </div>
-        <div style="display: flex; gap: 15px;">
+        <div style="display: flex; gap: 15px; align-items:center;">
+            <span id="mb-formato-print-host"></span>
+            <button class="btn-neo" onclick="RestauranteModule.abrirPropinasDia()" style="background:#16a085; color:#fff;">
+                <i class="fas fa-hand-holding-usd"></i> PROPINAS DÍA
+            </button>
             <button class="btn-neo" onclick="RestauranteModule.abrirPanelCocina()" id="btn-panel-cocina" style="position:relative;">
                 <i class="fas fa-fire"></i> COCINA
                 <span id="badge-cocina-desktop" style="display:none; position:absolute; top:-8px; right:-8px; background:#e74c3c; color:white; border-radius:50%; width:20px; height:20px; font-size:0.7rem; font-weight:900; align-items:center; justify-content:center;">0</span>

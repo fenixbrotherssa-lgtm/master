@@ -453,10 +453,16 @@
             <div class="checkin-layout">
                 
                 <div class="checkin-section" style="max-height: 500px; overflow-y: auto;">
-                    <p style="margin-bottom: 20px; font-size: 0.9rem; color: #718096;"><i class="fas fa-user-check"></i> <strong>Huésped:</strong> <span id="out-huesped">--</span></p>
+                    <p style="margin-bottom: 8px; font-size: 0.9rem; color: #718096;"><i class="fas fa-user-check"></i> <strong>Huésped:</strong> <span id="out-huesped">--</span></p>
+                    <p style="margin-bottom: 20px; font-size: 0.85rem; color: #718096;"><i class="far fa-clock"></i> <strong>Ingreso:</strong> <span id="out-fecha-ingreso">--</span> &nbsp;·&nbsp; <strong>Salida prog.:</strong> <span id="out-fecha-salida">--</span></p>
                     <p id="out-codigo-acceso-wrap" style="display:none; margin-top:-15px; margin-bottom: 20px; font-size: 0.9rem; color: #718096;"><i class="fas fa-key"></i> <strong>Código de acceso:</strong> <span id="out-codigo-acceso" style="font-weight:900; color: var(--hotel-blue); letter-spacing: 2px;">--</span></p>
 
-                    <h4 style="color: var(--hotel-blue); font-size: 0.8rem; margin-bottom: 10px;"><i class="fas fa-file-invoice"></i> DETALLE DE CARGOS</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="color: var(--hotel-blue); font-size: 0.8rem; margin:0;"><i class="fas fa-file-invoice"></i> DETALLE DE CARGOS</h4>
+                        <button type="button" id="btn-minibar" style="display:none; background:#8e44ad; color:#fff; border:none; padding:7px 12px; border-radius:12px; cursor:pointer; font-size:0.7rem; font-weight:800;" onclick="RecepcionModule.abrirMinibar()">
+                            <i class="fas fa-wine-bottle"></i> CONSUMO MINIBAR
+                        </button>
+                    </div>
                     <table class="table-folio">
                         <thead><tr><th>Concepto</th><th class="text-right">Monto</th></tr></thead>
                         <tbody id="tb-folio-cargos"></tbody>
@@ -533,6 +539,32 @@
                 <button type="submit" class="btn-neo btn-save" style="flex: 2; justify-content: center; font-size: 1rem;"><i class="fas fa-door-open"></i> PROCESAR CHECK-OUT Y LIBERAR</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ====== MODAL: CONSUMO DE MINIBAR (carga al folio, sin cambiar la lógica de POS) ====== -->
+<div id="modalMinibar" class="modal-neo hidden">
+    <div class="modal-content-neo animate__animated animate__zoomIn" style="width: 640px;">
+        <h3 style="color: #8e44ad; text-align:center; margin-bottom:8px; letter-spacing:2px; text-transform:uppercase; border-bottom:2px solid var(--hotel-gold); padding-bottom:12px;">
+            <i class="fas fa-wine-bottle"></i> Consumo de Minibar
+        </h3>
+        <p style="text-align:center; font-size:0.8rem; color:#718096; margin:0 0 12px;">Habitación <strong id="minibar-hab">--</strong> · <span id="minibar-huesped">--</span></p>
+
+        <input type="text" id="minibar-buscar" class="input-neo" placeholder="🔍 Buscar producto..." oninput="RecepcionModule.renderMinibarProductos(this.value)">
+
+        <div id="minibar-lista" style="max-height:300px; overflow-y:auto; margin:10px 0;"></div>
+
+        <div style="background:var(--hotel-bg); border-radius:14px; padding:14px; box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;">
+            <div id="minibar-carrito" style="font-size:0.8rem; color:#555;">Sin productos seleccionados.</div>
+            <div style="text-align:right; font-weight:900; color:var(--hotel-blue); margin-top:6px;">TOTAL: <span id="minibar-total">$0.00</span></div>
+        </div>
+
+        <div style="display:flex; gap:15px; margin-top:18px;">
+            <button type="button" class="btn-neo" style="flex:1; justify-content:center;" onclick="RecepcionModule.cerrarMinibar()">CANCELAR</button>
+            <button type="button" class="btn-neo btn-save" style="flex:2; justify-content:center; background:#8e44ad !important;" onclick="RecepcionModule.cargarMinibar()">
+                <i class="fas fa-plus-circle"></i> CARGAR AL FOLIO
+            </button>
+        </div>
     </div>
 </div>
 

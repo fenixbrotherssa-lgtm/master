@@ -179,6 +179,7 @@ const CajaModule = {
                         ${m.ReferenciaVoucher || 'SIN REF'} ${voucherHtml}
                     </div>
                     <small style="color:#718096;">${m.Observacion || ''}</small>
+                    ${m.DetalleProductos ? `<br><small style="color:#2e7d32; font-weight:700;"><i class="fas fa-box-open"></i> ${m.DetalleProductos}</small>` : ''}
                 </td>
                 <td style="text-align:right; font-weight:900; font-size:1.1rem; color: ${m.TipoMovimiento === 'Ingreso' ? 'var(--hotel-success)' : 'var(--hotel-danger)'}">
                     ${m.TipoMovimiento === 'Ingreso' ? '+' : '-'}$${parseFloat(m.Monto).toFixed(2)}
@@ -1079,13 +1080,26 @@ const CajaModule = {
                     });
                     
                     const resDif = parseFloat(res.data.diferencia);
-                    await Swal.fire({ 
-                        title: resDif === 0 ? "¡CAJA CUADRADA PERFECTA!" : "TURNO CERRADO CON DESFASE", 
-                        text: `El turno ha finalizado y se ha enviado a auditoría.`,
-                        icon: resDif === 0 ? 'success' : 'warning', 
+                    const cuadrada = Math.abs(resDif) < 0.01;
+
+                    if (window.Alertas) {
+                        if (cuadrada) {
+                            window.Alertas.notificar('exito', 'Caja cerrada correctamente. El cuadre es exacto.');
+                        } else {
+                            const tipo = resDif < 0 ? 'faltante' : 'sobrante';
+                            window.Alertas.notificar('alerta', `Atención: la caja cerró con ${tipo} de ${Math.abs(resDif).toFixed(2)} dólares. Revise los valores pendientes.`);
+                        }
+                    }
+
+                    await Swal.fire({
+                        title: cuadrada ? "¡CAJA CUADRADA PERFECTA!" : "TURNO CERRADO CON DESFASE",
+                        html: cuadrada
+                            ? `El turno ha finalizado y se ha enviado a auditoría.`
+                            : `El turno finalizó con un <strong>${resDif < 0 ? 'FALTANTE' : 'SOBRANTE'}</strong> de <strong style="color:var(--hotel-danger)">$${Math.abs(resDif).toFixed(2)}</strong>.<br><small>Esperado: $${parseFloat(res.data.esperado).toFixed(2)} · Declarado: $${parseFloat(res.data.declarado).toFixed(2)}</small>`,
+                        icon: cuadrada ? 'success' : 'warning',
                         confirmButtonColor: 'var(--hotel-blue)',
                         confirmButtonText: 'ENTENDIDO',
-                        background: 'var(--hotel-bg)' 
+                        background: 'var(--hotel-bg)'
                     });
                 }
 

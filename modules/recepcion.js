@@ -14,6 +14,11 @@ const RecepcionModule = {
     // VARIABLE PARA EL ESTADO DE CUENTA
     folioActual: null,
 
+    // Minibar (consumo cargado al folio)
+    minibarCarrito: [],
+    minibarDotacion: [],
+    minibarVerTodo: false,
+
     // ====== RESERVAS ======
     reservasCache: [],
     filtroReservaActivo: 'hoy',
@@ -27,6 +32,10 @@ const RecepcionModule = {
         this.setupEventListeners();
         this.setupSocket();
         window.RecepcionModule = this;
+
+        // Recordatorio periódico de habitaciones vencidas (cada 10 min mientras se usa Recepción)
+        if (window._recepcionVencidasTimer) clearInterval(window._recepcionVencidasTimer);
+        window._recepcionVencidasTimer = setInterval(() => this.recordarVencidas(), 10 * 60 * 1000);
     },
 
     setupSocket() {
@@ -135,6 +144,36 @@ const RecepcionModule = {
         const ocupadas = this.habitacionesCache.filter(h => h.Estado === 'OCUPADA').length;
         const pct = total > 0 ? Math.round((ocupadas / total) * 100) : 0;
         document.getElementById('pct-ocupacion').textContent = `${pct}%`;
+        setTimeout(() => this.recordarVencidas(), 1000);
+    },
+
+    // Recuerda por voz al recepcionista las habitaciones vencidas (salida ya pasada
+    // y aún OCUPADAS) para que revise y procese el check-out. Con anti-repetición.
+    recordarVencidas() {
+        if (!window.Alertas) return;
+        // Solo mientras Recepción está en pantalla (evita que el intervalo huérfano siga sonando)
+        if (!document.getElementById('rack-viewport')) return;
+        const ahora = new Date();
+        const vencidas = (this.habitacionesCache || []).filter(h => {
+            if (h.Estado !== 'OCUPADA' || !h.FechaSalidaProgramada) return false;
+            const s = new Date(String(h.FechaSalidaProgramada).replace('T', ' ').replace('Z', ''));
+            return !isNaN(s) && s < ahora;
+        }).map(h => h.NroHabitacion);
+
+        if (vencidas.length === 0) { this._avisoVencidasKey = ''; return; }
+
+        const key = vencidas.slice().sort().join(',');
+        const ahoraMs = Date.now();
+        // No repetir el mismo aviso salvo que pasen 15 min o cambie el conjunto
+        if (key === this._avisoVencidasKey && (ahoraMs - (this._avisoVencidasTs || 0)) < 15 * 60 * 1000) return;
+        this._avisoVencidasKey = key;
+        this._avisoVencidasTs = ahoraMs;
+
+        const plural = vencidas.length > 1;
+        const lista = vencidas.length <= 4 ? vencidas.join(', ') : vencidas.slice(0, 4).join(', ') + ' y más';
+        window.Alertas.notificar('alerta',
+            `Recepción: ${vencidas.length} habitación${plural ? 'es' : ''} vencida${plural ? 's' : ''}: ${lista}. ` +
+            `Por favor revise y procese el check-out.`);
     },
 
     gestionarHabitacion(id) {
@@ -291,7 +330,7 @@ const RecepcionModule = {
         const fechaInput = document.getElementById('in-fecha-ingreso-migracion').value;
         
         let baseDate = (esMigracion && fechaInput) ? new Date(fechaInput + 'T12:00:00') : new Date();
-        
+
         const lblTiempo = document.getElementById('lbl-tiempo-dinamico');
         const boxRango = document.getElementById('box-rango-fechas');
         
@@ -761,6 +800,15 @@ const RecepcionModule = {
     renderFolio(hab) {
         document.getElementById('modalCheckoutTitulo').textContent = `ESTADO DE CUENTA: HABITACIÓN ${hab.NroHabitacion}`;
         document.getElementById('out-huesped').textContent = this.folioActual.recepcion.NombreFull;
+
+        // Fechas ya formateadas por el servidor (misma convención que el resto del sistema)
+        const elIng = document.getElementById('out-fecha-ingreso');
+        const elSal = document.getElementById('out-fecha-salida');
+        if (elIng) elIng.textContent = this.folioActual.recepcion.FechaEntradaFmt || '--';
+        if (elSal) elSal.textContent = this.folioActual.recepcion.FechaSalidaProgramadaFmt || '--';
+
+        const btnMb = document.getElementById('btn-minibar');
+        if (btnMb) btnMb.style.display = this.folioActual.recepcion.TieneMinibar ? 'inline-block' : 'none';
         
         let totalCargos = parseFloat(this.folioActual.recepcion.TotalHospedaje);
         let totalAbonos = 0;
@@ -817,8 +865,167 @@ const RecepcionModule = {
             uiSaldo.textContent = "$0.00";
             uiSaldo.style.color = 'var(--hotel-success)';
             inMonto.value = "0.00";
-            sectionPago.style.display = 'none'; 
+            sectionPago.style.display = 'none';
             if(btnAbonar) btnAbonar.style.display = 'none';
+        }
+    },
+
+    // ===== MINIBAR — consumo cargado al folio (reusa /inventario/venta con RecepcionID) =====
+    async abrirMinibar() {
+        if (!this.folioActual) return;
+        this.minibarCarrito = [];
+        this.minibarVerTodo = false;
+        this.minibarDotacion = [];
+        document.getElementById('minibar-hab').textContent = this.folioActual.recepcion.NroHabitacion;
+        document.getElementById('minibar-huesped').textContent = this.folioActual.recepcion.NombreFull;
+        const b = document.getElementById('minibar-buscar'); if (b) b.value = '';
+
+        // Dotación (planograma) efectiva de esta habitación — solo referencia, no cambia stock
+        try {
+            const r = await api.get(`/minibar/dotacion/habitacion/${this.folioActual.recepcion.HabitacionID}`);
+            this.minibarDotacion = (r.data && r.data.items) ? r.data.items : [];
+        } catch (e) { this.minibarDotacion = []; }
+        this.minibarVerTodo = (this.minibarDotacion.length === 0);
+
+        this.renderMinibarProductos('');
+        this.renderMinibarCarrito();
+        document.getElementById('modalMinibar').classList.remove('hidden');
+    },
+    cerrarMinibar() { document.getElementById('modalMinibar').classList.add('hidden'); },
+
+    minibarVerTodoToggle() {
+        this.minibarVerTodo = !this.minibarVerTodo;
+        this.renderMinibarProductos((document.getElementById('minibar-buscar') || {}).value || '');
+    },
+
+    // cuántas unidades de un producto ya están cargadas en este folio (visibilidad, no candado)
+    _minibarYaCargado(productoId) {
+        const consumos = (this.folioActual && this.folioActual.consumos) || [];
+        return consumos.filter(c => c.ProductoID === productoId).reduce((s, c) => s + (c.Cantidad || 0), 0);
+    },
+
+    renderMinibarProductos(filtro = '') {
+        const cont = document.getElementById('minibar-lista');
+        if (!cont) return;
+        const f = (filtro || '').toLowerCase();
+
+        const usarDotacion = !this.minibarVerTodo && this.minibarDotacion.length > 0;
+        let fuente;
+        if (usarDotacion) {
+            fuente = this.minibarDotacion.map(d => {
+                const inv = (this.productosPOS || []).find(p => p.ProductoID === d.ProductoID) || {};
+                return {
+                    ProductoID: d.ProductoID,
+                    Nombre: d.Nombre,
+                    PrecioVenta: (inv.PrecioVenta != null ? inv.PrecioVenta : d.PrecioVenta),
+                    StockActual: (inv.StockActual != null ? inv.StockActual : '?'),
+                    Par: d.Cantidad
+                };
+            });
+        } else {
+            fuente = (this.productosPOS || []).map(p => ({ ProductoID: p.ProductoID, Nombre: p.Nombre, PrecioVenta: p.PrecioVenta, StockActual: p.StockActual, Par: null }));
+        }
+        fuente = fuente.filter(p => !f || (p.Nombre || '').toLowerCase().includes(f));
+
+        const cabecera = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <small style="font-weight:800; color:${usarDotacion ? '#8e44ad' : '#718096'};">
+                    ${usarDotacion ? 'DOTACIÓN DE ESTA HABITACIÓN' : 'INVENTARIO GENERAL'}
+                </small>
+                ${this.minibarDotacion.length > 0
+                    ? `<button type="button" class="btn-neo" style="padding:4px 10px; font-size:0.68rem;" onclick="RecepcionModule.minibarVerTodoToggle()">
+                         ${usarDotacion ? '＋ Ver todo el inventario' : '↩ Volver a la dotación'}
+                       </button>`
+                    : ''}
+            </div>`;
+
+        if (fuente.length === 0) { cont.innerHTML = cabecera + '<p style="text-align:center; color:#999; padding:15px;">Sin productos.</p>'; return; }
+
+        cont.innerHTML = cabecera + fuente.map(p => {
+            const enCarrito = this.minibarCarrito.find(c => c.ProductoID === p.ProductoID);
+            const q = enCarrito ? enCarrito.Cantidad : 0;
+            const yaCargado = this._minibarYaCargado(p.ProductoID);
+            return `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 6px; border-bottom:1px solid #eee;">
+                <div style="flex:1;">
+                    <div style="font-weight:800; color:var(--hotel-blue); font-size:0.85rem;">${p.Nombre}</div>
+                    <div style="font-size:0.68rem; color:#718096;">
+                        $${parseFloat(p.PrecioVenta).toFixed(2)} · stock ${p.StockActual}
+                        ${p.Par != null ? ` · <span style="color:#8e44ad; font-weight:700;">estándar: ${p.Par}</span>` : ''}
+                        ${yaCargado > 0 ? ` · <span style="color:#e67e22; font-weight:700;">ya cargado: ${yaCargado}</span>` : ''}
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button type="button" class="btn-neo" style="padding:4px 10px;" onclick="RecepcionModule.minibarAdd(${p.ProductoID}, -1)">−</button>
+                    <span style="min-width:22px; text-align:center; font-weight:900;">${q}</span>
+                    <button type="button" class="btn-neo" style="padding:4px 10px;" onclick="RecepcionModule.minibarAdd(${p.ProductoID}, 1)">+</button>
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    minibarAdd(productoId, delta) {
+        const prod = (this.productosPOS || []).find(p => p.ProductoID === productoId);
+        if (!prod) { window.Toast.fire({ icon: 'warning', title: 'Producto no disponible en el inventario' }); return; }
+        const item = this.minibarCarrito.find(c => c.ProductoID === productoId);
+        let nueva = (item ? item.Cantidad : 0) + delta;
+        if (nueva < 0) nueva = 0;
+        if (nueva > prod.StockActual) {
+            window.Toast.fire({ icon: 'warning', title: `Solo hay ${prod.StockActual} en stock` });
+            nueva = prod.StockActual;
+        }
+        if (nueva === 0) {
+            this.minibarCarrito = this.minibarCarrito.filter(c => c.ProductoID !== productoId);
+        } else if (item) {
+            item.Cantidad = nueva;
+        } else {
+            this.minibarCarrito.push({ ProductoID: productoId, Nombre: prod.Nombre, PrecioVenta: parseFloat(prod.PrecioVenta), Cantidad: nueva });
+        }
+        this.renderMinibarProductos((document.getElementById('minibar-buscar') || {}).value || '');
+        this.renderMinibarCarrito();
+    },
+
+    renderMinibarCarrito() {
+        const cont = document.getElementById('minibar-carrito');
+        const totEl = document.getElementById('minibar-total');
+        if (!cont) return;
+        if (this.minibarCarrito.length === 0) {
+            cont.innerHTML = 'Sin productos seleccionados.';
+            if (totEl) totEl.textContent = '$0.00';
+            return;
+        }
+        let total = 0;
+        cont.innerHTML = this.minibarCarrito.map(c => {
+            const sub = c.PrecioVenta * c.Cantidad; total += sub;
+            return `${c.Cantidad}× ${c.Nombre} — $${sub.toFixed(2)}`;
+        }).join('<br>');
+        if (totEl) totEl.textContent = `$${total.toFixed(2)}`;
+    },
+
+    async cargarMinibar() {
+        if (!this.folioActual || this.minibarCarrito.length === 0) {
+            return window.Toast.fire({ icon: 'warning', title: 'Elige al menos un producto' });
+        }
+        const user = JSON.parse(localStorage.getItem('user'));
+        const sedeId = localStorage.getItem('currentSedeId') || user.SedeID;
+        try {
+            const res = await api.post('/inventario/venta', {
+                SedeID: sedeId,
+                UsuarioID: user.UsuarioID,
+                CajaID: this.cajaId,
+                RecepcionID: this.folioActual.recepcion.RecepcionID,
+                carrito: this.minibarCarrito.map(c => ({ ProductoID: c.ProductoID, Cantidad: c.Cantidad, PrecioVenta: c.PrecioVenta, EsCortesia: false })),
+                pagoInmediato: null
+            });
+            if (res.data.success) {
+                this.minibarCarrito = [];
+                this.cerrarMinibar();
+                window.Toast.fire({ icon: 'success', title: 'Consumo de minibar cargado al folio' });
+                await this.cargarProductosPOS();
+                await this.abrirFolioCheckout(this.habSeleccionada);
+            }
+        } catch (err) {
+            window.Toast.fire({ icon: 'error', title: (err.response && err.response.data && err.response.data.error) || 'Error al cargar el consumo' });
         }
     },
 
@@ -1383,7 +1590,18 @@ const RecepcionModule = {
                 try {
                     const res = await api.post('/recepcion/checkin', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
                     if (res.data.success) {
-                        await Swal.fire({ title: 'INGRESO EXITOSO', text: 'La habitación ha sido ocupada.', icon: 'success' });
+                        if (window.Alertas) {
+                            const nomHuesped = (document.getElementById('in-nombre').value || '').trim().split(/\s+/)[0] || '';
+                            const hotel = (window.App && App.sedeNombre && App.sedeNombre()) || 'nuestro hotel';
+                            window.Alertas.notificar('exito',
+                                `Bienvenido${nomHuesped ? ' ' + nomHuesped : ''} a ${hotel}. Le deseamos una feliz estadía. ` +
+                                `Le pedimos hacer buen uso de la habitación para ayudarnos a mantener un mejor servicio. ` +
+                                `Al terminar su estadía le enviaremos una breve encuesta; su opinión es muy importante para nosotros.`);
+                        }
+                        const txtIngreso = res.data.fechaEntradaFmt
+                            ? `Ingreso registrado: ${res.data.fechaEntradaFmt}`
+                            : 'La habitación ha sido ocupada.';
+                        await Swal.fire({ title: 'INGRESO EXITOSO', text: txtIngreso, icon: 'success' });
 
                         // Cerradura inteligente: el código se genera fire-and-forget en el
                         // check-in, así que reintentamos un par de veces antes de mostrarlo.
@@ -1496,8 +1714,14 @@ const RecepcionModule = {
 
                 try {
                     const res = await api.post('/recepcion/checkout', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    
+
                     if (res.data.success) {
+                        if (window.Alertas) {
+                            const hotel = (window.App && App.sedeNombre && App.sedeNombre()) || 'nuestro hotel';
+                            window.Alertas.notificar('exito',
+                                `Gracias por su visita a ${hotel}. Esperamos que su estadía haya sido excelente. ` +
+                                `En breve recibirá una encuesta; sus comentarios nos ayudan a mejorar. ¡Vuelva pronto!`);
+                        }
                         if (requiereFactura) {
                             Swal.fire({ title: 'Firmando Factura...', text: 'Conectando con el motor SRI...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                             try {

@@ -207,12 +207,20 @@
         </div>
         
         <div style="display:flex; gap:10px;" class="no-print">
+            <button class="btn-neo" style="background:#16a085 !important; color:white !important;" onclick="ActivosModule.mostrarQRLevantamiento()" title="Levantar activos desde el celular">
+                <i class="fas fa-mobile-alt"></i> LEVANTAMIENTO MÓVIL
+            </button>
+
             <button class="btn-neo btn-qr-bulk" onclick="ActivosModule.imprimirTodasLasEtiquetas()" title="Imprimir Etiquetas QR Auditales">
                 <i class="fas fa-qrcode"></i> IMPRIMIR ETIQUETAS
             </button>
             
             <button class="btn-neo btn-print" onclick="ActivosModule.imprimirReporteOficial('TODOS')" title="Imprimir Reporte de Inventario">
                 <i class="fas fa-file-invoice"></i> REPORTE OFICIAL
+            </button>
+
+            <button class="btn-neo" id="btn-depreciacion" style="background:#2f7be6 !important; color:white !important; display:none;" onclick="ActivosModule.abrirDepreciacion()" title="Depreciación mensual">
+                <i class="fas fa-chart-line"></i> DEPRECIACIÓN
             </button>
 
             <button class="btn-neo btn-save" onclick="ActivosModule.abrirModalRegistro()">
@@ -226,11 +234,6 @@
         
         <select id="filtroTipoActivo" class="input-neo" style="margin-bottom: 0; flex: 1;">
             <option value="TODOS">Todos los Tipos</option>
-            <option value="1">Vehículos</option>
-            <option value="2">Equipo Cómputo</option>
-            <option value="3">Mobiliario</option>
-            <option value="4">Maquinaria</option>
-            <option value="5">Otros</option>
         </select>
         
         <select id="filtroEstadoActivo" class="input-neo" style="margin-bottom: 0; flex: 1;">
@@ -239,7 +242,13 @@
             <option value="EN TRÁNSITO">En Tránsito</option>
             <option value="EN MANTENIMIENTO">En Mantenimiento</option>
             <option value="BAJA">Baja</option>
+            <option value="VENDIDO">Vendido</option>
         </select>
+
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:800; color:var(--hotel-blue); white-space:nowrap; cursor:pointer;">
+            <input type="checkbox" id="chkIncluirBajas" style="width:18px; height:18px;">
+            Ver dados de baja
+        </label>
     </div>
 
     <div id="grid-activos" class="productos-grid"></div>
@@ -256,21 +265,89 @@
         <div id="form-registro">
             <label class="label-hint">Nombre del Activo</label>
             <input type="text" id="nombre-input" class="input-neo" placeholder="Ej: Laptop Dell XPS">
-            
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Marca</label>
+                    <input type="text" id="marca-input" class="input-neo" placeholder="Ej: Dell">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Modelo</label>
+                    <input type="text" id="modelo-input" class="input-neo" placeholder="Ej: XPS 13 9310">
+                </div>
+            </div>
+
             <label class="label-hint">Serie o Placa</label>
             <input type="text" id="serie-input" class="input-neo" placeholder="Número de serie o código de placa">
-            
-            <label class="label-hint">Valor de Compra ($)</label>
-            <input type="number" id="valor-input" class="input-neo" placeholder="0.00" step="0.01">
-            
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Valor unitario ($)</label>
+                    <input type="number" id="valor-input" class="input-neo" placeholder="0.00" step="0.01">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Cantidad</label>
+                    <input type="number" id="cantidad-input" class="input-neo" value="1" min="1" step="1">
+                </div>
+            </div>
+
             <label class="label-hint">Tipo de Activo</label>
             <select id="tipo-input" class="input-neo">
-                <option value="1">Vehículos</option>
-                <option value="2">Equipo Cómputo</option>
-                <option value="3">Mobiliario</option>
-                <option value="4">Maquinaria</option>
-                <option value="5">Otros</option>
+                <option value="">Cargando tipos…</option>
             </select>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Estado</label>
+                    <select id="estado-input" class="input-neo">
+                        <option value="OPERATIVO">Operativo</option>
+                        <option value="EN MANTENIMIENTO">En mantenimiento</option>
+                        <option value="EN TRÁNSITO">En tránsito</option>
+                        <option value="BAJA">Baja</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Condición física</label>
+                    <select id="condicion-input" class="input-neo">
+                        <option value="BUENO">Bueno</option>
+                        <option value="REGULAR">Regular</option>
+                        <option value="MALO">Malo</option>
+                        <option value="DAÑADO">Dañado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Fecha de compra</label>
+                    <input type="date" id="fecha-input" class="input-neo">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Ubicación / Área</label>
+                    <input type="text" id="ubicacion-input" class="input-neo" placeholder="Ej: Hab 203, Bodega">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Vida útil (meses)</label>
+                    <input type="number" id="vidautil-input" class="input-neo" min="1" step="1" placeholder="por defecto del tipo">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Valor residual ($)</label>
+                    <input type="number" id="residual-input" class="input-neo" min="0" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+
+            <label class="label-hint">Responsable / Custodio</label>
+            <input type="text" id="responsable-activo-input" class="input-neo" placeholder="Quien lo tiene a cargo">
+
+            <label class="label-hint">Observación</label>
+            <textarea id="observacion-input" class="input-neo" placeholder="Detalle libre" style="min-height:70px;"></textarea>
+
+            <label class="label-hint">Foto <span style="font-weight:600; color:#7f8c8d;">(opcional)</span></label>
+            <input type="file" id="foto-input" class="input-neo" accept="image/*">
+            <div id="foto-preview" style="margin-top:8px;"></div>
         </div>
 
         <div id="form-movimiento" style="display:none;">
@@ -309,6 +386,115 @@
             <button class="btn-neo btn-save" style="flex:1; justify-content:center;" onclick="ActivosModule.ejecutarConfirmacion()">
                 <i class="fas fa-check-circle"></i> CONFIRMAR
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: DAR DE BAJA / VENDER (solo SuperAdmin) ===== -->
+<div id="modal-baja" class="modal-neo modal-hidden">
+    <div class="modal-content-neo">
+        <h3 style="text-align:center; color:var(--hotel-danger); font-weight:900; margin-bottom:20px; border-bottom:2px solid var(--hotel-danger); padding-bottom:15px; text-transform:uppercase;">
+            Dar de baja / Vender
+        </h3>
+
+        <input type="hidden" id="baja-activo-id">
+        <p id="baja-activo-nombre" style="text-align:center; font-weight:800; color:var(--hotel-blue); margin:0 0 15px;"></p>
+
+        <label class="label-hint">Motivo</label>
+        <select id="baja-motivo" class="input-neo" onchange="ActivosModule._toggleCamposVenta(this.value)">
+            <option value="VENTA">Venta</option>
+            <option value="SUBASTA">Subasta</option>
+            <option value="DONACION">Donación</option>
+            <option value="OBSOLESCENCIA">Obsolescencia</option>
+            <option value="ROBO_PERDIDA">Robo / Pérdida</option>
+            <option value="BAJA_TECNICA">Baja técnica (daño irreparable)</option>
+        </select>
+
+        <div id="baja-campos-venta">
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Valor de venta ($)</label>
+                    <input type="number" id="baja-valor" class="input-neo" step="0.01" placeholder="0.00">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Caja donde entra el dinero</label>
+                    <select id="baja-metodo" class="input-neo"></select>
+                </div>
+            </div>
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label class="label-hint">Comprador / Adjudicatario</label>
+                    <input type="text" id="baja-comprador" class="input-neo">
+                </div>
+                <div style="flex:1;">
+                    <label class="label-hint">Referencia / N° documento</label>
+                    <input type="text" id="baja-referencia" class="input-neo">
+                </div>
+            </div>
+            <p style="font-size:0.7rem; color:#7f8c8d; margin:0 0 10px;">
+                <i class="fas fa-circle-info"></i> El ingreso se asienta en <strong>Finanzas</strong> (rubro "Venta de Activos").
+            </p>
+        </div>
+
+        <label class="label-hint">Fecha</label>
+        <input type="date" id="baja-fecha" class="input-neo">
+
+        <label class="label-hint">Responsable</label>
+        <input type="text" id="baja-responsable" class="input-neo" placeholder="Quien autoriza / entrega">
+
+        <label class="label-hint">Observaciones</label>
+        <textarea id="baja-obs" class="input-neo" placeholder="Detalle del motivo"></textarea>
+
+        <label class="label-hint">Comprobante (opcional)</label>
+        <input type="file" id="baja-voucher" class="input-neo" accept="image/*,application/pdf">
+
+        <div style="display:flex; gap:20px; margin-top:20px;">
+            <button class="btn-neo" style="flex:1; justify-content:center;" onclick="ActivosModule.cerrarBaja()">CANCELAR</button>
+            <button class="btn-neo" style="flex:1; justify-content:center; background:var(--hotel-danger); color:#fff;" onclick="ActivosModule.guardarBaja()">
+                <i class="fas fa-arrow-down-up-across-line"></i> CONFIRMAR BAJA
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: DEPRECIACIÓN MENSUAL (solo SuperAdmin) ===== -->
+<div id="modal-deprec" class="modal-neo modal-hidden">
+    <div class="modal-content-neo" style="width:720px;">
+        <h3 style="text-align:center; color:var(--hotel-blue); font-weight:900; margin-bottom:20px; border-bottom:2px solid var(--hotel-gold); padding-bottom:15px; text-transform:uppercase;">
+            <i class="fas fa-chart-line"></i> Depreciación mensual
+        </h3>
+
+        <div style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap;">
+            <div>
+                <label class="label-hint">Año</label>
+                <input type="number" id="dep-anio" class="input-neo" style="width:110px;" step="1">
+            </div>
+            <div>
+                <label class="label-hint">Mes</label>
+                <select id="dep-mes" class="input-neo" style="width:150px;">
+                    <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                    <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                    <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                    <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+            </div>
+            <button class="btn-neo" style="background:#2f7be6; color:#fff;" onclick="ActivosModule._previewDep()">
+                <i class="fas fa-magnifying-glass"></i> Ver plan
+            </button>
+            <button class="btn-neo btn-save" id="dep-run-btn" disabled onclick="ActivosModule._runDep()">
+                <i class="fas fa-play"></i> Ejecutar
+            </button>
+        </div>
+
+        <p style="font-size:0.72rem; color:#7f8c8d; margin:10px 0;">
+            <i class="fas fa-circle-info"></i> Línea recta. No se puede correr dos veces el mismo mes.
+            Excluye activos dados de baja / vendidos y los totalmente depreciados.
+        </p>
+
+        <div id="dep-resultado" style="max-height:340px; overflow:auto; margin-top:10px;"></div>
+
+        <div style="text-align:right; margin-top:20px;">
+            <button class="btn-neo" onclick="ActivosModule.cerrarDeprec()">CERRAR</button>
         </div>
     </div>
 </div>

@@ -54,6 +54,9 @@ const LoginModule = {
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 
                 // ÉXITO TOTAL
+                if (window.Alertas) {
+                    window.Alertas.notificar('exito', `Bienvenido, ${response.data.user.NombreFull}`);
+                }
                 await window.Toast.fire({
                     icon: 'success',
                     title: 'ACCESO CONCEDIDO',

@@ -205,6 +205,7 @@ const CocinaMovilModule = {
         if (!window.socket) return;
 
         window.socket.on('cocina:pedido_nuevo', () => {
+            if (window.Alertas) window.Alertas.notificar('cocina', 'Nuevo pedido en cocina');
             this.cargarPedidos();
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         });
@@ -214,6 +215,7 @@ const CocinaMovilModule = {
         });
 
         window.socket.on('cocina:pedido_pos', (data) => {
+            if (window.Alertas) window.Alertas.notificar('cocina', `Nuevo pedido de room service${data && data.nombreProducto ? ': ' + data.nombreProducto : ''}`);
             this.pedidosPos.push(data);
             this.renderPos();
             if (navigator.vibrate) navigator.vibrate([300, 100, 300]);

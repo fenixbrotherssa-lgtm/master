@@ -219,15 +219,20 @@ const HabitacionesModule = {
             document.getElementById('precioDia').value = data.PrecioDia;
             document.getElementById('precioMomento').value = data.PrecioMomento;
             document.getElementById('precioPeriodo').value = data.PrecioPeriodo;
-            document.getElementById('horasMomentoHab').value = data.HorasMomento || 3; 
+            document.getElementById('horasMomentoHab').value = data.HorasMomento || 3;
             document.getElementById('observacionesHab').value = data.Observaciones || '';
+            const chkMb = document.getElementById('tieneMinibarHab');
+            if (chkMb) chkMb.checked = !!data.TieneMinibar;
+        } else {
+            const chkMb = document.getElementById('tieneMinibarHab');
+            if (chkMb) chkMb.checked = false;
         }
 
         // --- Gestión dinámica de edición según privilegios ---
         const camposGenerales = [
-            'nroHabitacion', 'pisoHab', 'tipoIdSelect', 
-            'precioDia', 'precioMomento', 'precioPeriodo', 
-            'horasMomentoHab', 'observacionesHab'
+            'nroHabitacion', 'pisoHab', 'tipoIdSelect',
+            'precioDia', 'precioMomento', 'precioPeriodo',
+            'horasMomentoHab', 'observacionesHab', 'tieneMinibarHab'
         ];
 
         // Deshabilitar los campos de configuración general si no es administrador
@@ -387,8 +392,9 @@ const HabitacionesModule = {
                     PrecioDia: document.getElementById('precioDia').value,
                     PrecioMomento: document.getElementById('precioMomento').value,
                     PrecioPeriodo: document.getElementById('precioPeriodo').value,
-                    HorasMomento: document.getElementById('horasMomentoHab').value, 
-                    Observaciones: document.getElementById('observacionesHab').value
+                    HorasMomento: document.getElementById('horasMomentoHab').value,
+                    Observaciones: document.getElementById('observacionesHab').value,
+                    TieneMinibar: document.getElementById('tieneMinibarHab') && document.getElementById('tieneMinibarHab').checked ? 1 : 0
                 };
 
                 try {

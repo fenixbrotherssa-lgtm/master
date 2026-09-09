@@ -1,4 +1,5 @@
 const api = require('./api');
+const pt = require('./printTicket');
 
 const ParqueaderoModule = {
     espacios: [],
@@ -17,6 +18,9 @@ const ParqueaderoModule = {
             const btnCrear = document.querySelector('button[onclick="ParqueaderoModule.abrirModalConfig()"]');
             if (btnCrear) btnCrear.style.display = 'none';
         }
+
+        const hostFmt = document.getElementById('pq-formato-print-host');
+        if (hostFmt) hostFmt.innerHTML = pt.selectorHTML('sel-formato-parqueadero');
 
         // 1. RENDERIZAR SELECTOR DE SEDES (LA CLAVE MULTISUCURSAL)
         this.renderSedeSelector();
@@ -218,13 +222,36 @@ const ParqueaderoModule = {
         try {
             const res = await api.post('/parqueadero/ticket/entrada', payload);
             if (res.data.success) {
-                window.Toast.fire({ icon: 'success', title: 'INGRESO REGISTRADO' });
                 this.cerrarModales();
                 await this.cargarEspacios();
+                const r = await Swal.fire({
+                    icon: 'success', title: 'INGRESO REGISTRADO',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-print"></i> IMPRIMIR TICKET',
+                    cancelButtonText: 'LISTO', confirmButtonColor: 'var(--hotel-blue)'
+                });
+                if (r.isConfirmed && res.data.ticket) this._imprimirTicketIngreso(res.data.ticket);
             }
         } catch (err) {
             Swal.fire('Error', err.response?.data?.error || 'No se pudo registrar', 'error');
         }
+    },
+
+    _imprimirTicketIngreso(t) {
+        const html = `
+            <div class="t-center">
+                <div class="t-title">${t.Sede || 'PARQUEADERO'}</div>
+                <div class="t-b" style="margin-top:6px;">TICKET DE INGRESO</div>
+            </div>
+            <hr class="t-hr">
+            <div class="t-center" style="font-size:1.6em; font-weight:bold; letter-spacing:2px;">${t.Placa}</div>
+            <hr class="t-hr">
+            <div class="t-row"><span>Ticket</span><span>#${t.TicketID}</span></div>
+            <div class="t-row"><span>Espacio</span><span>${t.CodigoEspacio || '-'}${t.Zona ? ' · ' + t.Zona : ''}</span></div>
+            <div class="t-row"><span>Ingreso</span><span>${t.FechaIngresoFmt || ''}</span></div>
+            <hr class="t-hr">
+            <div class="t-sm t-center">Conserve este ticket. Requerido para el retiro del vehículo.</div>`;
+        pt.imprimir(html, { titulo: `Ingreso ${t.Placa}` });
     },
 
     // ==========================================
@@ -343,13 +370,49 @@ const ParqueaderoModule = {
         try {
             const res = await api.post('/parqueadero/ticket/salida', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             if (res.data.success) {
-                await Swal.fire('Salida Exitosa', 'Vehículo retirado y cuentas actualizadas.', 'success');
                 this.cerrarModales();
                 await this.cargarEspacios();
+                const r = await Swal.fire({
+                    icon: 'success', title: 'SALIDA EXITOSA',
+                    text: 'Vehículo retirado y cuentas actualizadas.',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-print"></i> IMPRIMIR RECIBO',
+                    cancelButtonText: 'LISTO', confirmButtonColor: 'var(--hotel-blue)'
+                });
+                if (r.isConfirmed && res.data.recibo) this._imprimirReciboSalida(res.data.recibo);
             }
         } catch (err) {
             Swal.fire('Error', err.response?.data?.error || 'Error al procesar salida', 'error');
         }
+    },
+
+    _imprimirReciboSalida(x) {
+        const money = n => '$' + (Number(n) || 0).toFixed(2);
+        let tiempo = '';
+        const min = parseInt(x.Minutos, 10);
+        if (!isNaN(min)) {
+            const h = Math.floor(min / 60), m = min % 60;
+            tiempo = (h > 0 ? h + 'h ' : '') + m + 'min';
+        }
+        const html = `
+            <div class="t-center">
+                <div class="t-title">${x.Sede || 'PARQUEADERO'}</div>
+                <div class="t-b" style="margin-top:6px;">RECIBO DE PARQUEADERO</div>
+                <div class="t-sm">No es documento tributario</div>
+            </div>
+            <hr class="t-hr">
+            <div class="t-center" style="font-size:1.4em; font-weight:bold; letter-spacing:2px;">${x.Placa}</div>
+            <hr class="t-hr">
+            <div class="t-row"><span>Espacio</span><span>${x.CodigoEspacio || '-'}${x.Zona ? ' · ' + x.Zona : ''}</span></div>
+            <div class="t-row"><span>Ingreso</span><span>${x.IngresoFmt || ''}</span></div>
+            <div class="t-row"><span>Salida</span><span>${x.SalidaFmt || ''}</span></div>
+            ${tiempo ? `<div class="t-row"><span>Permanencia</span><span>${tiempo}</span></div>` : ''}
+            <div class="t-row"><span>Cobro</span><span>${x.TipoCobro === 'HABITACION' ? 'Cargado a habitación' : (x.MetodoPago || 'Efectivo')}</span></div>
+            <hr class="t-hr">
+            <table><tr class="t-tot"><td>TOTAL</td><td class="t-right">${money(x.TotalCobrado)}</td></tr></table>
+            <hr class="t-hr">
+            <div class="t-center t-sm">Gracias por su preferencia.</div>`;
+        pt.imprimir(html, { titulo: `Salida ${x.Placa}` });
     },
 
     // ==========================================
