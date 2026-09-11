@@ -217,14 +217,37 @@ const PersonalModule = {
                         <div style="font-size:.7rem;color:#718096;margin-top:3px">${m.FechaFmt || ''} ${m.Periodo ? '· Período: '+m.Periodo : ''}</div>
                         <div style="margin-top:4px;">${badgeCaja}</div>
                     </div>
-                    <div style="font-weight:900;font-size:1rem;color:${tipoColor[m.Tipo]||'#718096'}">
-                        ${tiposPositivos.includes(m.Tipo) ? '+' : '-'}$${parseFloat(m.Monto).toFixed(2)}
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="font-weight:900;font-size:1rem;color:${tipoColor[m.Tipo]||'#718096'}">
+                            ${tiposPositivos.includes(m.Tipo) ? '+' : '-'}$${parseFloat(m.Monto).toFixed(2)}
+                        </div>
+                        ${m.Tipo !== 'PAGO_NOMINA' ? `<button class="btn-neo btn-sm" style="color:#e74c3c" onclick="PersonalModule.eliminarMovimiento(${m.MovimientoID}, ${m.PersonalID})" title="Eliminar movimiento">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
                     </div>
                 </div>`;
             }).join('');
         } catch (_) {
             document.getElementById('ps-hist-contenido').innerHTML =
                 `<p style="color:#e74c3c;padding:20px">Error cargando historial.</p>`;
+        }
+    },
+
+    async eliminarMovimiento(movimientoId, personalId) {
+        const conf = await Swal.fire({
+            icon: 'warning', title: '¿Eliminar este movimiento?',
+            text: 'Si estaba registrado en Caja, también se elimina ese egreso. Esta acción no se puede deshacer.',
+            showCancelButton: true, confirmButtonText: 'Sí, eliminar', confirmButtonColor: '#e74c3c', cancelButtonText: 'Cancelar'
+        });
+        if (!conf.isConfirmed) return;
+        try {
+            await api.delete(`/personal/movimiento/${movimientoId}`);
+            Swal.fire({ icon: 'success', title: 'Movimiento eliminado', timer: 1500, showConfirmButton: false });
+            const nombre = this._personal.find(p => String(p.PersonalID) === String(personalId))?.NombreCompleto;
+            await this.verHistorial(personalId, nombre);
+            await this.cargarPersonal();
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: e.response?.data?.error || e.message, confirmButtonColor: '#1a365d' });
         }
     },
 
