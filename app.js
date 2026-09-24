@@ -14,12 +14,12 @@ const App = {
         try {
             const sid = localStorage.getItem('currentSedeId') || (this.user ? this.user.SedeID : null);
             if (!sid) return;
-            if (this.sedes && this.sedes.length) {
-                const s = this.sedes.find(x => String(x.SedeID) === String(sid));
-                if (s && s.NombreComercial) { this._sedeNombre = s.NombreComercial; return; }
+            if (!this.sedes || !this.sedes.length) {
+                const res = await api.get('/admin/sedes');
+                this.sedes = (res && res.data) ? res.data : [];
             }
-            const res = await api.get(`/sede/${sid}`);
-            if (res && res.data && res.data.NombreComercial) this._sedeNombre = res.data.NombreComercial;
+            const s = this.sedes.find(x => String(x.SedeID) === String(sid));
+            if (s && s.NombreComercial) this._sedeNombre = s.NombreComercial;
         } catch (e) { /* silencioso */ }
     },
 

@@ -423,7 +423,7 @@ const PersonalModule = {
             <tr>
                 <td>${n.NombreCompleto}</td>
                 <td style="font-size:.75rem;color:#718096">${n.Cargo || '—'}</td>
-                <td style="color:#27ae60;font-weight:700">$${n.SalarioBase.toFixed(2)}</td>
+                <td style="color:#27ae60;font-weight:700">$${n.SalarioBase.toFixed(2)}${n.DiasTrabajados < 30 ? `<br><span style="font-size:.65rem;font-weight:700;color:#e67e22" title="Ingresó a mitad de mes: se prorratea por días trabajados">prorrateado · ${n.DiasTrabajados}/30 días</span>` : ''}</td>
                 <td style="color:#3498db;font-weight:700">${n.Bonos > 0 ? '+$'+n.Bonos.toFixed(2) : '—'}</td>
                 <td style="color:#8e44ad;font-weight:700">${n.HorasExtra > 0 ? '+$'+n.HorasExtra.toFixed(2) : '—'}</td>
                 <td style="color:#e74c3c;font-weight:700">${n.Adelantos > 0 ? '-$'+n.Adelantos.toFixed(2) : '—'}</td>
@@ -683,7 +683,7 @@ const PersonalModule = {
 
         // Ingresos: lo que efectivamente incrementa el pago de este mes.
         const filasIngresos = [
-            ['Salario Base',                              `$${n.SalarioBase.toFixed(2)}`],
+            ['Salario Base' + (n.DiasTrabajados < 30 ? ` (prorrateado ${n.DiasTrabajados}/30 días)` : ''), `$${n.SalarioBase.toFixed(2)}`],
             n.HorasExtra > 0 ? ['(+) Horas suplementarias/extraordinarias', `$${n.HorasExtra.toFixed(2)}`] : null,
             n.Bonos      > 0 ? ['(+) Bonos / Incentivos',                   `$${n.Bonos.toFixed(2)}`]      : null,
             n.DecimoTerceroMensualizado ? ['(+) Décimo Tercero (mensualizado)', `$${n.DecimoTerceroAcumulado.toFixed(2)}`] : null,

@@ -39,6 +39,27 @@ function loadQRCodeLib() {
     });
 }
 
+/**
+ * qrcode.min.js (davidshimjs) NO detecta automáticamente el tamaño de QR necesario:
+ * si no se pasa `typeNumber` usa un tamaño fijo (4) y lanza "code length overflow"
+ * en vez de crecer, aunque el texto no quepa. Acá se reintenta con typeNumber
+ * creciente hasta que el contenido entre — así el QR conserva TODA la info
+ * (nombre completo, serie, sede, ID) en vez de tener que recortarla.
+ */
+function crearQRSeguro(container, text, opts) {
+    const { width = 100, height = 100, correctLevel } = opts || {};
+    let ultimoError = null;
+    for (let typeNumber = 4; typeNumber <= 40; typeNumber++) {
+        try {
+            container.innerHTML = '';
+            return new window.QRCode(container, { text, width, height, correctLevel, typeNumber });
+        } catch (err) {
+            ultimoError = err;
+        }
+    }
+    throw ultimoError || new Error('No se pudo generar el QR.');
+}
+
 const ActivosModule = {
     activosCache: [],
     tiposCache: [],
@@ -157,9 +178,13 @@ const ActivosModule = {
     async cargarActivos() {
         try {
             const sedeId = this.getSedeId();
-            
-            const resSede = await api.get(`/sede/${sedeId}`);
-            this.sedeActualInfo = resSede.data || { NombreComercial: "Sede Central" };
+
+            let sedes = (window.App && App.sedes && App.sedes.length) ? App.sedes : null;
+            if (!sedes) {
+                const resSedes = await api.get('/admin/sedes');
+                sedes = (resSedes && resSedes.data) ? resSedes.data : [];
+            }
+            this.sedeActualInfo = sedes.find(s => String(s.SedeID) === String(sedeId)) || { NombreComercial: "Sede Central" };
 
             const qs = this.state.incluirBajas ? '?incluirBajas=1' : '';
             const res = await api.get(`/activos/${sedeId}${qs}`);
@@ -259,12 +284,12 @@ const ActivosModule = {
             if (container && window.QRCode) {
                 container.innerHTML = '';
                 const qrText = `ACTIVO: ${a.Nombre}\nSERIE: ${a.SeriePlaca || 'S/N'}\nSEDE: ${this.sedeActualInfo.NombreComercial}\nID: ${a.ActivoID}`;
-                new window.QRCode(container, {
-                    text: qrText,
-                    width: 100, 
-                    height: 100,
-                    correctLevel: window.QRCode.CorrectLevel.H
-                });
+                try {
+                    crearQRSeguro(container, qrText, { width: 100, height: 100, correctLevel: window.QRCode.CorrectLevel.M });
+                } catch (err) {
+                    console.error(`No se pudo generar el QR del activo ${a.ActivoID}:`, err);
+                    container.innerHTML = '<span style="font-size:.65rem;color:#e74c3c;">QR no disponible</span>';
+                }
             }
         });
     },
@@ -286,13 +311,13 @@ const ActivosModule = {
         const generarQRBase64 = (texto) => {
             return new Promise((resolve) => {
                 const tempDiv = document.createElement('div');
-                new window.QRCode(tempDiv, {
-                    text: texto,
-                    width: 90,
-                    height: 90,
-                    correctLevel: window.QRCode.CorrectLevel.M
-                });
-                
+                try {
+                    crearQRSeguro(tempDiv, texto, { width: 90, height: 90, correctLevel: window.QRCode.CorrectLevel.M });
+                } catch (err) {
+                    console.error('No se pudo generar el QR para la etiqueta:', err);
+                    return resolve('');
+                }
+
                 // Extraer el Base64 del canvas generado
                 setTimeout(() => {
                     const canvas = tempDiv.querySelector('canvas');
@@ -372,11 +397,11 @@ const ActivosModule = {
         let qrBase64 = '';
         if (window.QRCode) {
             const tmp = document.createElement('div');
-            new window.QRCode(tmp, {
-                text: urlLevantamiento,
-                width: 260, height: 260,
-                correctLevel: window.QRCode.CorrectLevel.M
-            });
+            try {
+                crearQRSeguro(tmp, urlLevantamiento, { width: 260, height: 260, correctLevel: window.QRCode.CorrectLevel.M });
+            } catch (err) {
+                console.error('No se pudo generar el QR del levantamiento:', err);
+            }
             await new Promise(r => setTimeout(r, 40));
             const canvas = tmp.querySelector('canvas');
             const img = tmp.querySelector('img');
