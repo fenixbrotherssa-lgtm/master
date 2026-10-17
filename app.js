@@ -330,6 +330,8 @@ const App = {
             window.socket.off('cocina:item_listo');
             window.socket.off('cocina:pedido_nuevo');
             window.socket.off('cocina:estado_cambio');
+            window.socket.off('cerradura:evento');
+            window.socket.off('cerradura:controlador');
         }
 
         try {

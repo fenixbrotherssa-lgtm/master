@@ -1,5 +1,6 @@
 const api = require('./api');
 const { marcarBuscando } = require('./uiLoading');
+const pt  = require('./printTicket');
 
 const RecepcionModule = {
     habitacionesCache: [],
@@ -768,20 +769,45 @@ const RecepcionModule = {
     // así que reintentamos un par de veces antes de mostrarlo (o desistir en silencio
     // si la habitación no tiene cerradura vinculada).
     async mostrarCodigoAcceso(habitacionId) {
-        for (let intento = 0; intento < 4; intento++) {
-            const data = await this.consultarCodigoAcceso(habitacionId);
+        // Por radio (Z-Wave) buscar slot libre + cargar el código puede tardar
+        // varios segundos: ~30 s de espera con aviso visible.
+        let avisado = false, data = {};
+        for (let intento = 0; intento < 15; intento++) {
+            data = await this.consultarCodigoAcceso(habitacionId);
             if (!data.tieneCerradura) return; // sin cerradura instalada, no hay nada que mostrar
-            if (data.codigo) {
+            // Stick desconectado: el código quedó en cola, no tiene sentido esperar
+            if (data.codigo && data.pendiente && data.controladorEnLinea === false) break;
+            if ((!data.codigo || data.pendiente) && !avisado) {
+                avisado = true;
+                Swal.fire({ title: 'Generando código de acceso...', text: 'Enviando el código a la cerradura',
+                    allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+            }
+            if (data.codigo && !data.pendiente) {
                 await Swal.fire({
                     title: 'CÓDIGO DE ACCESO GENERADO',
-                    html: `<div style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:var(--hotel-blue);">${data.codigo}</div>`,
+                    html: `<div style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:var(--hotel-blue);">${data.codigo}</div>
+                           ${this._botonesCodigoHTML(habitacionId)}`,
                     icon: 'success',
                     confirmButtonText: 'Entendido'
                 });
                 return;
             }
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 2000));
         }
+        if (data.codigo && data.pendiente) {
+            // En cola: el backend lo envía solo en cuanto vuelva el stick / la señal
+            const motivo = data.controladorEnLinea === false
+                ? 'El controlador de cerraduras (stick USB) está desconectado.'
+                : 'La cerradura no respondió.';
+            Swal.fire({ icon: 'warning', title: 'Código pendiente de cargar',
+                html: `<div style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:var(--hotel-blue);">${data.codigo}</div>
+                       <p style="margin-top:12px;">${motivo} El código quedó en cola y se cargará automáticamente
+                       al restablecerse la conexión. <b>Hasta entonces no abre la puerta.</b></p>
+                       ${this._botonesCodigoHTML(habitacionId)}`,
+                confirmButtonText: 'Entendido' });
+        } else if (avisado) Swal.fire({ icon: 'warning', title: 'La cerradura no respondió',
+            text: 'El código no se pudo cargar todavía. Revisa la cerradura en el módulo Cerraduras.',
+            confirmButtonText: 'Entendido' });
     },
 
     // En el modal de checkout: muestra el código vigente por si hay que repetírselo
@@ -793,8 +819,79 @@ const RecepcionModule = {
         const data = await this.consultarCodigoAcceso(habitacionId);
         if (data.tieneCerradura && data.codigo) {
             document.getElementById('out-codigo-acceso').textContent = data.codigo;
+            const acc = document.getElementById('out-codigo-acciones');
+            if (acc) acc.innerHTML = `
+                <button type="button" title="Imprimir código" onclick="RecepcionModule.imprimirCodigo(${habitacionId})"
+                    style="border:none; background:#1a365d; color:#fff; border-radius:8px; padding:3px 8px; cursor:pointer; margin-left:8px;">
+                    <i class="fas fa-print"></i></button>
+                <button type="button" title="Enviar por WhatsApp" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId})"
+                    style="border:none; background:#25d366; color:#fff; border-radius:8px; padding:3px 8px; cursor:pointer; margin-left:4px;">
+                    <i class="fab fa-whatsapp"></i></button>`;
             wrap.style.display = '';
         }
+    },
+
+    // ===== CÓDIGO DE ACCESO: imprimir ticket / enviar por WhatsApp =====
+    _botonesCodigoHTML(habitacionId) {
+        const b = 'border:none; color:#fff; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:800; font-size:.78rem; margin:4px;';
+        return `<div style="margin-top:14px;">
+            <button type="button" style="${b} background:#1a365d;" onclick="RecepcionModule.imprimirCodigo(${habitacionId})">
+                <i class="fas fa-print"></i> IMPRIMIR</button>
+            <button type="button" style="${b} background:#25d366;" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId})">
+                <i class="fab fa-whatsapp"></i> ENVIAR POR WHATSAPP</button>
+        </div>`;
+    },
+
+    async imprimirCodigo(habitacionId) {
+        const d = await this.consultarCodigoAcceso(habitacionId);
+        if (!d.codigo) return window.Toast.fire({ icon: 'warning', title: 'La habitación no tiene código vigente' });
+        const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        pt.imprimir(`
+            <div class="t-center">
+                <div class="t-title">${esc(d.hotel || 'HOTEL')}</div>
+                <div class="t-sm">CÓDIGO DE ACCESO</div>
+                <hr class="t-hr">
+                <div class="t-sm">HABITACIÓN</div>
+                <div style="font-size:2em; font-weight:bold;">${esc(d.nroHabitacion)}</div>
+                ${d.huesped ? `<div class="t-sm">${esc(d.huesped)}</div>` : ''}
+                <hr class="t-hr">
+                <div class="t-sm">Su código es</div>
+                <div style="font-size:2.6em; font-weight:bold; letter-spacing:6px; margin:4px 0;">${esc(d.codigo)}</div>
+                <hr class="t-hr">
+                <div class="t-sm">Digite el código en el teclado de la cerradura para abrir.</div>
+                ${d.salidaFmt ? `<div class="t-sm">Válido hasta su salida: <b>${esc(d.salidaFmt)}</b></div>` : ''}
+                ${d.pendiente ? `<div class="t-sm t-b">* Código en proceso de activación</div>` : ''}
+                <div class="t-sm" style="margin-top:6px;">Por su seguridad, no comparta este código.</div>
+            </div>`, { titulo: `Código hab. ${d.nroHabitacion}` });
+    },
+
+    async enviarCodigoWhatsApp(habitacionId) {
+        const d = await this.consultarCodigoAcceso(habitacionId);
+        if (!d.codigo) return window.Toast.fire({ icon: 'warning', title: 'La habitación no tiene código vigente' });
+        const { value: telefono } = await Swal.fire({
+            title: 'Enviar código por WhatsApp',
+            html: `Habitación <b>${d.nroHabitacion}</b>${d.huesped ? ` — ${d.huesped}` : ''}`,
+            input: 'tel',
+            inputValue: d.telefono || '',
+            inputPlaceholder: 'Número de WhatsApp del huésped (ej. 0991234567)',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fab fa-whatsapp"></i> Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#25d366',
+            showLoaderOnConfirm: true,
+            inputValidator: v => (String(v || '').replace(/\D/g, '').length < 9) ? 'Escribe un número válido' : undefined,
+            preConfirm: async tel => {
+                try {
+                    const r = await api.post(`/cerraduras/habitacion/${habitacionId}/codigo/whatsapp`, { telefono: tel });
+                    return r.data.telefono || tel;
+                } catch (e) {
+                    Swal.showValidationMessage(e.response?.data?.error || 'No se pudo enviar el mensaje');
+                    return false;
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        });
+        if (telefono) window.Toast.fire({ icon: 'success', title: `Código enviado por WhatsApp a ${telefono}` });
     },
 
     renderFolio(hab) {
@@ -816,8 +913,15 @@ const RecepcionModule = {
         
         let htmlConsumos = `<tr><td>Alojamiento (${this.folioActual.recepcion.TipoAlquiler})</td><td class="text-right">$${totalCargos.toFixed(2)}</td></tr>`;
         
+        // Origen del cargo (VentasDetalle.Origen, mig 12) — filas viejas vienen sin origen
+        const ORIGEN = { RECEPCION: '🛎️ Recepción', MINIBAR: '🍷 Minibar', RESTAURANTE: '🍽️ Restaurante',
+                         PARQUEADERO: '🚗 Parqueadero', POS: '🛒 POS' };
         this.folioActual.consumos.forEach(c => {
-            htmlConsumos += `<tr><td>${c.Cantidad}x ${c.Producto}</td><td class="text-right">$${c.Subtotal.toFixed(2)}</td></tr>`;
+            const meta = [c.FechaRegistroFmt && `📅 ${c.FechaRegistroFmt}`, ORIGEN[c.Origen], c.CargadoPor]
+                .filter(Boolean).join(' · ');
+            htmlConsumos += `<tr><td>${c.Cantidad}x ${c.Producto}${c.EsCortesia ? ' <small>(cortesía)</small>' : ''}
+                ${meta ? `<div style="font-size:.72rem; color:#718096; margin-top:2px;">${meta}</div>` : ''}</td>
+                <td class="text-right">$${c.Subtotal.toFixed(2)}</td></tr>`;
             totalCargos += parseFloat(c.Subtotal);
         });
 
@@ -1015,7 +1119,8 @@ const RecepcionModule = {
                 CajaID: this.cajaId,
                 RecepcionID: this.folioActual.recepcion.RecepcionID,
                 carrito: this.minibarCarrito.map(c => ({ ProductoID: c.ProductoID, Cantidad: c.Cantidad, PrecioVenta: c.PrecioVenta, EsCortesia: false })),
-                pagoInmediato: null
+                pagoInmediato: null,
+                Origen: 'MINIBAR'
             });
             if (res.data.success) {
                 this.minibarCarrito = [];

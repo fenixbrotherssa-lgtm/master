@@ -73,6 +73,13 @@
     .wizard h3 { color:var(--blue); margin:0 0 6px; font-size:1.2rem; }
     .wizard-step { display:none; }
     .wizard-step.activo { display:block; }
+    .reg-lbl   { font-size:.72rem; font-weight:700; color:var(--grey); display:block; margin-bottom:4px; }
+    .reg-tabla { width:100%; border-collapse:collapse; font-size:.8rem; }
+    .reg-tabla th { text-align:left; color:var(--grey); font-size:.7rem; padding:8px; border-bottom:1px solid var(--sd); }
+    .reg-tabla td { padding:8px; border-bottom:1px solid var(--sd); }
+    .cod-fila  { display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:8px; border-radius:12px;
+                 box-shadow:inset 2px 2px 5px var(--sd), inset -2px -2px 5px var(--sl); }
+    .cod-num   { font-family:monospace; font-size:1.1rem; font-weight:900; letter-spacing:3px; color:var(--blue); }
     .step-icon { font-size:3rem; text-align:center; margin:16px 0; }
     .step-txt  { color:var(--grey); font-size:.88rem; line-height:1.6; text-align:center; margin-bottom:20px; }
     .countdown { font-size:2rem; font-weight:900; color:var(--gold); text-align:center; margin:10px 0; }
@@ -112,6 +119,12 @@
         <button class="tab-btn"        id="tab-vincular"  onclick="CerradurasModule.switchTab('vincular')">
             <i class="fas fa-link"></i> Vincular Cerradura
         </button>
+        <button class="tab-btn"        id="tab-codigos"   onclick="CerradurasModule.switchTab('codigos')">
+            <i class="fas fa-key"></i> Códigos
+        </button>
+        <button class="tab-btn"        id="tab-registro"  onclick="CerradurasModule.switchTab('registro')">
+            <i class="fas fa-history"></i> Registro de aperturas
+        </button>
     </div>
 
     <!-- TAB MONITOR -->
@@ -128,6 +141,62 @@
         </div>
     </div>
 
+    <!-- TAB CÓDIGOS (maestro + personal) -->
+    <div id="panel-codigos" style="display:none">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+            <div style="background:var(--bg);border-radius:20px;padding:24px;flex:1;min-width:280px;max-width:420px;
+                 box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl)">
+                <h4 style="margin:0 0 6px;color:var(--blue)"><i class="fas fa-crown" style="color:var(--gold)"></i> Código maestro</h4>
+                <p style="font-size:.75rem;color:var(--grey);margin:0 0 14px">
+                    Abre todas las puertas del hotel. Uno solo, para el dueño. Sus aperturas también quedan en el registro.
+                </p>
+                <div id="codigo-maestro"></div>
+            </div>
+            <div style="background:var(--bg);border-radius:20px;padding:24px;flex:2;min-width:320px;
+                 box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px;flex-wrap:wrap">
+                    <h4 style="margin:0;color:var(--blue)"><i class="fas fa-tools"></i> Personal (mantenimiento / limpieza)</h4>
+                    <button class="btn-neo btn-prim btn-sm" onclick="CerradurasModule.nuevoCodigo('PERSONAL')">
+                        <i class="fas fa-plus"></i> Agregar persona
+                    </button>
+                </div>
+                <p style="font-size:.75rem;color:var(--grey);margin:0 0 14px">
+                    Un código por persona, abre todas las habitaciones. El registro muestra quién entró, a qué hora y cuánto tiempo.
+                </p>
+                <div id="codigos-personal"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB REGISTRO DE APERTURAS -->
+    <div id="panel-registro" style="display:none">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+            <div><label class="reg-lbl">DESDE</label><input type="date" id="reg-desde" class="input-neo" style="margin:0"></div>
+            <div><label class="reg-lbl">HASTA</label><input type="date" id="reg-hasta" class="input-neo" style="margin:0"></div>
+            <div><label class="reg-lbl">QUIÉN</label>
+                <select id="reg-tipo" class="input-neo" style="margin:0">
+                    <option value="">Todos</option>
+                    <option value="PERSONAL">Personal</option>
+                    <option value="MAESTRO">Dueño (maestro)</option>
+                    <option value="HUESPED">Huéspedes</option>
+                </select>
+            </div>
+            <button class="btn-neo btn-prim" onclick="CerradurasModule.cargarRegistro()">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            <button class="btn-neo" onclick="CerradurasModule.imprimirRegistro()" title="Imprime lo que se ve, agrupado por día">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+        <div style="overflow-x:auto;background:var(--bg);border-radius:16px;padding:10px;
+             box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl)">
+            <table class="reg-tabla">
+                <thead><tr><th>Fecha y hora</th><th>Hab.</th><th>Evento</th><th>Quién</th><th>Se cerró</th><th>Tiempo dentro</th></tr></thead>
+                <tbody id="reg-body"><tr><td colspan="6" style="color:var(--grey)">Sin datos.</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- TAB VINCULAR -->
     <div id="panel-vincular" style="display:none">
         <div style="background:var(--bg);border-radius:20px;padding:24px;max-width:500px;
@@ -137,6 +206,36 @@
             <select id="sel-controlador" class="input-neo" style="margin-bottom:16px"></select>
             <label style="font-size:.78rem;font-weight:700;color:var(--grey);display:block;margin-bottom:6px">HABITACIÓN</label>
             <select id="sel-habitacion"  class="input-neo" style="margin-bottom:20px"></select>
+
+            <!-- Long Range (SmartStart) — el modo para las Kwikset HC620 LR -->
+            <div style="border-top:1px solid var(--sd);padding-top:16px;margin-bottom:20px">
+                <h5 style="margin:0 0 4px;color:var(--blue)"><i class="fas fa-broadcast-tower"></i> Long Range (recomendado)</h5>
+                <p style="font-size:.72rem;color:var(--grey);margin:0 0 10px">
+                    Escribe los <b>40 dígitos</b> de la etiqueta (8 grupos de 5, junto al QR). Luego quita y vuelve
+                    a poner las baterías de la cerradura: se une sola por Long Range, sin presionar botón.
+                </p>
+                <textarea id="inp-dsk" class="input-neo" rows="2"
+                          placeholder="12345-12435-21842-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
+                          style="margin-bottom:10px;font-family:monospace;letter-spacing:1px;resize:none"></textarea>
+                <button class="btn-neo btn-prim" style="width:100%;justify-content:center"
+                        onclick="CerradurasModule.registrarLongRange()">
+                    <i class="fas fa-broadcast-tower"></i> Registrar para Long Range
+                </button>
+                <div id="lr-lista" style="margin-top:12px"></div>
+            </div>
+
+            <!-- Por botón (malla clásica) -->
+            <h5 style="margin:0 0 10px;color:var(--blue);border-top:1px solid var(--sd);padding-top:16px">
+                <i class="fas fa-hand-pointer"></i> Por botón (malla clásica)
+            </h5>
+            <label style="font-size:.78rem;font-weight:700;color:var(--grey);display:block;margin-bottom:6px">PIN DE LA CERRADURA</label>
+            <input id="inp-pin-previo" class="input-neo" type="text" inputmode="numeric" maxlength="5"
+                   placeholder="5 primeros dígitos del DSK"
+                   style="margin-bottom:6px;letter-spacing:4px;text-align:center" />
+            <p style="font-size:.72rem;color:var(--grey);margin:0 0 20px">
+                Está en la etiqueta del DSK (bajo la tapa de baterías o en la caja), subrayado.
+                Escribirlo antes evita que la cerradura cancele mientras lo buscas.
+            </p>
             <button class="btn-neo btn-prim" style="width:100%;justify-content:center"
                     onclick="CerradurasModule.iniciarVinculacion()">
                 <i class="fas fa-wifi"></i> Iniciar Vinculación

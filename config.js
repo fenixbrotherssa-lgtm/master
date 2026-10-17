@@ -1,6 +1,6 @@
 const CONFIG = {
     ENV: 'production',
-    SERVER_ADDRESS: 'concordia.hotelgalemsecuador.com',
+    SERVER_ADDRESS: 'localhost',
     PORT: 4000, // Se mantiene referencial, el getApiUrl lo omitir� al ser dominio
 
     getApiUrl() {

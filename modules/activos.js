@@ -4,13 +4,17 @@ const api = require('./api');
  * CARGA DINÁMICA DE LIBRERÍA QR VÍA HTTP
  * Se consume directamente desde el servidor Express local.
  */
+// Subir la versión cada vez que cambie qrcode.min.js: el backend lo sirve con caché de 24 h
+// y sin esto los clientes seguirían usando la copia vieja (p. ej. la del bug de UTF-8).
+const QR_LIB_VERSION = '20261015';
+
 function loadQRCodeLib() {
     return new Promise(async (resolve) => {
         if (window.QRCode) return resolve(); 
         
         try {
             const baseUrl = api.defaults.baseURL.replace('/api', '');
-            const scriptUrl = `${baseUrl}/assets/js/qrcode.min.js`;
+            const scriptUrl = `${baseUrl}/assets/js/qrcode.min.js?v=${QR_LIB_VERSION}`;
 
             const response = await fetch(scriptUrl);
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
@@ -28,7 +32,7 @@ function loadQRCodeLib() {
             console.error("❌ Error al inyectar QR Lib vía fetch. Usando fallback...", error);
             const baseUrl = api.defaults.baseURL.replace('/api', '');
             const scriptFallback = document.createElement('script');
-            scriptFallback.src = `${baseUrl}/assets/js/qrcode.min.js`;
+            scriptFallback.src = `${baseUrl}/assets/js/qrcode.min.js?v=${QR_LIB_VERSION}`;
             scriptFallback.onload = resolve;
             scriptFallback.onerror = () => {
                 console.error("Fallo crítico: No se pudo cargar qrcode.min.js.");
@@ -312,7 +316,9 @@ const ActivosModule = {
             return new Promise((resolve) => {
                 const tempDiv = document.createElement('div');
                 try {
-                    crearQRSeguro(tempDiv, texto, { width: 90, height: 90, correctLevel: window.QRCode.CorrectLevel.M });
+                    // Se dibuja a 360 px y la etiqueta lo muestra a 90 px: impreso queda nítido
+                    // (a 90 px reales cada módulo mide 1-2 px y la cámara no lo lee en papel).
+                    crearQRSeguro(tempDiv, texto, { width: 360, height: 360, correctLevel: window.QRCode.CorrectLevel.M });
                 } catch (err) {
                     console.error('No se pudo generar el QR para la etiqueta:', err);
                     return resolve('');
