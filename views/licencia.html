@@ -1,0 +1,53 @@
+<style>
+    #seccion-licencia { padding: 30px 35px; max-width: 1100px; margin: 0 auto; }
+    #seccion-licencia .cab { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    #seccion-licencia .cab h2 { margin: 0; color: #1a365d; font-weight: 900; letter-spacing: 1px; }
+    #seccion-licencia .cab p { margin: 2px 0 0; color: #718096; font-size: .78rem; font-weight: 700; text-transform: uppercase; }
+    .lic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .lic-card { background: #e0e0e4; border-radius: 22px; padding: 24px 26px; box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff; }
+    .lic-card h3 { margin: 0 0 16px; color: #1a365d; font-size: .95rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+    .lic-fila { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .9rem; }
+    .lic-fila span { color: #718096; font-weight: 700; } .lic-fila b { color: #1a202c; text-align: right; }
+    .lic-pill { display: inline-block; padding: 5px 14px; border-radius: 999px; font-weight: 900; font-size: .78rem; letter-spacing: .5px; }
+    .lic-ok { background: #c6f6d5; color: #22543d; } .lic-warn { background: #fefcbf; color: #744210; } .lic-mal { background: #fed7d7; color: #822727; }
+    .lic-input { width: 100%; padding: 14px; border-radius: 14px; border: none; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+                 font-family: Consolas, monospace; font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #1a365d; margin: 8px 0 14px; }
+    .lic-btn { border: none; border-radius: 14px; padding: 13px 20px; font-weight: 900; cursor: pointer; background: #1a365d; color: #fff; font-size: .82rem; letter-spacing: .5px; }
+    .lic-btn.sec { background: #e0e0e4; color: #1a365d; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; }
+    .lic-btn.oro { background: #c5a059; }
+    .lic-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .lic-nota { font-size: .8rem; color: #4a5568; line-height: 1.6; margin-top: 12px; }
+    .lic-notas-ver { background: rgba(26,54,93,.06); border-radius: 12px; padding: 12px 14px; font-size: .82rem; color: #2d3748; line-height: 1.55; margin: 10px 0 14px; }
+    @media (max-width: 900px) { .lic-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div id="seccion-licencia">
+    <div class="cab">
+        <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="Regresar"><i class="fas fa-arrow-left"></i></button>
+        <div><h2><i class="fas fa-id-card"></i> LICENCIA Y ACTUALIZACIONES</h2><p>Licencia perpetua · mantenimiento anual · actualizaciones del sistema</p></div>
+    </div>
+
+    <div class="lic-grid">
+        <div class="lic-card">
+            <h3><i class="fas fa-key"></i> Licencia de este servidor</h3>
+            <div id="licEstado" style="color:#718096;">Consultando...</div>
+            <div id="licRegistro" style="margin-top:18px;">
+                <label style="font-size:.72rem; font-weight:900; color:#718096; text-transform:uppercase;">Clave de licencia</label>
+                <input id="licClave" class="lic-input" placeholder="MH-XXXX-XXXX-XXXX-XXXX" maxlength="22" autocomplete="off">
+                <button class="lic-btn" onclick="LicenciaModule.registrar()"><i class="fas fa-link"></i> REGISTRAR CLAVE</button>
+                <button class="lic-btn sec" id="licSync" onclick="LicenciaModule.sincronizar()" style="margin-left:8px;"><i class="fas fa-rotate"></i> SINCRONIZAR</button>
+                <p class="lic-nota">La clave la entrega CasRodsoft. Se activa una sola vez con internet y queda atada a este servidor.
+                   La licencia es <b>perpetua</b>: el sistema nunca se bloquea, aunque no haya internet. El <b>mantenimiento</b> anual da derecho a las actualizaciones y al soporte.</p>
+            </div>
+        </div>
+
+        <div class="lic-card">
+            <h3><i class="fas fa-cloud-arrow-down"></i> Actualizaciones</h3>
+            <div id="updEstado" style="color:#718096;">Consultando...</div>
+            <div id="updAccion" style="margin-top:14px;"></div>
+            <p class="lic-nota">La actualización se descarga de casrodsoft.com, se comprueba que sea la publicada (SHA-256) y se instala
+               sola: el servidor se detiene uno o dos minutos y vuelve. Los datos, la configuración y la licencia del hotel no se tocan.
+               Cada computadora se actualiza después, desde el aviso que le aparece al abrir el sistema.</p>
+        </div>
+    </div>
+</div>
