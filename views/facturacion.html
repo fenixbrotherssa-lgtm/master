@@ -120,7 +120,11 @@
     <div id="tabHistorial">
         <div class="tabla-container-neo">
             <label class="label-hint">Buscar por cliente o secuencial</label>
-            <input type="text" id="histFacturaBuscar" class="input-neo" placeholder="Nombre, cédula/RUC o secuencial..." onkeyup="FacturacionModule.renderHistorial()">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <input type="text" id="histFacturaBuscar" class="input-neo" style="flex:1;" placeholder="Nombre, cédula/RUC o secuencial..." onkeyup="FacturacionModule.renderHistorial()">
+                <span style="font-size:.75rem; font-weight:700; opacity:.7; white-space:nowrap;"><i class="fas fa-receipt"></i> Ticket:</span>
+                <span id="facFormatoTicket"></span>
+            </div>
             <table class="tabla-neo">
                 <thead>
                     <tr>
@@ -179,17 +183,32 @@
                     <h3 style="color: var(--hotel-blue); margin-top: 0; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; font-size: 1rem;">
                         <i class="fas fa-box"></i> Agregar Detalle
                     </h3>
+                    <label class="label-hint">Producto del inventario (opcional)</label>
+                    <input type="text" id="manProdBuscar" class="input-neo" list="manProdLista" autocomplete="off"
+                           placeholder="Escriba para buscar: nombre o código de barras" oninput="FacturacionModule.elegirProductoManual()">
+                    <datalist id="manProdLista"></datalist>
+
                     <label class="label-hint">Descripción del Servicio/Producto</label>
                     <input type="text" id="manDetDesc" class="input-neo" placeholder="Ej: Servicio de Alojamiento">
-                    
+
                     <div style="display: flex; gap: 15px;">
                         <div style="flex: 1;">
                             <label class="label-hint">Cantidad</label>
-                            <input type="number" id="manDetCant" class="input-neo" value="1" min="1">
+                            <input type="number" id="manDetCant" class="input-neo" value="1" min="0.01" step="any">
                         </div>
                         <div style="flex: 1;">
-                            <label class="label-hint">P. Unitario ($)</label>
+                            <label class="label-hint" title="Precio unitario con IVA incluido">P. Unit. c/IVA</label>
                             <input type="number" id="manDetPrecio" class="input-neo" placeholder="0.00" step="0.01">
+                        </div>
+                        <div style="flex: 1.2;">
+                            <label class="label-hint">IVA</label>
+                            <select id="manDetTarifa" class="input-neo">
+                                <option value="4">IVA vigente</option>
+                                <option value="0">IVA 0 %</option>
+                                <option value="5">IVA 5 %</option>
+                                <option value="6">No objeto de IVA</option>
+                                <option value="7">Exento de IVA</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -210,19 +229,31 @@
                                 <th>Descripción</th>
                                 <th>Cant.</th>
                                 <th>V. Unitario</th>
+                                <th>IVA</th>
                                 <th>Subtotal</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody id="tablaDetallesManual">
-                            <tr><td colspan="5" style="text-align: center; opacity: 0.5;">No hay ítems agregados</td></tr>
+                            <tr><td colspan="6" style="text-align: center; opacity: 0.5;">No hay ítems agregados</td></tr>
                         </tbody>
                     </table>
 
+                    <label style="display:flex; align-items:center; gap:10px; margin-top:14px; font-weight:700; color:var(--hotel-blue); cursor:pointer;">
+                        <input type="checkbox" id="manServicioChk" onchange="FacturacionModule.renderDetallesManual()">
+                        Agregar cargo por servicio
+                        <input type="number" id="manServicioPct" class="input-neo" value="10" min="0" max="10" step="0.5"
+                               style="width:80px; margin:0; padding:6px 8px;" oninput="FacturacionModule.renderDetallesManual()"> %
+                    </label>
+                    <div style="font-size:.72rem; opacity:.7; margin-top:4px;">Se calcula sobre el subtotal sin IVA y no lleva IVA (campo "propina" del SRI). Máximo 10 %.</div>
+
                     <div class="totales-box">
-                        <h4>Subtotal 0%: $<span id="manSubCero">0.00</span></h4>
                         <h4>Subtotal IVA: $<span id="manSubIva">0.00</span></h4>
+                        <h4>Subtotal 0%: $<span id="manSubCero">0.00</span></h4>
+                        <h4 id="manFilaCinco" style="display:none;">Subtotal 5%: $<span id="manSubCinco">0.00</span></h4>
+                        <h4 id="manFilaNoObj" style="display:none;">No objeto / exento: $<span id="manSubNoObj">0.00</span></h4>
                         <h4>IVA: $<span id="manTotalIva">0.00</span></h4>
+                        <h4 id="manFilaServicio" style="display:none;">Servicio: $<span id="manServicio">0.00</span></h4>
                         <hr style="border-color: rgba(255,255,255,0.2); margin: 10px 0;">
                         <h2>TOTAL: $<span id="manTotalGeneral">0.00</span></h2>
                     </div>
@@ -565,6 +596,9 @@
                                 </select>
                             </div>
                         </div>
+
+                        <label class="label-hint">Centro de Costo <span style="opacity:.6">(¿para qué área es la compra?)</span></label>
+                        <select id="cpCentroCosto" class="input-neo" data-centros-costo></select>
 
                         <label class="label-hint">Nro. Comprobante (Ej: 001-001-000000555)</label>
                         <input type="text" id="cpNumeroComprobante" class="input-neo" placeholder="001-001-000000555">

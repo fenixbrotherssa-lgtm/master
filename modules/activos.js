@@ -91,7 +91,7 @@ const ActivosModule = {
 
         await loadQRCodeLib();
         await this.cargarTipos();
-        if (App.isSuperAdmin()) {
+        if (require('./permisos').puede('activos', 3)) {
             this.cargarMetodosPago();
             const btnDep = document.getElementById('btn-depreciacion');
             if (btnDep) btnDep.style.display = 'flex';
@@ -223,7 +223,8 @@ const ActivosModule = {
 
         const baseUrl = api.defaults.baseURL.replace('/api', '');
 
-        const esAdmin = App.isSuperAdmin();
+        const esAdmin = require('./permisos').puede('activos', 3);   // baja, venta, reactivar
+        const puedeEditar = require('./permisos').puede('activos', 2);
 
         grid.innerHTML = activosFiltrados.map(a => {
             const esBaja = (a.Estado === 'BAJA' || a.Estado === 'VENDIDO');
@@ -269,10 +270,12 @@ const ActivosModule = {
                                     <i class="fas fa-exchange-alt"></i> REGISTRAR SALIDA
                                 </button>
                             `}
-                            ${esAdmin ? `
+                            ${puedeEditar ? `
                                 <button class="btn-neo no-print" style="justify-content:center; background:#34495e; color:white;" onclick="ActivosModule.abrirModalEdicion(${a.ActivoID})">
                                     <i class="fas fa-pen"></i> EDITAR
                                 </button>
+                            ` : ''}
+                            ${esAdmin ? `
                                 <button class="btn-neo no-print" style="justify-content:center; background:#c0392b; color:white;" onclick="ActivosModule.abrirModalBaja(${a.ActivoID})">
                                     <i class="fas fa-arrow-down-up-across-line"></i> DAR DE BAJA / VENDER
                                 </button>

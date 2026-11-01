@@ -1,0 +1,211 @@
+<style>
+    #seccion-eventos { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-eventos .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; flex-wrap: wrap; }
+    #seccion-eventos h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-eventos .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-eventos .cc-btn { padding: 10px 16px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .76rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-eventos .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-eventos .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-eventos .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-eventos .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-eventos .cc-btn.oro { background: #c5a059; color: #fff; }
+    #seccion-eventos .cc-btn.mini { padding: 6px 10px; font-size: .68rem; border-radius: 10px; }
+    #seccion-eventos input, #seccion-eventos select, #seccion-eventos textarea { padding: 9px 11px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; min-width: 0; }
+    #seccion-eventos input[type=checkbox] { box-shadow: none; padding: 0; }
+    #seccion-eventos .cc-tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    #seccion-eventos .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-eventos .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-eventos .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 18px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 18px; }
+    #seccion-eventos .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-eventos .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 12px; line-height: 1.45; }
+    #seccion-eventos table { width: 100%; border-collapse: collapse; }
+    #seccion-eventos th { text-align: left; font-size: .62rem; color: #7f8c8d; text-transform: uppercase; padding: 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-eventos td { padding: 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .78rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-eventos .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-eventos .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-eventos .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-eventos .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; white-space: nowrap; }
+    #seccion-eventos .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-eventos .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-eventos .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-eventos .b-azul { background: #d6eaf8; color: #1f618d; }
+    #seccion-eventos .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-eventos .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    #seccion-eventos .kpi { background: #e0e0e4; border-radius: 16px; padding: 13px 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-eventos .kpi .t { font-size: .6rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-eventos .kpi .v { font-size: 1.15rem; font-weight: 900; color: #1a365d; margin-top: 3px; }
+    #seccion-eventos .kpi .s { font-size: .66rem; color: #7f8c8d; }
+    #seccion-eventos .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    #seccion-eventos .campo { display: flex; flex-direction: column; gap: 5px; }
+    #seccion-eventos .campo label { font-size: .62rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-eventos .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    #seccion-eventos .grid2 { display: grid; grid-template-columns: 1fr 330px; gap: 20px; align-items: start; }
+    #seccion-eventos .cal { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+    #seccion-eventos .cal th { text-align: center; }
+    #seccion-eventos .cal th.hoy { color: #c5a059; }
+    #seccion-eventos .cal td { background: rgba(255,255,255,.35); border-radius: 10px; vertical-align: top; height: 74px; padding: 4px; border: none; cursor: pointer; }
+    #seccion-eventos .cal td.salon { background: none; font-weight: 900; color: #1a365d; font-size: .74rem; cursor: default; width: 140px; vertical-align: middle; }
+    #seccion-eventos .chip { display: block; border-radius: 8px; padding: 4px 6px; font-size: .64rem; font-weight: 800; margin-bottom: 3px; color: #fff; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #seccion-eventos .chip.COTIZACION { background: #f39c12; }
+    #seccion-eventos .chip.CONFIRMADO { background: #1a365d; }
+    #seccion-eventos .chip.REALIZADO { background: #27ae60; }
+    #seccion-eventos .totales div { display: flex; justify-content: space-between; font-size: .8rem; padding: 5px 0; border-bottom: 1px dashed rgba(0,0,0,.08); }
+    #seccion-eventos .totales .grande { font-size: 1.05rem; font-weight: 900; color: #1a365d; }
+    #seccion-eventos tr.click { cursor: pointer; }
+    #seccion-eventos tr.click:hover td { background: rgba(26,54,93,.05); }
+    #seccion-eventos .lineas input, #seccion-eventos .lineas select { padding: 6px 8px; font-size: .76rem; width: 100%; }
+    #seccion-eventos .x { background: none; border: none; color: #b03a2e; cursor: pointer; font-size: .9rem; }
+    @media (max-width: 1150px) { #seccion-eventos .grid2 { grid-template-columns: 1fr; } #seccion-eventos { padding: 16px; } }
+</style>
+
+<div id="seccion-eventos">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard', 'viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-champagne-glasses"></i> Eventos y salones</h2>
+            <p class="cc-sub">Cotización · confirmación · anticipos · menú del inventario · rentabilidad por evento</p>
+        </div>
+        <div id="sedeSelectorEventos" style="margin-left:auto;"></div>
+    </div>
+
+    <div id="ev-kpis" class="kpis"></div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="calendario" onclick="EventosModule.tab('calendario')"><i class="fas fa-calendar-week"></i> Calendario</button>
+        <button class="cc-tab" data-tab="lista" onclick="EventosModule.tab('lista')"><i class="fas fa-list"></i> Eventos</button>
+        <button class="cc-tab solo-admin" data-tab="editor" onclick="EventosModule.nuevo()"><i class="fas fa-plus"></i> Nueva cotización</button>
+        <button class="cc-tab" data-tab="salones" onclick="EventosModule.tab('salones')"><i class="fas fa-door-open"></i> Salones</button>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div class="cc-tabpanel" data-panel="calendario">
+        <div class="cc-panel">
+            <div class="barra">
+                <button class="cc-btn mini" onclick="EventosModule.semana(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="cc-btn mini" onclick="EventosModule.semana(0)">Hoy</button>
+                <button class="cc-btn mini" onclick="EventosModule.semana(1)"><i class="fas fa-chevron-right"></i></button>
+                <b id="ev-semana" style="color:#1a365d;"></b>
+                <span style="margin-left:auto;" class="muted"><span class="badge" style="background:#f39c12;color:#fff;">Cotización</span> <span class="badge" style="background:#1a365d;color:#fff;">Confirmado</span> <span class="badge" style="background:#27ae60;color:#fff;">Realizado</span></span>
+            </div>
+            <div id="ev-cal" style="overflow-x:auto;"></div>
+            <p class="muted" style="margin-top:8px;">Clic en un evento para ver su detalle; clic en un espacio libre para cotizar en ese salón y día.</p>
+        </div>
+    </div>
+
+    <!-- LISTA -->
+    <div class="cc-tabpanel" data-panel="lista" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <select id="ev-f-estado" onchange="EventosModule.cargarLista()"><option value="">Todos los estados</option><option value="COTIZACION">Cotización</option>
+                    <option value="CONFIRMADO">Confirmado</option><option value="REALIZADO">Realizado</option><option value="CANCELADO">Cancelado</option></select>
+                <input type="text" id="ev-f-buscar" placeholder="Buscar nombre, contacto, empresa o código" style="min-width:280px;" onkeydown="if(event.key==='Enter')EventosModule.cargarLista()">
+                <label class="muted" style="display:flex;gap:6px;align-items:center;font-weight:800;"><input type="checkbox" id="ev-f-prox" onchange="EventosModule.cargarLista()"> Solo próximos</label>
+                <button class="cc-btn mini primary" onclick="EventosModule.cargarLista()"><i class="fas fa-search"></i></button>
+            </div>
+            <div id="ev-lista" style="max-height:560px; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="cc-tabpanel" data-panel="editor" style="display:none;">
+        <div class="grid2">
+            <div>
+                <div class="cc-panel">
+                    <h3><i class="fas fa-file-signature"></i> <span id="ev-ed-titulo">Nueva cotización</span></h3>
+                    <div class="fila">
+                        <div class="campo" style="flex:2;min-width:220px;"><label>Nombre del evento</label><input id="ev-nombre" maxlength="150" placeholder="Boda Pérez-Andrade"></div>
+                        <div class="campo"><label>Tipo</label><select id="ev-tipo"><option value="SOCIAL">Social</option><option value="BODA">Boda</option><option value="CORPORATIVO">Corporativo</option>
+                            <option value="CONFERENCIA">Conferencia</option><option value="CUMPLEANOS">Cumpleaños</option><option value="GRADUACION">Graduación</option><option value="OTRO">Otro</option></select></div>
+                        <div class="campo" style="width:110px;"><label>Asistentes</label><input type="number" id="ev-asist" min="0" oninput="EventosModule.recalcular()"></div>
+                    </div>
+                    <div class="fila">
+                        <div class="campo" style="flex:1;min-width:180px;"><label>Contacto</label><input id="ev-contacto" maxlength="150"></div>
+                        <div class="campo" style="flex:1;min-width:160px;"><label>Empresa</label><input id="ev-empresa" maxlength="150"></div>
+                        <div class="campo" style="width:140px;"><label>Cédula / RUC</label><input id="ev-doc" maxlength="20"></div>
+                        <div class="campo" style="width:130px;"><label>Teléfono</label><input id="ev-tel" maxlength="30"></div>
+                        <div class="campo" style="flex:1;min-width:160px;"><label>Correo</label><input id="ev-correo" maxlength="150"></div>
+                    </div>
+                </div>
+                <div class="cc-panel lineas">
+                    <h3><i class="fas fa-door-open"></i> Salones y horario</h3>
+                    <p class="ayuda">Un bloque por salón y horario. El precio sale de la tarifa del salón; "Precio fijo" para un valor negociado. Dos eventos confirmados no pueden usar el mismo salón a la misma hora.</p>
+                    <table><thead><tr><th style="width:24%;">Salón</th><th>Desde</th><th>Hasta</th><th>Montaje</th><th>Tarifa</th><th class="num" style="width:110px;">Valor</th><th></th></tr></thead><tbody id="ev-bloques"></tbody></table>
+                    <button class="cc-btn mini" style="margin-top:8px;" onclick="EventosModule.agregarBloque()"><i class="fas fa-plus"></i> Bloque</button>
+                </div>
+                <div class="cc-panel lineas">
+                    <h3><i class="fas fa-utensils"></i> Menú, bebidas y servicios</h3>
+                    <p class="ayuda">Los platos y bebidas del inventario traen su costo real (receta por gramos) y salen de bodega al marcar el evento como realizado. Servicios externos (decoración, música…): escriba la descripción y su costo.</p>
+                    <table><thead><tr><th style="width:10%;">Tipo</th><th style="width:26%;">Producto / descripción</th><th>Momento</th><th class="num" style="width:80px;">Cant.</th><th class="num" style="width:90px;">P. unit.</th><th class="num" style="width:90px;">Costo u.</th><th class="num" style="width:90px;">Valor</th><th></th></tr></thead><tbody id="ev-items"></tbody></table>
+                    <button class="cc-btn mini" style="margin-top:8px;" onclick="EventosModule.agregarItem()"><i class="fas fa-plus"></i> Ítem</button>
+                </div>
+                <div class="cc-panel">
+                    <h3><i class="fas fa-clipboard-list"></i> Requerimientos y condiciones</h3>
+                    <div class="fila">
+                        <div class="campo" style="flex:1;min-width:260px;"><label>Requerimientos (montaje, audio, decoración…)</label><textarea id="ev-notas" rows="4" maxlength="2000"></textarea></div>
+                        <div class="campo" style="flex:1;min-width:260px;"><label>Condiciones (anticipo, cancelación…)</label><textarea id="ev-cond" rows="4" maxlength="1000" placeholder="Anticipo del 50 % para confirmar. Saldo hasta 3 días antes del evento."></textarea></div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="cc-panel totales" style="position:sticky; top:10px;">
+                    <h3><i class="fas fa-calculator"></i> Totales</h3>
+                    <div><span>Salones</span><b id="ev-t-sal">$0.00</b></div>
+                    <div><span>Menú y servicios</span><b id="ev-t-items">$0.00</b></div>
+                    <div><span>Descuento % <input type="number" id="ev-desc" min="0" max="100" style="width:70px;padding:4px 6px;" oninput="EventosModule.recalcular()"></span><b id="ev-t-desc">$0.00</b></div>
+                    <div class="grande"><span>TOTAL</span><span id="ev-t-total">$0.00</span></div>
+                    <div><span>Costo estimado</span><b id="ev-t-costo">$0.00</b></div>
+                    <div><span>Margen</span><b id="ev-t-margen">—</b></div>
+                    <div><span>Por persona</span><b id="ev-t-pp">—</b></div>
+                    <div class="campo" style="margin-top:12px;"><label>Válida hasta</label><input type="date" id="ev-vence"></div>
+                    <div id="ev-avisos" style="margin-top:10px;"></div>
+                    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                        <button class="cc-btn primary" onclick="EventosModule.guardar()"><i class="fas fa-save"></i> Guardar</button>
+                        <button class="cc-btn" onclick="EventosModule.tab('lista')">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETALLE -->
+    <div class="cc-tabpanel" data-panel="detalle" style="display:none;"><div id="ev-detalle"></div></div>
+
+    <!-- SALONES -->
+    <div class="cc-tabpanel" data-panel="salones" style="display:none;">
+        <div class="grid2">
+            <div class="cc-panel">
+                <h3><i class="fas fa-door-open"></i> Salones de la sede</h3>
+                <div id="ev-salones"></div>
+            </div>
+            <div class="cc-panel solo-admin">
+                <h3><i class="fas fa-pen"></i> <span id="sl-titulo">Nuevo salón</span></h3>
+                <input type="hidden" id="sl-id">
+                <div class="campo" style="margin-bottom:10px;"><label>Nombre</label><input id="sl-nombre" maxlength="100"></div>
+                <div class="campo" style="margin-bottom:10px;"><label>Descripción</label><textarea id="sl-desc" rows="2" maxlength="500"></textarea></div>
+                <div class="fila">
+                    <div class="campo" style="width:90px;"><label>Área m²</label><input type="number" id="sl-area" min="0"></div>
+                    <div class="campo" style="width:90px;"><label>Orden</label><input type="number" id="sl-orden" min="0" value="0"></div>
+                    <label class="muted" style="display:flex;gap:6px;align-items:center;font-weight:800;"><input type="checkbox" id="sl-activo" checked> Activo</label>
+                </div>
+                <p class="muted" style="margin:0 0 6px;font-weight:800;">CAPACIDAD POR MONTAJE (personas)</p>
+                <div class="fila">
+                    <div class="campo" style="width:80px;"><label>Teatro</label><input type="number" id="sl-ct" min="0"></div>
+                    <div class="campo" style="width:80px;"><label>Banquete</label><input type="number" id="sl-cb" min="0"></div>
+                    <div class="campo" style="width:80px;"><label>Escuela</label><input type="number" id="sl-ce" min="0"></div>
+                    <div class="campo" style="width:80px;"><label>Cóctel</label><input type="number" id="sl-cc" min="0"></div>
+                    <div class="campo" style="width:80px;"><label>En U</label><input type="number" id="sl-cu" min="0"></div>
+                </div>
+                <p class="muted" style="margin:0 0 6px;font-weight:800;">TARIFAS ($)</p>
+                <div class="fila">
+                    <div class="campo" style="width:100px;"><label>Por hora</label><input type="number" id="sl-ph" min="0" step="0.01"></div>
+                    <div class="campo" style="width:100px;"><label>Medio día (5 h)</label><input type="number" id="sl-pm" min="0" step="0.01"></div>
+                    <div class="campo" style="width:100px;"><label>Día</label><input type="number" id="sl-pd" min="0" step="0.01"></div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="cc-btn primary" onclick="EventosModule.guardarSalon()"><i class="fas fa-save"></i> Guardar</button>
+                    <button class="cc-btn" onclick="EventosModule.limpiarSalon()">Nuevo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

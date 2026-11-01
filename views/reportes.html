@@ -284,6 +284,7 @@
                 <div style="flex: 1;"><label class="label-hint">Cuenta / Método</label><select id="movMetodo" class="input-neo"></select></div>
             </div>
             <label class="label-hint">Rubro / Concepto Contable</label><select id="movRubro" class="input-neo" required></select>
+            <label class="label-hint">Centro de Costo <span style="opacity:.6">(vacío = el que tenga el rubro)</span></label><select id="movCentro" class="input-neo" data-centros-costo></select>
             <div style="display: flex; gap: 15px;">
                 <div style="flex: 1;"><label class="label-hint">Monto ($)</label><input type="number" id="movMonto" step="0.01" class="input-neo" required placeholder="0.00"></div>
                 <div style="flex: 1;"><label class="label-hint">Referencia</label><input type="text" id="movReferencia" class="input-neo" placeholder="Ej: No. Transf / Cheque"></div>

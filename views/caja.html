@@ -323,7 +323,7 @@
                     </div>
                     <div style="flex: 1;">
                         <label class="label-hint">Método de Pago</label>
-                        <select id="metodoMov" class="input-neo" required>
+                        <select id="metodoMov" class="input-neo" required data-metodos-pago>
                             <option value="1">EFECTIVO</option>
                             <option value="2">TRANSFERENCIA</option>
                             <option value="3">TARJETA</option>
@@ -344,6 +344,9 @@
                         <i class="fas fa-exclamation-triangle"></i> Todo egreso debe respaldarse: adjunte la foto de la factura/comprobante o, si no la tiene a mano, indique la referencia (Nro. de documento) arriba.
                     </p>
                 </div>
+
+                <label class="label-hint">Centro de Costo <span style="opacity:.6">(opcional · ¿a qué área corresponde?)</span></label>
+                <select id="centroMov" class="input-neo" data-centros-costo></select>
 
                 <label class="label-hint">Observación Detallada</label>
                 <textarea id="obsMov" class="input-neo" rows="2" required placeholder="Motivo del movimiento..."></textarea>

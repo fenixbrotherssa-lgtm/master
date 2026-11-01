@@ -61,6 +61,13 @@ api.interceptors.request.use(config => {
  * En 401: intenta renovar el access token con el refresh token antes de hacer logout.
  * Solo cierra sesión si el refresh también está expirado o no existe.
  */
+// Al vencer la sesion se borra SOLO la sesion (antes localStorage.clear() tambien borraba la IP del
+// servidor de la app movil, el formato de impresion y otras preferencias del equipo).
+const CLAVES_SESION = ['token', 'refreshToken', 'user', 'permisos', 'currentSedeId', 'hotel'];
+function cerrarSesionLocal() {
+    CLAVES_SESION.forEach(k => { try { localStorage.removeItem(k); } catch (e) { /* nada */ } });
+}
+
 let _refreshing = false;
 let _refreshQueue = [];
 
@@ -80,7 +87,7 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
 
             if (!refreshToken) {
-                localStorage.clear();
+                cerrarSesionLocal();
                 window.location.reload();
                 return Promise.reject(error);
             }
@@ -109,7 +116,7 @@ api.interceptors.response.use(
                 return api.request(config);
             } catch (refreshErr) {
                 procesarColaRefresh(null, refreshErr);
-                localStorage.clear();
+                cerrarSesionLocal();
                 window.location.reload();
                 return Promise.reject(refreshErr);
             } finally {

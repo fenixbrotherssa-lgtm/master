@@ -275,6 +275,15 @@
                             <input type="date" id="in-nacimiento" class="input-neo">
                         </div>
                     </div>
+                    <!-- Consentimiento para promociones (Fase 6): solo se registra si se le preguntó al huésped -->
+                    <div class="form-row" style="gap:18px; font-size:0.78rem; color:var(--hotel-blue); margin-top:-4px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="in-acepta-wa"> <i class="fab fa-whatsapp"></i> Acepta promociones por WhatsApp
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="in-acepta-correo"> <i class="fas fa-envelope"></i> Acepta promociones por correo
+                        </label>
+                    </div>
 
                     <hr style="opacity: 0.1; margin: 15px 0;">
                     <h4 style="color: var(--hotel-blue); margin-bottom: 10px; font-size: 0.8rem;"><i class="fas fa-users"></i> ACOMPAÑANTES</h4>
@@ -365,13 +374,14 @@
                     <div style="background: var(--hotel-blue); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
                         <small style="opacity: 0.8; font-weight: 800; font-size: 0.6rem; letter-spacing: 1px;">VALOR TOTAL A COBRAR</small>
                         <h2 id="ui-total-hospedaje" style="font-size: 2.2rem; margin: 5px 0;">$0.00</h2>
+                        <div id="ui-tarifa-nota" style="font-size: 0.68rem; font-weight: 700; opacity: 0.85;"></div>
                     </div>
 
                     <div id="seccion-pago-checkin">
                         <div class="form-row">
                             <div style="flex: 1;">
                                 <label class="label-hint">MÉTODO PAGO</label>
-                                <select id="in-metodoPago" class="input-neo">
+                                <select id="in-metodoPago" class="input-neo" data-metodos-pago>
                                     <option value="1">EFECTIVO</option>
                                     <option value="2">TRANSFERENCIA</option>
                                     <option value="3">TARJETA</option>
@@ -417,7 +427,7 @@
             <div id="pos-panel-pago-inmediato">
                 <hr style="opacity: 0.1; margin: 20px 0;">
                 <label class="label-hint">MÉTODO DE PAGO INMEDIATO</label>
-                <select id="pos-metodo-pago" class="input-neo" onchange="document.getElementById('pos-box-voucher').style.display = (this.value == '2' || this.value == '3') ? 'block' : 'none'">
+                <select id="pos-metodo-pago" class="input-neo" onchange="document.getElementById('pos-box-voucher').style.display = ((window.MetodosPago ? MetodosPago.esNoEfectivo(this.value) : (this.value == '2' || this.value == '3'))) ? 'block' : 'none'" data-metodos-pago>
                     <option value="1">EFECTIVO</option>
                     <option value="2">TRANSFERENCIA</option>
                     <option value="3">TARJETA</option>
@@ -494,7 +504,7 @@
                     <div id="section-pago-checkout" style="display: none;">
                         <hr style="opacity: 0.1; margin: 20px 0;">
                         <label class="label-hint">MÉTODO PAGO (PARA EL SALDO FINAL)</label>
-                        <select id="out-metodoPago" class="input-neo">
+                        <select id="out-metodoPago" class="input-neo" data-metodos-pago>
                             <option value="1">EFECTIVO</option>
                             <option value="2">TRANSFERENCIA</option>
                             <option value="3">TARJETA</option>

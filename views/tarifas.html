@@ -1,0 +1,199 @@
+<style>
+    #seccion-tarifas { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-tarifas .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-tarifas h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-tarifas .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-tarifas .cc-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-tarifas .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-tarifas .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-tarifas .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-tarifas .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-tarifas .cc-btn.mini { padding: 6px 10px; font-size: .7rem; border-radius: 10px; }
+    #seccion-tarifas input, #seccion-tarifas select, #seccion-tarifas textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-tarifas .cc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-tarifas .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-tarifas .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-tarifas .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-tarifas .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-tarifas .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-tarifas table { width: 100%; border-collapse: collapse; }
+    #seccion-tarifas th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-tarifas td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-tarifas td input, #seccion-tarifas td select { padding: 7px 9px; }
+    #seccion-tarifas .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-tarifas .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-tarifas .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-tarifas .tabla-scroll { max-height: 520px; overflow-y: auto; }
+    #seccion-tarifas .grid-receta { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    #seccion-tarifas .lista-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    #seccion-tarifas .lista-item:hover { background: rgba(26,54,93,.06); }
+    #seccion-tarifas .lista-item.sel { background: #1a365d; color: #fff; }
+    #seccion-tarifas .lista-item.sel .muted { color: #cbd5e1; }
+    #seccion-tarifas .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-tarifas .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; }
+    #seccion-tarifas .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-tarifas .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-tarifas .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-tarifas .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-tarifas .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    #seccion-tarifas .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-tarifas .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-tarifas .kpi .v { font-size: 1.25rem; font-weight: 900; color: #1a365d; margin-top: 4px; }
+    #seccion-tarifas .campo { display: flex; flex-direction: column; gap: 6px; }
+    #seccion-tarifas .campo label { font-size: .64rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-tarifas .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    @media (max-width: 1000px) { #seccion-tarifas .grid-receta { grid-template-columns: 1fr; } #seccion-tarifas { padding: 16px; } }
+    #seccion-tarifas .cal-wrap { overflow-x: auto; border-radius: 14px; }
+    #seccion-tarifas table.cal { border-collapse: separate; border-spacing: 4px; width: auto; }
+    #seccion-tarifas table.cal th, #seccion-tarifas table.cal td { border: none; text-align: center; padding: 6px 4px; min-width: 66px; }
+    #seccion-tarifas table.cal th.tipo, #seccion-tarifas table.cal td.tipo { position: sticky; left: 0; z-index: 2; background: #e0e0e4; text-align: left; min-width: 190px; max-width: 220px; font-size: .72rem; font-weight: 900; color: #1a365d; }
+    #seccion-tarifas table.cal th.dia { font-size: .62rem; line-height: 1.25; }
+    #seccion-tarifas table.cal th.dia.finde { color: #b03a2e; }
+    #seccion-tarifas td.ocu { font-size: .68rem; font-weight: 900; border-radius: 10px; }
+    #seccion-tarifas td.celda { border-radius: 12px; cursor: pointer; background: #eef0f2; user-select: none; }
+    #seccion-tarifas td.celda .p { font-size: .82rem; font-weight: 900; color: #1a365d; font-variant-numeric: tabular-nums; }
+    #seccion-tarifas td.celda .s { font-size: .62rem; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    #seccion-tarifas td.celda.sube { background: #fdebd0; }
+    #seccion-tarifas td.celda.baja { background: #d6eaf8; }
+    #seccion-tarifas td.celda .s.up { color: #b9770e; }
+    #seccion-tarifas td.celda .s.down { color: #2471a3; }
+    #seccion-tarifas td.celda.sel { outline: 3px solid #1a365d; }
+    #seccion-tarifas td.celda:hover { filter: brightness(.96); }
+    #seccion-tarifas .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: .68rem; color: #566573; font-weight: 700; margin: 10px 0 0; }
+    #seccion-tarifas .leyenda i.box { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -2px; margin-right: 4px; }
+    #seccion-tarifas .dias-sem label { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 800; margin-right: 8px; text-transform: none; color: #2c3e50; }
+    #seccion-tarifas tr.inactiva td { opacity: .5; }
+</style>
+
+<div id="seccion-tarifas">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard','viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-chart-line"></i> Tarifas dinámicas</h2>
+            <p class="cc-sub">El sistema sugiere según temporada, día y ocupación esperada · usted aprueba · todo queda en el historial</p>
+        </div>
+        <div id="sedeSelectorTarifas" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="calendario" onclick="TarifasModule.tab('calendario')"><i class="fas fa-calendar-days"></i> Calendario</button>
+        <button class="cc-tab" data-tab="reglas" onclick="TarifasModule.tab('reglas')"><i class="fas fa-sliders"></i> Reglas</button>
+        <button class="cc-tab" data-tab="limites" onclick="TarifasModule.tab('limites')"><i class="fas fa-arrows-up-down"></i> Límites y ajustes</button>
+        <button class="cc-tab" data-tab="historial" onclick="TarifasModule.tab('historial')"><i class="fas fa-clock-rotate-left"></i> Historial</button>
+        <button class="cc-tab" data-tab="descuentos" onclick="TarifasModule.tab('descuentos')"><i class="fas fa-tags"></i> Descuentos en recepción</button>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="calendario">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Desde</label><input type="date" id="tf-desde"></div>
+                <div class="campo"><label>Días</label><select id="tf-dias">
+                    <option value="14">14</option><option value="30" selected>30</option><option value="60">60</option><option value="90">90</option></select></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="TarifasModule.cargarCalendario()"><i class="fas fa-rotate"></i> Ver</button>
+                <span style="flex:1;"></span>
+                <button class="cc-btn ok" style="align-self:flex-end;" onclick="TarifasModule.aprobarSugerencias(false)"><i class="fas fa-check-double"></i> Aprobar todas las sugerencias</button>
+                <button class="cc-btn" style="align-self:flex-end;" onclick="TarifasModule.aprobarSugerencias(true)"><i class="fas fa-check"></i> Aprobar sugerencia de lo marcado</button>
+                <button class="cc-btn" style="align-self:flex-end;" onclick="TarifasModule.precioManual()"><i class="fas fa-pen"></i> Precio manual</button>
+                <button class="cc-btn danger" style="align-self:flex-end;" onclick="TarifasModule.volverBase()"><i class="fas fa-rotate-left"></i> Volver a base</button>
+            </div>
+            <p class="ayuda">Cada casilla es el precio por noche que hoy cobra el sistema para ese tipo (recepción, reservas, portal web y WhatsApp). Debajo, la <b>sugerencia</b> cuando es distinta. Clic marca o desmarca una casilla (o un día entero desde su encabezado); doble clic pone un precio a mano. Nada cambia hasta que usted aprueba.</p>
+            <div id="tf-resumen" class="kpis"></div>
+            <div class="cal-wrap" id="tf-cal"></div>
+            <div class="leyenda">
+                <span><i class="box" style="background:#fdebd0"></i>sobre el precio base</span>
+                <span><i class="box" style="background:#d6eaf8"></i>bajo el precio base</span>
+                <span><i class="box" style="background:#eef0f2"></i>precio base</span>
+                <span><span style="color:#b9770e;font-weight:900;">▲</span>/<span style="color:#2471a3;font-weight:900;">▼</span> sugerencia pendiente de aprobar</span>
+                <span>Ocupación esperada = la mayor entre lo reservado/ocupado y el promedio del mismo día de la semana en las últimas semanas.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="reglas" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-sliders"></i> Nueva regla / editar</h3>
+            <p class="ayuda">Las reglas que coinciden en una noche se suman (p. ej. temporada +15 % y sábado +10 % = +25 %), con el tope de "Límites y ajustes" y nunca bajo la tarifa mínima ni sobre la máxima de cada tipo. Solo producen <b>sugerencias</b>.</p>
+            <input type="hidden" id="tf-r-id">
+            <div class="fila">
+                <div class="campo" style="flex:1; min-width:200px;"><label>Nombre</label><input type="text" id="tf-r-nombre" placeholder="Feriado de Carnaval"></div>
+                <div class="campo"><label>Tipo de regla</label><select id="tf-r-tipo" onchange="TarifasModule.formRegla()">
+                    <option value="TEMPORADA">Temporada / fechas especiales</option>
+                    <option value="DIA_SEMANA">Día de la semana</option>
+                    <option value="OCUPACION">Ocupación esperada</option></select></div>
+                <div class="campo"><label>Habitación</label><select id="tf-r-tipohab"></select></div>
+                <div class="campo" style="width:120px;"><label>Ajuste %</label><input type="number" id="tf-r-pct" step="0.5" placeholder="+15 o -10"></div>
+            </div>
+            <div class="fila" id="tf-r-fechas">
+                <div class="campo"><label>Desde</label><input type="date" id="tf-r-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="tf-r-hasta"></div>
+            </div>
+            <div class="fila" id="tf-r-ocup" style="display:none;">
+                <div class="campo" style="width:140px;"><label>Ocupación desde %</label><input type="number" id="tf-r-omin" min="0" max="100"></div>
+                <div class="campo" style="width:140px;"><label>hasta %</label><input type="number" id="tf-r-omax" min="0" max="100"></div>
+            </div>
+            <div class="fila dias-sem" id="tf-r-dias">
+                <div class="campo"><label id="tf-r-dias-lbl">Solo estos días (opcional)</label>
+                    <div>
+                        <label><input type="checkbox" data-d="0"> Lun</label><label><input type="checkbox" data-d="1"> Mar</label>
+                        <label><input type="checkbox" data-d="2"> Mié</label><label><input type="checkbox" data-d="3"> Jue</label>
+                        <label><input type="checkbox" data-d="4"> Vie</label><label><input type="checkbox" data-d="5"> Sáb</label>
+                        <label><input type="checkbox" data-d="6"> Dom</label>
+                    </div>
+                </div>
+            </div>
+            <div class="fila">
+                <button class="cc-btn ok" onclick="TarifasModule.guardarRegla()"><i class="fas fa-save"></i> Guardar regla</button>
+                <button class="cc-btn" onclick="TarifasModule.limpiarRegla()"><i class="fas fa-eraser"></i> Limpiar</button>
+            </div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-list"></i> Reglas de la sede</h3>
+            <div class="tabla-scroll" id="tf-reglas"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="limites" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-arrows-up-down"></i> Piso y techo por tipo de habitación</h3>
+            <p class="ayuda">Ninguna sugerencia ni precio manual puede quedar bajo la tarifa mínima ni sobre la máxima. Use como mínimo al menos su costo por habitación ocupada (pantalla "Costo por habitación"). El precio base se cambia en Habitaciones.</p>
+            <div class="tabla-scroll" id="tf-tipos"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-gear"></i> Ajustes de las sugerencias</h3>
+            <div class="fila">
+                <div class="campo" style="width:150px;"><label>Baja máxima %</label><input type="number" id="tf-c-min" step="1" max="0" min="-90"></div>
+                <div class="campo" style="width:150px;"><label>Subida máxima %</label><input type="number" id="tf-c-max" step="1" min="0" max="300"></div>
+                <div class="campo" style="width:170px;"><label>Redondear a múltiplos de $</label><input type="number" id="tf-c-red" step="0.05" min="0" max="50"></div>
+                <div class="campo" style="width:170px;"><label>Semanas de historia</label><input type="number" id="tf-c-sem" step="1" min="1" max="26"></div>
+                <div class="campo"><label>Alquiler por momento</label>
+                    <label style="text-transform:none; font-weight:700; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="tf-c-mom"> también aplica el ajuste del día</label></div>
+                <button class="cc-btn ok" onclick="TarifasModule.guardarConfig()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="historial" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Cambios desde</label><input type="date" id="tf-h-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="tf-h-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="TarifasModule.cargarHistorial()"><i class="fas fa-rotate"></i> Ver</button>
+            </div>
+            <p class="ayuda">Cada aprobación queda aquí con quién, cuándo, el precio antes y después, y el motivo. No se puede borrar.</p>
+            <div class="tabla-scroll" id="tf-historial" style="max-height:640px;"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="descuentos" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Check-in desde</label><input type="date" id="tf-d-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="tf-d-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="TarifasModule.cargarDescuentos()"><i class="fas fa-rotate"></i> Ver</button>
+            </div>
+            <p class="ayuda">Check-ins cobrados distinto a la tarifa de lista vigente (descuento manual, precio negociado o tarifa garantizada de una reserva). Se registra desde que se instaló esta versión.</p>
+            <div id="tf-desc-kpis" class="kpis"></div>
+            <div class="tabla-scroll" id="tf-descuentos" style="max-height:640px;"></div>
+        </div>
+    </div>
+</div>

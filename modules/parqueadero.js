@@ -11,7 +11,7 @@ const ParqueaderoModule = {
         console.log("🚗 Módulo Parqueadero Iniciado...");
 
         const user = JSON.parse(localStorage.getItem('user'));
-        this._isAdmin = user && parseInt(user.RolID) === 1;
+        this._isAdmin = require('./permisos').puede('parqueadero', 3);   // permiso "Total" en Parqueadero (espacios)
 
         // Ocultar controles de administración para usuarios no admin
         if (!this._isAdmin) {
@@ -312,7 +312,7 @@ const ParqueaderoModule = {
 
         // Comprobante solo aplica a cobro externo pagado con transferencia/tarjeta
         metodoSelect.onchange = () => {
-            const requiereVoucher = !isHuesped && (metodoSelect.value === '2' || metodoSelect.value === '3');
+            const requiereVoucher = !isHuesped && ((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoSelect.value) : (metodoSelect.value == '2' || metodoSelect.value == '3')));
             boxVoucher.style.display = requiereVoucher ? 'block' : 'none';
         };
         metodoSelect.onchange();

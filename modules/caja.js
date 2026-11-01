@@ -111,16 +111,17 @@ const CajaModule = {
             
             movimientos.forEach(m => {
                 const monto = parseFloat(m.Monto);
-                const metodo = parseInt(m.MetodoID) || 1; 
+                const metodo = parseInt(m.MetodoID) || 1;
+                const grupo = m.MetodoGrupo || ({ 1: 'EFECTIVO', 2: 'TRANSFERENCIA', 3: 'TARJETA' }[metodo] || 'DIGITAL');
                 
-                if (metodo === 1) { 
+                if (grupo === 'EFECTIVO') { 
                     if (m.TipoMovimiento === 'Ingreso') inEfe += monto;
                     else outEfe += monto;
                 } 
-                else if (metodo === 2 && m.TipoMovimiento === 'Ingreso') { 
+                else if ((grupo === 'TRANSFERENCIA' || grupo === 'DIGITAL') && m.TipoMovimiento === 'Ingreso') { 
                     inTransf += monto;
                 }
-                else if (metodo === 3 && m.TipoMovimiento === 'Ingreso') { 
+                else if (grupo === 'TARJETA' && m.TipoMovimiento === 'Ingreso') { 
                     inTarjeta += monto;
                 }
             });
@@ -217,7 +218,7 @@ const CajaModule = {
         if(!metodoSelect || !tipoSelect || !fileContainer) return;
 
         const esEgreso = tipoSelect.value === 'Egreso';
-        const esNoEfectivo = metodoSelect.value === '2' || metodoSelect.value === '3';
+        const esNoEfectivo = (window.MetodosPago ? MetodosPago.esNoEfectivo(metodoSelect.value) : (metodoSelect.value == '2' || metodoSelect.value == '3'));
 
         if(esEgreso || esNoEfectivo) {
             fileContainer.style.display = 'block';
@@ -241,13 +242,14 @@ const CajaModule = {
         res.data.forEach(m => {
             const monto = parseFloat(m.Monto);
             const metodo = parseInt(m.MetodoID) || 1;
+            const grupo = m.MetodoGrupo || ({ 1: 'EFECTIVO', 2: 'TRANSFERENCIA', 3: 'TARJETA' }[metodo] || 'DIGITAL');
             
-            if (metodo === 1) {
+            if (grupo === 'EFECTIVO') {
                 if (m.TipoMovimiento === 'Ingreso') inEfe += monto;
                 else outEfe += monto;
             } 
-            else if (metodo === 2 && m.TipoMovimiento === 'Ingreso') inTransf += monto;
-            else if (metodo === 3 && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
+            else if ((grupo === 'TRANSFERENCIA' || grupo === 'DIGITAL') && m.TipoMovimiento === 'Ingreso') inTransf += monto;
+            else if (grupo === 'TARJETA' && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
         });
 
         // EL SALDO ESPERADO TOTAL AHORA ES GLOBAL (EFECTIVO + TRANSF + TARJ)
@@ -1032,6 +1034,8 @@ const CajaModule = {
                     formData.append('monto', document.getElementById('montoMov').value);
                     formData.append('ref', refVal);
                     formData.append('obs', document.getElementById('obsMov').value);
+                    const ccSel = document.getElementById('centroMov');
+                    if (ccSel && ccSel.value) formData.append('centroCostoId', ccSel.value);
 
                     if (tieneVoucher) {
                         formData.append('voucher', fileInput.files[0]);

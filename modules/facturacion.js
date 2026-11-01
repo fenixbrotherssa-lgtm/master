@@ -3,18 +3,27 @@ const NotasCreditoModule = require('./notascredito');
 const NotasDebitoModule = require('./notasdebito');
 const RetencionesModule = require('./retenciones');
 const { marcarBuscando } = require('./uiLoading');
+const pt = require('./printTicket');
+
+// Tarifas SRI (codigoPorcentaje) — mismas que Backend/services/facturaLineas.js
+const TARIFAS_IVA = { '4': 'IVA', '0': '0%', '5': '5%', '6': 'No obj.', '7': 'Exento' };
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const FacturacionModule = {
     comprobantes: [],
     certificadoActivo: null,
     detallesManuales: [],
+    productosManual: [],
 
     async init() {
         console.log("📡 Módulo de Facturación Electrónica SRI Iniciado...");
-        
+
         this.renderSedeSelector();
         await this.cargarCertificadoSede();
         await this.cargarHistorial();
+        this.cargarProductosManual();
+        const selFmt = document.getElementById('facFormatoTicket');
+        if (selFmt) selFmt.innerHTML = pt.selectorHTML('fac-formato-ticket');
         
         this.setupEventListeners();
         this.verificarPermisosConfig();
@@ -183,28 +192,66 @@ const FacturacionModule = {
         }
     },
 
+    // Productos de la sede para la factura manual (solo arma la factura: no descarga inventario).
+    async cargarProductosManual() {
+        const lista = document.getElementById('manProdLista');
+        if (!lista) return;
+        try {
+            const res = await api.get(`/inventario/sede/${this.getSedeId()}`);
+            this.productosManual = (res.data || []).filter(p => p.TipoItem !== 'INSUMO' && p.TipoItem !== 'PREPARACION');
+            lista.innerHTML = this.productosManual.map(p =>
+                `<option value="${esc(p.Nombre)}">${esc([p.CodigoBarras, `$${Number(p.PrecioVenta || 0).toFixed(2)}`, TARIFAS_IVA[p.TarifaIVA || '4']].filter(Boolean).join(' · '))}</option>`).join('');
+        } catch (e) {
+            this.productosManual = [];
+        }
+    },
+
+    elegirProductoManual() {
+        const txt = (document.getElementById('manProdBuscar').value || '').trim().toLowerCase();
+        const p = txt && this.productosManual.find(x => x.Nombre.toLowerCase() === txt || (x.CodigoBarras && x.CodigoBarras.toLowerCase() === txt));
+        this.productoElegido = p || null;
+        if (!p) return;
+        document.getElementById('manDetDesc').value = p.Nombre;
+        document.getElementById('manDetPrecio').value = Number(p.PrecioVenta || 0).toFixed(2);
+        document.getElementById('manDetTarifa').value = p.TarifaIVA || '4';
+        document.getElementById('manDetCant').focus();
+    },
+
     agregarDetalleManual() {
         const desc = document.getElementById('manDetDesc').value.trim();
         const cant = parseFloat(document.getElementById('manDetCant').value);
         const precio = parseFloat(document.getElementById('manDetPrecio').value);
+        const tarifa = document.getElementById('manDetTarifa')?.value || '4';
 
         if (!desc || isNaN(cant) || cant <= 0 || isNaN(precio) || precio < 0) {
             return Swal.fire('Error', 'Ingrese una descripción, cantidad válida y precio unitario.', 'warning');
         }
 
+        const p = this.productoElegido && this.productoElegido.Nombre === desc ? this.productoElegido : null;
         this.detallesManuales.push({
-            Codigo: 'MAN001',
+            Codigo: p ? String(p.CodigoBarras || p.ProductoID) : 'MAN001',
+            ProductoID: p ? p.ProductoID : null,
             Descripcion: desc,
             Cantidad: cant,
-            PrecioUnitario: precio
+            PrecioUnitario: precio,
+            Tarifa: tarifa
         });
 
+        document.getElementById('manProdBuscar').value = '';
+        this.productoElegido = null;
         document.getElementById('manDetDesc').value = '';
         document.getElementById('manDetCant').value = '1';
         document.getElementById('manDetPrecio').value = '';
-        document.getElementById('manDetDesc').focus();
+        document.getElementById('manDetTarifa').value = '4';
+        document.getElementById('manProdBuscar').focus();
 
         this.renderDetallesManual();
+    },
+
+    servicioPctManual() {
+        if (!document.getElementById('manServicioChk')?.checked) return 0;
+        const v = parseFloat(document.getElementById('manServicioPct').value);
+        return isFinite(v) ? Math.min(10, Math.max(0, v)) : 0;
     },
 
     removerDetalleManual(index) {
@@ -216,28 +263,30 @@ const FacturacionModule = {
         const tbody = document.getElementById('tablaDetallesManual');
         if (!tbody) return;
 
-        if (this.detallesManuales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; opacity: 0.5;">No hay ítems agregados</td></tr>';
-            document.getElementById('manSubIva').textContent = '0.00';
-            document.getElementById('manTotalIva').textContent = '0.00';
-            document.getElementById('manTotalGeneral').textContent = '0.00';
-            return;
-        }
+        const poner = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v.toFixed(2); };
+        const mostrar = (id, si) => { const el = document.getElementById(id); if (el) el.style.display = si ? '' : 'none'; };
 
+        // Vista previa: el servidor recalcula todo con el IVA real de la sede al emitir.
         const PCT_IVA = parseFloat(localStorage.getItem('sede_iva_pct') || '15');
-        const FACTOR  = 1 + PCT_IVA / 100;   
-
-        let totalConIva  = 0;   
+        const pctDe = t => t === '4' ? PCT_IVA : (t === '5' ? 5 : 0);
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const base = { '4': 0, '0': 0, '5': 0, otros: 0 };
+        let iva = 0;
         let html = '';
 
         this.detallesManuales.forEach((item, idx) => {
-            const lineaConIva = item.Cantidad * item.PrecioUnitario;  
-            totalConIva += lineaConIva;
+            const lineaConIva = item.Cantidad * item.PrecioUnitario;
+            const t = item.Tarifa || '4';
+            const pct = pctDe(t);
+            const b = r2(lineaConIva / (1 + pct / 100));
+            iva += r2(lineaConIva - b);
+            base[t === '6' || t === '7' ? 'otros' : t] += b;
             html += `
                 <tr>
-                    <td>${item.Descripcion}</td>
+                    <td>${esc(item.Descripcion)}</td>
                     <td>${item.Cantidad}</td>
                     <td>$${item.PrecioUnitario.toFixed(2)}</td>
+                    <td><small style="font-weight:800; color:${t === '4' ? 'var(--hotel-blue)' : '#c05621'};">${TARIFAS_IVA[t]}</small></td>
                     <td>$${lineaConIva.toFixed(2)}</td>
                     <td>
                         <button class="btn-neo btn-danger" style="padding: 5px 10px;" onclick="FacturacionModule.removerDetalleManual(${idx})">
@@ -248,14 +297,21 @@ const FacturacionModule = {
             `;
         });
 
-        tbody.innerHTML = html;
+        tbody.innerHTML = html || '<tr><td colspan="6" style="text-align: center; opacity: 0.5;">No hay ítems agregados</td></tr>';
 
-        const baseImponible = totalConIva / FACTOR;
-        const iva           = totalConIva - baseImponible;
-
-        document.getElementById('manSubIva').textContent = baseImponible.toFixed(2);
-        document.getElementById('manTotalIva').textContent = iva.toFixed(2);
-        document.getElementById('manTotalGeneral').textContent = totalConIva.toFixed(2);
+        const subtotal = r2(base['4'] + base['0'] + base['5'] + base.otros);
+        const servicio = r2(subtotal * this.servicioPctManual() / 100);
+        iva = r2(iva);
+        poner('manSubIva', base['4']);
+        poner('manSubCero', base['0']);
+        poner('manSubCinco', base['5']);
+        poner('manSubNoObj', base.otros);
+        poner('manTotalIva', iva);
+        poner('manServicio', servicio);
+        mostrar('manFilaCinco', base['5'] > 0);
+        mostrar('manFilaNoObj', base.otros > 0);
+        mostrar('manFilaServicio', servicio > 0);
+        poner('manTotalGeneral', r2(subtotal + iva + servicio));
     },
 
     // ==========================================
@@ -316,7 +372,8 @@ const FacturacionModule = {
             SedeID: this.getSedeId(),
             FormaPago: formaPago,
             Cliente: { Documento: doc, NombreFull: nom, Correo: correo, Telefono: telefono, Direccion: direccion },
-            Detalles: this.detallesManuales
+            Detalles: this.detallesManuales,
+            ServicioPct: this.servicioPctManual()
         };
 
         try {
@@ -325,14 +382,24 @@ const FacturacionModule = {
             const res = await api.post('/facturacion/documento/emitir-manual', payload);
 
             if (res.data.success) {
-                await Swal.fire({ title: '¡FACTURA EMITIDA!', text: `SRI: ${res.data.estadoSRI} | Acceso: ${res.data.claveAcceso}`, icon: 'success', confirmButtonColor: 'var(--hotel-blue)' });
-                
+                const imp = await Swal.fire({ title: '¡FACTURA EMITIDA!', icon: 'success',
+                    html: `SRI: <b>${esc(res.data.estadoSRI)}</b> · Total <b>$${Number(res.data.total || 0).toFixed(2)}</b><br><small style="word-break:break-all;">${esc(res.data.claveAcceso)}</small>
+                           <div style="margin-top:14px;">¿Imprimir? ${pt.selectorHTML('fac-formato-emitida')}</div>`,
+                    showCancelButton: true, confirmButtonText: '<i class="fas fa-print"></i> Imprimir', cancelButtonText: 'Listo',
+                    confirmButtonColor: 'var(--hotel-blue)' });
+                if (imp.isConfirmed && res.data.facturaId) {
+                    if (pt.getFormato() === 'a4') await this.imprimirFactura(res.data.facturaId, true);
+                    else await this.imprimirTicket(res.data.facturaId);
+                }
+
                 document.getElementById('manDocCliente').value = '';
                 document.getElementById('manNomCliente').value = '';
                 document.getElementById('manCorreoCliente').value = '';
                 document.getElementById('manTelCliente').value = '';
                 document.getElementById('manDirCliente').value = '';
                 this.detallesManuales = [];
+                const chk = document.getElementById('manServicioChk');
+                if (chk) chk.checked = false;
                 this.renderDetallesManual();
                 
                 await this.cargarHistorial();
@@ -429,6 +496,9 @@ const FacturacionModule = {
                             <button class="btn-neo" style="padding:8px 12px; color:#2c3e50;" onclick="FacturacionModule.imprimirFactura('${f.FacturaID}')" title="Imprimir PDF (RIDE)">
                                 <i class="fas fa-print"></i>
                             </button>
+                            <button class="btn-neo" style="padding:8px 12px; color:#2f855a;" onclick="FacturacionModule.imprimirTicket('${f.FacturaID}')" title="Ticket en impresora térmica (58/80 mm)">
+                                <i class="fas fa-receipt"></i>
+                            </button>
                             <button class="btn-neo" style="padding:8px 12px; color:#3498db;" onclick="FacturacionModule.enviarCorreo('${f.FacturaID}')" title="Enviar por Correo">
                                 <i class="fas fa-envelope"></i>
                             </button>
@@ -465,13 +535,13 @@ const FacturacionModule = {
         }
     },
 
-    async imprimirFactura(id) {
+    async imprimirFactura(id, recienEmitida) {
         const factura = this.comprobantes.find(f => f.FacturaID == id);
-        if (!factura) return;
-        
+        if (!factura && !recienEmitida) return;
+
         Swal.fire({
             title: 'Generando RIDE...',
-            text: `Construyendo PDF SRI para la factura ${factura.Secuencial}...`,
+            text: `Construyendo PDF SRI${factura ? ` para la factura ${factura.Secuencial}` : ''}...`,
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
@@ -486,6 +556,63 @@ const FacturacionModule = {
         } catch (err) {
             Swal.fire('Error', 'No se pudo generar el documento PDF en el servidor', 'error');
         }
+    },
+
+    // Ticket de la factura para impresora térmica (58/80 mm) o A4, con los datos del XML enviado al SRI.
+    async imprimirTicket(id) {
+        let d;
+        try {
+            d = (await api.get(`/facturacion/documento/ticket/${id}`)).data;
+        } catch (e) {
+            return Swal.fire('Error', e.response?.data?.error || 'No se pudo leer la factura', 'error');
+        }
+        const $ = n => `$${Number(n || 0).toFixed(2)}`;
+        const fila = (l, v, cls = '') => `<div class="t-row ${cls}"><span>${l}</span><span>${v}</span></div>`;
+        const s = d.subtotales || {};
+        const pctGrav = s.tarifaGravado != null ? `${Math.round(s.tarifaGravado)}%` : 'IVA';
+        const lineas = (d.detalles || []).map(x => `
+            <div>${esc(x.descripcion)}${x.tarifa && x.tarifa !== '4' && x.tarifa !== '2' ? ` <span class="t-sm">(${esc(TARIFAS_IVA[x.tarifa] || x.tarifa)})</span>` : ''}</div>
+            ${fila(`<span class="t-sm">${x.cantidad} x ${$(x.precioUnitario)}</span>`, $(x.total))}`).join('');
+        const html = `
+            <div class="t-center">
+                <div class="t-title">${esc(d.nombreComercial || d.razonSocial)}</div>
+                ${d.nombreComercial && d.nombreComercial !== d.razonSocial ? `<div class="t-sm">${esc(d.razonSocial)}</div>` : ''}
+                <div class="t-sm">RUC ${esc(d.ruc)}</div>
+                <div class="t-sm">${esc(d.dirMatriz)}</div>
+                ${d.telefonoSede ? `<div class="t-sm">Tel. ${esc(d.telefonoSede)}</div>` : ''}
+                <div class="t-sm">Obligado a llevar contabilidad: ${esc(d.obligado)}</div>
+                ${d.rimpe ? `<div class="t-sm">${esc(d.rimpe)}</div>` : ''}
+            </div>
+            <hr class="t-hr">
+            <div class="t-center t-b">FACTURA ${esc(d.numero)}</div>
+            ${fila('Fecha:', esc(d.fechaHora || d.fechaEmision))}
+            ${fila('Ambiente:', esc(d.ambiente))}
+            <div class="t-sm">Clave de acceso / autorización:</div>
+            <div class="t-sm" style="word-break:break-all;">${esc(d.autorizacion || d.claveAcceso)}</div>
+            ${d.estadoSRI !== 'AUTORIZADO' ? `<div class="t-sm t-b">Estado SRI: ${esc(d.estadoSRI)} (pendiente de autorización)</div>` : ''}
+            <hr class="t-hr">
+            <div><span class="t-b">Cliente:</span> ${esc(d.cliente.nombre)}</div>
+            <div class="t-sm">CI/RUC: ${esc(d.cliente.identificacion)}</div>
+            ${d.cliente.direccion ? `<div class="t-sm">${esc(d.cliente.direccion)}</div>` : ''}
+            <hr class="t-hr">
+            ${lineas}
+            <hr class="t-hr">
+            ${fila(`Subtotal ${pctGrav}`, $(s.gravado))}
+            ${s.cero ? fila('Subtotal 0%', $(s.cero)) : ''}
+            ${s.cinco ? fila('Subtotal 5%', $(s.cinco)) : ''}
+            ${s.noObjeto ? fila('No objeto de IVA', $(s.noObjeto)) : ''}
+            ${s.exento ? fila('Exento de IVA', $(s.exento)) : ''}
+            ${fila('Subtotal sin impuestos', $(d.subtotal))}
+            ${d.descuento ? fila('Descuento', $(d.descuento)) : ''}
+            ${fila(`IVA ${pctGrav}`, $(d.iva))}
+            ${d.servicio ? fila('Servicio', $(d.servicio)) : ''}
+            <hr class="t-hr">
+            ${fila('TOTAL', $(d.total), 't-b')}
+            <div class="t-sm">Forma de pago: ${esc(d.formaPago)}</div>
+            <hr class="t-hr">
+            <div class="t-center t-sm">Documento electrónico. Consúltelo en srienlinea.sri.gob.ec con la clave de acceso.</div>
+            <div class="t-center t-sm">¡Gracias por su visita!</div>`;
+        pt.imprimir(html, { titulo: `Factura ${d.numero}` });
     },
 
     enviarCorreo(id) {

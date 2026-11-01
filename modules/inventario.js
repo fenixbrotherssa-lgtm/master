@@ -1,4 +1,5 @@
 const api = require('./api');
+const Unidades = require('./unidades');
 
 const InventarioModule = {
     productos: [],
@@ -18,6 +19,10 @@ const InventarioModule = {
         this.initForm();
         this.initFormCategoria();
         this.initFiltrosListeners();
+        ['unidadBaseProd', 'unidadCompraProd'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(id === 'unidadCompraProd' ? 'input' : 'change', () => this.ayudaUnidades());
+        });
         this.setupSocket();
     },
 
@@ -39,6 +44,17 @@ const InventarioModule = {
     },
 
     // --- LÓGICA DE UI ---
+    // Si la unidad de compra es estándar (KG, LB, L…) el contenido se calcula solo.
+    ayudaUnidades() {
+        const base = document.getElementById('unidadBaseProd')?.value || 'UND';
+        const uc = (document.getElementById('unidadCompraProd')?.value || '').trim().toUpperCase();
+        const fac = document.getElementById('factorProd');
+        const lbl = document.getElementById('lblFactorProd');
+        if (lbl) lbl.textContent = `Contenido (${Unidades.NOMBRE_BASE[base]})`;
+        const std = (Unidades.COMPATIBLES[base] || []).find(x => x[0] === uc);
+        if (std && fac) { fac.value = std[2]; fac.readOnly = true; } else if (fac) fac.readOnly = false;
+    },
+
     toggleStockFields() {
         const container = document.getElementById('contenedorStock');
         if (!container) return;
@@ -185,7 +201,8 @@ const InventarioModule = {
         const productosFiltrados = this.productos.filter(p => {
             const matchBusqueda = p.Nombre.toLowerCase().includes(this.state.busqueda.toLowerCase());
             const matchCat = (this.state.categoria === 'TODAS' || p.CategoriaID == this.state.categoria);
-            const matchTipo = (this.state.tipo === 'TODOS' || p.TipoItem === this.state.tipo);
+            const matchTipo = (this.state.tipo === 'TODOS' || p.TipoItem === this.state.tipo
+                               || (this.state.tipo === 'RECETA' && p.EsPlatoReceta == 1));
             return matchBusqueda && matchCat && matchTipo;
         });
 
@@ -196,39 +213,55 @@ const InventarioModule = {
 
         // 2. Renderizado de Tarjetas
         grid.innerHTML = productosFiltrados.map(p => {
-            const stockActual = parseInt(p.StockActual) || 0;
-            const stockMinimo = parseInt(p.StockMinimo) || 0;
-            
-            // Evaluamos estado crítico de stock para TODO tipo de ítem
-            const esCritico = (stockActual <= stockMinimo);
+            const stockActual = Number(p.StockActual) || 0;
+            const esReceta = p.EsPlatoReceta == 1;
 
-            // Etiqueta visual para distinguir si es servicio o producto
-            const iconTipo = p.TipoItem === 'SERVICIO' ? '<i class="fas fa-briefcase"></i> SERV | ' : '<i class="fas fa-box"></i> ';
+            // Crítico: plato con receta sin porciones posibles, o stock bajo el mínimo
+            const esCritico = p.Alerta == 1;
+
+            // Etiqueta visual por tipo de ítem
+            const iconTipo = p.TipoItem === 'SERVICIO' ? '<i class="fas fa-briefcase"></i> SERV | '
+                : p.TipoItem === 'INSUMO' ? '<i class="fas fa-seedling"></i> INSUMO | '
+                : p.TipoItem === 'PREPARACION' ? '<i class="fas fa-blender"></i> PREP. | '
+                : esReceta ? '<i class="fas fa-utensils"></i> ' : '<i class="fas fa-box"></i> ';
+            const stockTxt = esReceta ? `ALCANZA: ${stockActual} porc.` : `STOCK: ${Unidades.fmt(stockActual, p.UnidadBase)}`;
+            const costoTxt = esReceta
+                ? `Costo por porción $${Number(p.CostoPorcion || 0).toFixed(2)}`
+                : (p.TipoItem !== 'SERVICIO' && Number(p.CostoPromedio) > 0 ? `Costo prom. ${Unidades.fmtCosto(p.CostoPromedio, p.UnidadBase)}` : '');
+            const llevaReceta = p.TipoItem === 'VENTA' || p.TipoItem === 'PREPARACION';
 
             return `
             <div class="prod-card" style="${esCritico ? 'border: 2px solid var(--hotel-danger);' : ''}">
                 <div class="stock-badge" style="color: ${esCritico ? 'var(--hotel-danger)' : '#1a365d'}">
-                    ${iconTipo} STOCK: ${stockActual}
-                    ${esCritico ? '<br><small style="font-weight:900;">BAJO MÍNIMO</small>' : ''}
+                    ${iconTipo} ${stockTxt}
+                    ${esCritico ? `<br><small style="font-weight:900;">${esReceta ? 'SIN INSUMOS' : 'BAJO MÍNIMO'}</small>` : ''}
                 </div>
                 
                 <h4 style="margin: 10px 0; font-weight: 800; color: #1a365d;">${p.Nombre}</h4>
                 <p style="font-size:0.7rem; color:#7f8c8d; margin-bottom:10px; text-transform: uppercase;">${p.CategoriaNombre || 'Sin Categoría'}</p>
                 <span class="price-tag">$${parseFloat(p.PrecioVenta).toFixed(2)}</span>
+                ${costoTxt ? `<p style="font-size:0.68rem; color:#4a5568; margin:6px 0 0;">${costoTxt}</p>` : ''}
                 
                 <div style="margin-top:15px; display:flex; flex-direction:column; gap:5px;">
-                    <button class="btn-neo" style="width:100%; justify-content:center;" onclick="InventarioModule.editarProducto(${p.ProductoID})">
-                        <i class="fas fa-edit"></i> EDITAR FICHA
-                    </button>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-neo" style="flex:1; min-width:0; justify-content:center; padding:10px 6px;" onclick="InventarioModule.editarProducto(${p.ProductoID})">
+                            <i class="fas fa-edit"></i> FICHA
+                        </button>
+                        ${llevaReceta ? `<button class="btn-neo" style="flex:1; min-width:0; justify-content:center; padding:10px 6px;" title="Receta por gramos y costo" onclick="InventarioModule.abrirReceta(${p.ProductoID})">
+                            <i class="fas fa-utensils"></i> RECETA</button>` : ''}
+                        <button class="btn-neo" style="flex:0 0 auto; padding:10px 12px;" title="Kardex valorizado" onclick="InventarioModule.abrirKardex(${p.ProductoID})">
+                            <i class="fas fa-list-ol"></i>
+                        </button>
+                    </div>
 
                     <div style="display:flex; gap:5px;">
-                        <button class="btn-neo" style="flex:1" onclick="InventarioModule.abrirModalMovimiento(${p.ProductoID}, 'INGRESO')">
+                        ${esReceta ? '' : `<button class="btn-neo" style="flex:1; min-width:0; justify-content:center; padding:10px 6px;" onclick="InventarioModule.abrirModalMovimiento(${p.ProductoID}, 'INGRESO')">
                             <i class="fas fa-plus"></i> Ingreso
                         </button>
-                        <button class="btn-neo" style="flex:1" onclick="InventarioModule.abrirModalMovimiento(${p.ProductoID}, 'AJUSTE')">
+                        <button class="btn-neo" style="flex:1; min-width:0; justify-content:center; padding:10px 6px;" onclick="InventarioModule.abrirModalMovimiento(${p.ProductoID}, 'AJUSTE')">
                             <i class="fas fa-tools"></i> Ajuste
-                        </button>
-                        <button class="btn-neo" style="flex:0 0 auto; color:#e74c3c;" title="Eliminar" onclick="InventarioModule.eliminarProducto(${p.ProductoID})">
+                        </button>`}
+                        <button class="btn-neo" style="flex:0 0 auto; padding:10px 12px; color:#e74c3c; ${esReceta ? 'margin-left:auto;' : ''}" title="Eliminar" onclick="InventarioModule.eliminarProducto(${p.ProductoID})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -238,46 +271,71 @@ const InventarioModule = {
         }).join('');
     },
 
+    // Abre Cocina y Costos directo en la receta / el kardex de este producto.
+    abrirReceta(id) { window.__costosAbrir = { tipo: 'receta', id }; App.renderView('costos', 'viewport'); },
+    abrirKardex(id) { window.__costosAbrir = { tipo: 'kardex', id }; App.renderView('costos', 'viewport'); },
+
     // --- GESTIÓN DE MOVIMIENTOS ---
+    // Ingreso: cantidad en la unidad que elija (la de compra o la base) + costo por esa unidad,
+    // así el kardex recalcula el costo promedio. Ajuste: salida con motivo (queda auditada).
     async abrirModalMovimiento(id, tipo) {
+        const p = this.productos.find(x => x.ProductoID === id) || {};
+        if (p.EsPlatoReceta == 1) {
+            return Swal.fire('Plato con receta', 'Este plato no lleva stock propio: se descuentan sus insumos al venderlo. Ingrese o ajuste los insumos.', 'info');
+        }
+        const base = p.UnidadBase || 'UND';
+        const factor = Number(p.FactorCompra) || 1;
+        const tieneCompra = !!p.UnidadCompra && factor !== 1;
+        const esIngreso = tipo === 'INGRESO';
         const { value: formValues } = await Swal.fire({
-            title: tipo === 'INGRESO' ? 'Registrar Ingreso' : 'Registrar Ajuste Negativo',
-            html: '<input id="swal-cant" type="number" min="1" class="swal2-input" placeholder="Cantidad">' +
-                  '<input id="swal-motivo" type="text" class="swal2-input" placeholder="Motivo o Referencia">',
+            title: esIngreso ? 'Registrar Ingreso' : 'Registrar Ajuste Negativo',
+            html: `<p style="font-size:0.8rem; color:#718096;">${p.Nombre || ''} · stock ${Unidades.fmt(p.StockReal ?? p.StockActual, base)}</p>
+                <div style="display:flex; gap:8px; align-items:center; justify-content:center;">
+                    <input id="swal-cant" type="number" step="any" min="0" class="swal2-input" placeholder="Cantidad" style="width:45%; margin:6px 0;">
+                    <select id="swal-unidad" class="swal2-input" style="width:45%; margin:6px 0;">
+                        ${tieneCompra ? `<option value="COMPRA">${p.UnidadCompra} (= ${Unidades.fmt(factor, base)})</option>` : ''}
+                        ${Unidades.opciones(base)}
+                    </select>
+                </div>
+                ${esIngreso ? `<input id="swal-costo" type="number" step="0.0001" min="0" class="swal2-input" placeholder="Costo por esa unidad ($)" style="margin:6px 0;">` : ''}
+                <input id="swal-motivo" type="text" class="swal2-input" placeholder="${esIngreso ? 'Factura / referencia' : 'Motivo (obligatorio)'}" style="margin:6px 0;">`,
             focusConfirm: false,
             showCancelButton: true,
             confirmButtonText: 'PROCESAR',
             cancelButtonText: 'CANCELAR',
             preConfirm: () => {
-                const cant = document.getElementById('swal-cant').value;
-                if (!cant || cant <= 0) {
-                    Swal.showValidationMessage('Ingrese una cantidad válida mayor a 0');
-                    return false;
-                }
-                return {
-                    cantidad: cant,
-                    motivo: document.getElementById('swal-motivo').value
-                };
+                const cant = parseFloat(document.getElementById('swal-cant').value);
+                if (!(cant > 0)) { Swal.showValidationMessage('Ingrese una cantidad válida mayor a 0'); return false; }
+                const motivo = document.getElementById('swal-motivo').value.trim();
+                if (!esIngreso && !motivo) { Swal.showValidationMessage('El ajuste necesita un motivo'); return false; }
+                const unidad = document.getElementById('swal-unidad').value;
+                const f = unidad === 'COMPRA' ? factor : Unidades.factor(base, unidad);
+                const costoEl = document.getElementById('swal-costo');
+                const costo = costoEl && costoEl.value !== '' ? parseFloat(costoEl.value) : null;
+                // Todo viaja en unidad base: cantidad × factor; costo ÷ factor.
+                return { cantidad: Math.round(cant * f * 1000) / 1000, costo: costo != null ? costo / f : null, motivo };
             }
         });
 
         if (formValues && formValues.cantidad) {
-            this.ejecutarMovimiento(id, tipo, formValues.cantidad, formValues.motivo);
+            this.ejecutarMovimiento(id, tipo, formValues.cantidad, formValues.motivo, formValues.costo);
         }
     },
 
-    async ejecutarMovimiento(id, tipo, cantidad, motivo) {
+    async ejecutarMovimiento(id, tipo, cantidad, motivo, costoBase = null) {
         try {
             const selector = document.getElementById('globalSedeSelector');
             const user = JSON.parse(localStorage.getItem('user'));
-            
+
             await api.post('/inventario/movimiento', {
                 ProductoID: id,
                 SedeID: selector ? selector.value : user.SedeID,
                 UsuarioID: user.UsuarioID,
-                Cantidad: parseInt(cantidad),
+                Cantidad: cantidad,
                 TipoMovimiento: tipo === 'INGRESO' ? 'INGRESO' : 'AJUSTE_NEGATIVO',
-                Motivo: motivo || 'Sin motivo especificado'
+                Motivo: motivo || 'Sin motivo especificado',
+                Referencia: tipo === 'INGRESO' && motivo ? motivo : undefined,
+                ...(costoBase != null ? { CostoUnitario: costoBase } : {})
             });
             await this.cargarProductos();
             window.Toast.fire({ icon: 'success', title: 'Movimiento registrado correctamente' });
@@ -384,7 +442,12 @@ const InventarioModule = {
                 TipoItem: document.getElementById('tipoProd')?.value || 'VENTA',
                 StockMinimo: parseInt(document.getElementById('minProd')?.value || 0),
                 StockIdeal: parseInt(document.getElementById('idealProd')?.value || 0),
-                CodigoBarras: document.getElementById('barraProd')?.value || null
+                CodigoBarras: document.getElementById('barraProd')?.value || null,
+                UnidadBase: document.getElementById('unidadBaseProd')?.value || 'UND',
+                UnidadCompra: (document.getElementById('unidadCompraProd')?.value || '').trim().toUpperCase() || null,
+                FactorCompra: parseFloat(document.getElementById('factorProd')?.value) || 1,
+                Estacion: document.getElementById('estacionProd')?.value || null,
+                TarifaIVA: document.getElementById('tarifaIvaProd')?.value || '4'
             };
 
             try {
@@ -416,6 +479,12 @@ const InventarioModule = {
         document.getElementById('minProd').value = p.StockMinimo;
         document.getElementById('idealProd').value = p.StockIdeal;
         document.getElementById('barraProd').value = p.CodigoBarras || '';
+        document.getElementById('unidadBaseProd').value = p.UnidadBase || 'UND';
+        document.getElementById('unidadCompraProd').value = p.UnidadCompra || '';
+        document.getElementById('factorProd').value = Number(p.FactorCompra) || 1;
+        document.getElementById('estacionProd').value = p.Estacion || '';
+        if (document.getElementById('tarifaIvaProd')) document.getElementById('tarifaIvaProd').value = p.TarifaIVA || '4';
+        this.ayudaUnidades();
 
         document.getElementById('modalProducto').classList.remove('hidden');
     },
@@ -425,7 +494,11 @@ const InventarioModule = {
         if (form) form.reset();
         document.getElementById('productoId').value = '';
         document.getElementById('tipoProd').value = 'VENTA';
+        document.getElementById('unidadBaseProd').value = 'UND';
+        document.getElementById('factorProd').value = 1;
+        if (document.getElementById('tarifaIvaProd')) document.getElementById('tarifaIvaProd').value = '4';
         this.toggleStockFields();
+        this.ayudaUnidades();
         document.getElementById('modalProducto').classList.remove('hidden');
     },
 

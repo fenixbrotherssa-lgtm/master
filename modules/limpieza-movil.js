@@ -150,6 +150,11 @@ const LimpiezaMovilModule = {
 
             if (res.data.success) {
                 if (window.Toast) window.Toast.fire({ icon: 'success', title: `HABITACIÓN ACTUALIZADA A ${nuevoEstado}` });
+                // Fase 3: al terminar la limpieza de salida se descarga el kit de amenities.
+                const lim = res.data.limpieza;
+                if (lim && lim.faltantes && lim.faltantes.length) {
+                    Swal.fire({ icon: 'info', title: 'Kit registrado', text: `En el sistema no había stock de: ${lim.faltantes.join(', ')}. Avise a bodega.`, confirmButtonColor: 'var(--hotel-blue)' });
+                }
                 this.cerrarModal();
                 await this.cargarHabitaciones();
             }

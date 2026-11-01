@@ -1,0 +1,149 @@
+<style>
+    #seccion-ind { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-ind .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; flex-wrap: wrap; }
+    #seccion-ind h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-ind .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-ind .cc-btn { padding: 10px 16px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .76rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-ind .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-ind .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-ind .cc-btn.mini { padding: 6px 10px; font-size: .68rem; border-radius: 10px; }
+    #seccion-ind .cc-btn.sel { background: #1a365d; color: #fff; }
+    #seccion-ind input, #seccion-ind select { padding: 9px 11px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-ind .cc-tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    #seccion-ind .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-ind .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-ind .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-ind .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-ind .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-ind table { width: 100%; border-collapse: collapse; }
+    #seccion-ind th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-ind td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-ind tr.total td { font-weight: 900; color: #1a365d; border-top: 2px solid rgba(26,54,93,.2); }
+    #seccion-ind tr.sub td { font-weight: 800; background: rgba(26,54,93,.04); }
+    #seccion-ind .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-ind .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-ind .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    #seccion-ind .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-ind .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; white-space: nowrap; }
+    #seccion-ind .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-ind .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-ind .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-ind .b-azul { background: #d6eaf8; color: #1f618d; }
+    #seccion-ind .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-ind .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    #seccion-ind .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px 15px; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; position: relative; }
+    #seccion-ind .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; display: flex; justify-content: space-between; gap: 6px; }
+    #seccion-ind .kpi .v { font-size: 1.45rem; font-weight: 900; color: #1a365d; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+    #seccion-ind .kpi .cmp { font-size: .66rem; color: #566573; display: flex; justify-content: space-between; gap: 6px; margin-top: 2px; }
+    #seccion-ind .sube { color: #1e8449; font-weight: 900; }
+    #seccion-ind .baja { color: #b03a2e; font-weight: 900; }
+    #seccion-ind .meta { height: 6px; background: #d5d8dc; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    #seccion-ind .meta i { display: block; height: 100%; background: #27ae60; }
+    #seccion-ind .graf { position: relative; height: 280px; }
+    #seccion-ind .grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+    #seccion-ind .aviso { background: #fdebd0; color: #7e5109; border-radius: 12px; padding: 10px 14px; font-size: .75rem; font-weight: 700; margin-bottom: 14px; }
+    #seccion-ind .metas input { width: 92px; padding: 6px 8px; text-align: right; }
+    @media (max-width: 1100px) { #seccion-ind .grid2 { grid-template-columns: 1fr; } #seccion-ind { padding: 16px; } }
+</style>
+
+<div id="seccion-ind">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard', 'viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-gauge-high"></i> Indicadores</h2>
+            <p class="cc-sub">Ocupación · ADR · RevPAR · GOPPAR · resultado por centro · metas</p>
+        </div>
+        <div id="sedeSelectorInd" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cc-panel" style="padding:14px 18px;">
+        <div class="barra">
+            <button class="cc-btn mini" data-pre="mes" onclick="IndicadoresModule.preset('mes')">Este mes</button>
+            <button class="cc-btn mini" data-pre="anterior" onclick="IndicadoresModule.preset('anterior')">Mes anterior</button>
+            <button class="cc-btn mini" data-pre="30" onclick="IndicadoresModule.preset('30')">Últimos 30 días</button>
+            <button class="cc-btn mini" data-pre="anio" onclick="IndicadoresModule.preset('anio')">Este año</button>
+            <span class="muted" style="margin-left:8px;">Desde</span><input type="date" id="ind-desde">
+            <span class="muted">Hasta</span><input type="date" id="ind-hasta">
+            <button class="cc-btn primary" onclick="IndicadoresModule.cargar()"><i class="fas fa-rotate"></i> Ver</button>
+            <span id="ind-base" style="margin-left:auto;"></span>
+        </div>
+    </div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="resumen" onclick="IndicadoresModule.tab('resumen')"><i class="fas fa-gauge"></i> Resumen</button>
+        <button class="cc-tab" data-tab="centros" onclick="IndicadoresModule.tab('centros')"><i class="fas fa-sitemap"></i> Resultado por centro</button>
+        <button class="cc-tab" data-tab="tendencia" onclick="IndicadoresModule.tab('tendencia')"><i class="fas fa-chart-line"></i> Tendencia 12 meses</button>
+        <button class="cc-tab" data-tab="canales" onclick="IndicadoresModule.tab('canales')"><i class="fas fa-route"></i> Canales y pronóstico</button>
+        <button class="cc-tab" data-tab="metas" onclick="IndicadoresModule.tab('metas')"><i class="fas fa-bullseye"></i> Metas</button>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="cc-tabpanel" data-panel="resumen">
+        <div id="ind-avisos"></div>
+        <div class="kpis" id="ind-kpis"><div class="vacio">Cargando…</div></div>
+        <div class="grid2">
+            <div class="cc-panel">
+                <h3><i class="fas fa-chart-area"></i> Día por día</h3>
+                <p class="ayuda">Ocupación (barras) y RevPAR (línea) de cada día del periodo.</p>
+                <div class="graf"><canvas id="ind-graf-dias"></canvas></div>
+            </div>
+            <div class="cc-panel">
+                <h3><i class="fas fa-layer-group"></i> Ingresos por área</h3>
+                <p class="ayuda" id="ind-iva-nota">Producción del periodo.</p>
+                <div id="ind-areas"></div>
+            </div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-book-open"></i> Cómo leer estos números</h3>
+            <p class="ayuda" style="margin:0;">
+                <b>Ocupación</b> = noches vendidas ÷ habitaciones disponibles. <b>ADR</b> = ingreso de estadías ÷ noches vendidas.
+                <b>RevPAR</b> = ingreso de habitaciones (incluye momentos) ÷ habitaciones disponibles. <b>TRevPAR</b> = ingreso total ÷ habitaciones disponibles.
+                <b>GOP</b> = ingresos − costos y gastos de operación (sin depreciación). <b>GOPPAR</b> = GOP ÷ habitaciones disponibles: dice cuánto deja cada habitación, ocupada o no.
+                <b>CPOR</b> = costo por habitación ocupada (pantalla Costo por habitación). Una estadía larga reparte su valor noche por noche.
+            </p>
+        </div>
+    </div>
+
+    <!-- RESULTADO POR CENTRO -->
+    <div class="cc-tabpanel" data-panel="centros" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-sitemap"></i> Resultado por centro de costo (USALI)</h3>
+            <p class="ayuda" id="ind-centros-ayuda"></p>
+            <div id="ind-centros"></div>
+        </div>
+    </div>
+
+    <!-- TENDENCIA -->
+    <div class="cc-tabpanel" data-panel="tendencia" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-chart-line"></i> Últimos 12 meses</h3>
+            <p class="ayuda">Hasta el mes de la fecha "hasta". Cada mes con la base que tenía (contable o estimada en caja).</p>
+            <div class="graf" style="height:300px;"><canvas id="ind-graf-tend"></canvas></div>
+            <div id="ind-tend" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- CANALES Y PRONÓSTICO -->
+    <div class="cc-tabpanel" data-panel="canales" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-route"></i> ¿De dónde vienen las estadías?</h3>
+            <p class="ayuda">Reservas que llegan en el periodo por canal, con la comisión configurada en Configuración → Canales, y las estadías que llegaron sin reserva.</p>
+            <div id="ind-canales"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-binoculars"></i> Pronóstico: próximos 30 días</h3>
+            <p class="ayuda">Habitaciones ya comprometidas (huéspedes en casa + reservas vivas) frente a la ocupación promedio del mismo día de la semana en las últimas 8 semanas. Donde la barra queda muy por debajo de la línea, hay espacio para una promoción o subir la tarifa en Tarifas dinámicas.</p>
+            <div class="graf"><canvas id="ind-graf-pron"></canvas></div>
+        </div>
+    </div>
+
+    <!-- METAS -->
+    <div class="cc-tabpanel" data-panel="metas" style="display:none;">
+        <div class="cc-panel metas">
+            <h3><i class="fas fa-bullseye"></i> Metas mensuales (presupuesto)</h3>
+            <p class="ayuda">Escriba la meta de cada mes y guarde la fila. Las metas de ingreso y GOP se prorratean si mira solo una parte del mes. Deje vacío para no tener meta.</p>
+            <div class="barra" style="margin-bottom:12px;"><span class="muted">Año</span><select id="ind-metas-anio" onchange="IndicadoresModule.cargarMetas()"></select></div>
+            <div id="ind-metas" style="overflow-x:auto;"></div>
+        </div>
+    </div>
+</div>

@@ -152,6 +152,9 @@
             <button class="mtab" id="mtab-notas" onclick="CRM.switchModalTab('notas', this)">
                 <i class="fas fa-sticky-note"></i> Notas <span id="m-notas-count" style="font-weight:400; opacity:0.7;"></span>
             </button>
+            <button class="mtab" id="mtab-promos" onclick="CRM.switchModalTab('promos', this)">
+                <i class="fas fa-bullhorn"></i> Promociones
+            </button>
         </div>
 
         <!-- Tab: Historial -->
@@ -174,6 +177,9 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Tab: Promociones (Fase 6): permiso para campañas, su historial y lo recibido -->
+        <div id="mt-promos" style="display:none; padding:15px 20px;"></div>
 
         <!-- Tab: Notas -->
         <div id="mt-notas" style="display:none;">
@@ -260,6 +266,10 @@
 .c-sep { width: 1px; background: #ccc; margin: 0 5px; }
 
 /* Badges clasificación */
+.seg-mini { font-size: 0.6rem; font-weight: 800; color: #4a5568; background: #edf2f7; border-radius: 10px; padding: 2px 7px; margin-left: 4px; }
+.consent-fila { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#f8fafc; border-radius:10px; margin-bottom:8px; font-size:0.82rem; flex-wrap:wrap; }
+.consent-fila .estado { font-weight:800; }
+.consent-fila button:disabled { opacity: .35; cursor: default; }
 .clasif-badge { font-size: 0.62rem; font-weight: 800; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
 .badge-VIP          { background: #fef3cd; color: #856404; border: 1px solid #c5a059; }
 .badge-FRECUENTE    { background: #dbeafe; color: #1e40af; }

@@ -1,0 +1,217 @@
+<style>
+    #seccion-campanas { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-campanas .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-campanas h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-campanas .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-campanas .cc-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-campanas .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-campanas .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-campanas .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-campanas .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-campanas .cc-btn.mini { padding: 6px 10px; font-size: .7rem; border-radius: 10px; }
+    #seccion-campanas input, #seccion-campanas select, #seccion-campanas textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-campanas input[type=checkbox], #seccion-campanas input[type=radio] { box-shadow: none; padding: 0; }
+    #seccion-campanas .cc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-campanas .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-campanas .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-campanas .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-campanas .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-campanas .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-campanas table { width: 100%; border-collapse: collapse; }
+    #seccion-campanas th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-campanas td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-campanas .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-campanas .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-campanas .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-campanas .tabla-scroll { max-height: 520px; overflow-y: auto; }
+    #seccion-campanas .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-campanas .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; white-space: nowrap; }
+    #seccion-campanas .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-campanas .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-campanas .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-campanas .b-azul { background: #d6eaf8; color: #1f618d; }
+    #seccion-campanas .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-campanas .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    #seccion-campanas .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-campanas .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-campanas .kpi .v { font-size: 1.15rem; font-weight: 900; color: #1a365d; margin-top: 4px; }
+    #seccion-campanas .kpi .s { font-size: .68rem; color: #7f8c8d; margin-top: 2px; }
+    #seccion-campanas .campo { display: flex; flex-direction: column; gap: 6px; }
+    #seccion-campanas .campo label { font-size: .64rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-campanas .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    #seccion-campanas .grid2 { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+    #seccion-campanas .chips label { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 800; margin: 0 10px 6px 0; text-transform: none; color: #2c3e50; cursor: pointer; }
+    #seccion-campanas .ph { cursor: pointer; background: #eef0f2; border-radius: 8px; padding: 3px 8px; font-size: .7rem; font-weight: 800; color: #1a365d; border: none; }
+    #seccion-campanas .progreso { height: 8px; background: #eef0f2; border-radius: 6px; overflow: hidden; min-width: 120px; display: flex; }
+    #seccion-campanas .progreso i { display: block; height: 100%; }
+    #seccion-campanas .nota { font-size: .68rem; color: #b9770e; font-weight: 700; margin-top: 3px; }
+    /* Vista previa estilo WhatsApp */
+    #seccion-campanas .wa-fondo { background: #e5ddd5; border-radius: 16px; padding: 16px; min-height: 160px; }
+    #seccion-campanas .wa-burbuja { background: #fff; border-radius: 10px 10px 10px 2px; padding: 6px; max-width: 290px; box-shadow: 0 1px 1px rgba(0,0,0,.15); font-size: .82rem; color: #111; white-space: pre-wrap; word-wrap: break-word; line-height: 1.38; }
+    #seccion-campanas .wa-burbuja img { width: 100%; border-radius: 8px; display: block; margin-bottom: 6px; }
+    #seccion-campanas .wa-burbuja .txt { padding: 2px 6px 4px; }
+    #seccion-campanas .wa-hora { text-align: right; font-size: .62rem; color: #8696a0; padding: 0 6px; }
+    #seccion-campanas .conteo li { font-size: .76rem; margin: 3px 0; }
+    #seccion-campanas .auto-card { border-left: 5px solid #1a365d; }
+    #seccion-campanas .auto-card.on { border-left-color: #27ae60; }
+    @media (max-width: 1100px) { #seccion-campanas .grid2 { grid-template-columns: 1fr; } #seccion-campanas { padding: 16px; } }
+</style>
+
+<div id="seccion-campanas">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="CampanasModule.salir()" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-bullhorn"></i> Campañas</h2>
+            <p class="cc-sub">WhatsApp y correo por segmento · solo a quien aceptó · salida con SALIR · todo queda registrado</p>
+        </div>
+        <div id="sedeSelectorCampanas" style="margin-left:auto;"></div>
+    </div>
+
+    <div id="cp-estado" class="kpis"></div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="campanas" onclick="CampanasModule.tab('campanas')"><i class="fas fa-paper-plane"></i> Campañas</button>
+        <button class="cc-tab" data-tab="nueva" onclick="CampanasModule.tab('nueva')"><i class="fas fa-plus"></i> Nueva campaña</button>
+        <button class="cc-tab" data-tab="clientes" onclick="CampanasModule.tab('clientes')"><i class="fas fa-users-viewfinder"></i> Clientes y segmentos</button>
+        <button class="cc-tab" data-tab="auto" onclick="CampanasModule.tab('auto')"><i class="fas fa-robot"></i> Automatizaciones</button>
+        <button class="cc-tab" data-tab="ajustes" onclick="CampanasModule.tab('ajustes')"><i class="fas fa-shield-halved"></i> Ajustes y bajas</button>
+    </div>
+
+    <!-- CAMPAÑAS -->
+    <div class="cc-tabpanel" data-panel="campanas">
+        <div class="cc-panel">
+            <h3><i class="fas fa-paper-plane"></i> Campañas de la sede</h3>
+            <p class="ayuda">Los mensajes salen de uno en uno, con esperas al azar, solo en el horario de envío y hasta el tope diario (para cuidar el número del hotel). Una campaña grande continúa sola al día siguiente. Se pausa sola si falla 5 veces seguidas o si muchos piden la baja.</p>
+            <div class="tabla-scroll" id="cp-lista"></div>
+        </div>
+    </div>
+
+    <!-- NUEVA -->
+    <div class="cc-tabpanel" data-panel="nueva" style="display:none;">
+        <div class="grid2">
+            <div>
+                <div class="cc-panel">
+                    <h3><i class="fas fa-pen-to-square"></i> 1. Mensaje</h3>
+                    <div class="fila">
+                        <div class="campo"><label>Canal</label><select id="cp-canal" onchange="CampanasModule.cambioCanal()">
+                            <option value="WHATSAPP">WhatsApp</option><option value="CORREO">Correo</option></select></div>
+                        <div class="campo"><label>Tipo</label><select id="cp-tipo" onchange="CampanasModule.cambioTipo()">
+                            <option value="OFERTA">Oferta</option><option value="PERSONALIZADO">Mensaje libre</option>
+                            <option value="CUMPLEANOS">Cumpleaños</option><option value="REACTIVACION">Reactivación</option></select></div>
+                        <div class="campo" style="flex:1; min-width:200px;"><label>Nombre de la campaña (interno)</label><input type="text" id="cp-nombre" maxlength="150" placeholder="Oferta fin de semana noviembre"></div>
+                        <div class="campo" style="width:110px;"><label>Descuento %</label><input type="number" id="cp-desc" min="1" max="90" placeholder="—" oninput="CampanasModule.vistaPrevia()"></div>
+                    </div>
+                    <div class="fila" id="cp-fila-asunto" style="display:none;">
+                        <div class="campo" style="flex:1;"><label>Asunto del correo</label><input type="text" id="cp-asunto" maxlength="200" placeholder="Una oferta especial de {hotel}" oninput="CampanasModule.vistaPrevia()"></div>
+                    </div>
+                    <div class="campo" style="margin-bottom:6px;"><label>Texto <span class="muted" id="cp-cuenta"></span></label>
+                        <textarea id="cp-mensaje" rows="6" maxlength="1500" oninput="CampanasModule.vistaPrevia()"></textarea></div>
+                    <div class="barra" style="margin-bottom:6px;">
+                        <span class="muted">Insertar:</span>
+                        <button class="ph" onclick="CampanasModule.insertar('{nombre}')">{nombre}</button>
+                        <button class="ph" onclick="CampanasModule.insertar('{hotel}')">{hotel}</button>
+                        <button class="ph" onclick="CampanasModule.insertar('{descuento}')">{descuento}</button>
+                        <span class="muted">· *negrita* · _cursiva_</span>
+                    </div>
+                    <p class="ayuda" id="cp-pie-ayuda"></p>
+                    <div class="fila">
+                        <div class="campo"><label>Imagen (opcional, JPG o PNG)</label><input type="file" id="cp-img" accept="image/jpeg,image/png" onchange="CampanasModule.cargarImagen(this)"></div>
+                        <button class="cc-btn mini" id="cp-img-quitar" style="display:none;" onclick="CampanasModule.quitarImagen()"><i class="fas fa-xmark"></i> Quitar imagen</button>
+                    </div>
+                    <p class="ayuda">La imagen se reduce a 1280 px antes de subirla. Use imágenes propias del hotel, sin datos de huéspedes. Por privacidad, nunca mencione estadías, fechas ni acompañantes.</p>
+                </div>
+
+                <div class="cc-panel">
+                    <h3><i class="fas fa-users"></i> 2. A quién</h3>
+                    <div class="fila">
+                        <div class="campo" style="min-width:260px;"><label>Segmento guardado</label><select id="cp-seg" onchange="CampanasModule.cambioSegmento()"></select></div>
+                    </div>
+                    <div id="cp-criterios">
+                        <div class="campo chips" style="margin-bottom:10px;"><label>Segmento inteligente (según cuándo vino y cuántas veces)</label><div id="cp-rfm"></div></div>
+                        <div class="campo chips" style="margin-bottom:10px;"><label>Clasificación</label><div id="cp-clasif"></div></div>
+                        <div class="fila">
+                            <div class="campo" style="width:120px;"><label>Visitas mín.</label><input type="number" id="cp-f-vmin" min="0"></div>
+                            <div class="campo" style="width:130px;"><label>Gasto mín. $</label><input type="number" id="cp-f-gmin" min="0"></div>
+                            <div class="campo" style="width:150px;"><label>Sin venir desde (días)</label><input type="number" id="cp-f-dmin" min="0"></div>
+                            <div class="campo" style="width:150px;"><label>Vino hace máx. (días)</label><input type="number" id="cp-f-dmax" min="0"></div>
+                            <div class="campo" style="width:160px;"><label>Cumpleaños en (días)</label><input type="number" id="cp-f-cumple" min="0" max="60"></div>
+                        </div>
+                        <div class="fila">
+                            <div class="campo" style="width:200px;"><label>Procedencia contiene</label><input type="text" id="cp-f-proc" placeholder="Quito, Colombia..."></div>
+                            <div class="campo"><label>Se hospedó en</label><select id="cp-f-tipo"></select></div>
+                            <label class="muted" style="display:flex; gap:6px; align-items:center; text-transform:none;"><input type="checkbox" id="cp-f-mom"> incluir clientes que solo usaron "momento"</label>
+                        </div>
+                    </div>
+                    <div class="barra">
+                        <button class="cc-btn primary" onclick="CampanasModule.calcular()"><i class="fas fa-calculator"></i> Calcular destinatarios</button>
+                        <button class="cc-btn" onclick="CampanasModule.guardarSegmento()"><i class="fas fa-bookmark"></i> Guardar como segmento</button>
+                        <button class="cc-btn mini" onclick="CampanasModule.limpiarCriterios()"><i class="fas fa-eraser"></i> Limpiar</button>
+                    </div>
+                    <div id="cp-preview"></div>
+                </div>
+
+                <div class="cc-panel">
+                    <h3><i class="fas fa-clock"></i> 3. Cuándo</h3>
+                    <div class="fila">
+                        <div class="campo"><label>Programar (opcional)</label><input type="datetime-local" id="cp-prog"></div>
+                        <span class="muted" style="align-self:center;">Vacío = empieza ahora (dentro del horario de envío).</span>
+                    </div>
+                    <button class="cc-btn ok" onclick="CampanasModule.crear()"><i class="fas fa-paper-plane"></i> Crear campaña</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="cc-panel" style="position:sticky; top:10px;">
+                    <h3><i class="fas fa-eye"></i> Así lo verá <span class="muted" style="text-transform:none;">(ejemplo con "María")</span></h3>
+                    <div id="cp-vista" style="margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="cc-tabpanel" data-panel="clientes" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-users-viewfinder"></i> Sus clientes por segmento inteligente</h3>
+            <p class="ayuda">Clientes con estadías o reservas en esta sede. <b>Aceptan</b> = recepción o el propio huésped dijo que sí (en el check-in, en el CRM o escribiendo ALTA al WhatsApp del hotel). Sin permiso no reciben campañas. Pregunte en el check-in: es lo que más rinde.</p>
+            <div class="tabla-scroll" id="cp-resumen"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-bookmark"></i> Segmentos guardados</h3>
+            <div class="tabla-scroll" id="cp-segmentos"></div>
+        </div>
+    </div>
+
+    <!-- AUTOMATIZACIONES -->
+    <div class="cc-tabpanel" data-panel="auto" style="display:none;">
+        <p class="ayuda">Cada día (desde las 8:00) el sistema arma sola la campaña de cada automatización activa, con los mismos cuidados: solo a quien aceptó, dentro del horario y del tope diario, con salida por SALIR.</p>
+        <div id="cp-autos"></div>
+    </div>
+
+    <!-- AJUSTES -->
+    <div class="cc-tabpanel" data-panel="ajustes" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-shield-halved"></i> Cuidado del número de WhatsApp</h3>
+            <p class="ayuda">WhatsApp bloquea los números que envían muchos mensajes seguidos a gente que no los espera. Estos valores mantienen el envío lento y humano. Empiece con un tope bajo (40–60 al día) y súbalo poco a poco si casi nadie pide la baja. El tope es por número: cuenta todas las sedes.</p>
+            <div class="fila">
+                <div class="campo" style="width:150px;"><label>Tope diario WhatsApp</label><input type="number" id="cp-c-tope" min="1" max="300"></div>
+                <div class="campo" style="width:150px;"><label>Espera mín. (seg)</label><input type="number" id="cp-c-emin" min="10" max="600"></div>
+                <div class="campo" style="width:150px;"><label>Espera máx. (seg)</label><input type="number" id="cp-c-emax" min="15" max="900"></div>
+                <div class="campo" style="width:150px;"><label>Pausa larga cada</label><input type="number" id="cp-c-lote" min="0" max="100"></div>
+                <div class="campo" style="width:150px;"><label>Pausa larga (min)</label><input type="number" id="cp-c-plote" min="0" max="120"></div>
+            </div>
+            <div class="fila">
+                <div class="campo" style="width:150px;"><label>Tope diario correo</label><input type="number" id="cp-c-tcorreo" min="1" max="2000"></div>
+                <div class="campo" style="width:150px;"><label>Enviar desde (hora)</label><input type="number" id="cp-c-desde" min="6" max="22"></div>
+                <div class="campo" style="width:150px;"><label>hasta (hora)</label><input type="number" id="cp-c-hasta" min="7" max="23"></div>
+                <div class="campo" style="width:200px;"><label>No repetir a la misma persona en (días)</label><input type="number" id="cp-c-frec" min="0" max="90"></div>
+            </div>
+            <button class="cc-btn ok" onclick="CampanasModule.guardarConfig()"><i class="fas fa-save"></i> Guardar ajustes</button>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-user-slash"></i> Bajas</h3>
+            <p class="ayuda">Números y correos que pidieron no recibir más promociones (SALIR por WhatsApp o el enlace del correo). No vuelven a recibir campañas aunque aparezcan en otra ficha, salvo que el huésped escriba ALTA o lo acepte de nuevo en recepción.</p>
+            <div class="tabla-scroll" id="cp-bajas"></div>
+        </div>
+    </div>
+</div>

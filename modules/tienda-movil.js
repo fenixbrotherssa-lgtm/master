@@ -347,7 +347,7 @@ const TiendaMovilModule = {
                 title: 'COBRO EN TIENDA',
                 html: `
                     <label style="display:block; text-align:left; font-weight:bold; font-size:0.8rem; margin-bottom:5px;">Método de Pago</label>
-                    <select id="tienda-metodo" class="swal2-input" style="margin-bottom:15px;">
+                    <select id="tienda-metodo" class="swal2-input" style="margin-bottom:15px;" data-metodos-pago>
                         <option value="1">EFECTIVO</option>
                         <option value="2">TRANSFERENCIA</option>
                         <option value="3">TARJETA</option>
@@ -380,7 +380,7 @@ const TiendaMovilModule = {
 
                     // Mostrar el bloque de comprobante solo en transferencia (2) o tarjeta (3)
                     const toggleVoucher = () => {
-                        const requiere = selMetodo.value === '2' || selMetodo.value === '3';
+                        const requiere = (window.MetodosPago ? MetodosPago.esNoEfectivo(selMetodo.value) : (selMetodo.value == '2' || selMetodo.value == '3'));
                         boxVoucher.style.display = requiere ? 'block' : 'none';
                         if (!requiere) {
                             this._voucherFile = null;
@@ -406,7 +406,7 @@ const TiendaMovilModule = {
                 preConfirm: () => {
                     const metodo = document.getElementById('tienda-metodo').value;
                     // En transferencia/tarjeta exigimos el comprobante
-                    if ((metodo === '2' || metodo === '3') && !this._voucherFile) {
+                    if (((window.MetodosPago ? MetodosPago.esNoEfectivo(metodo) : (metodo == '2' || metodo == '3'))) && !this._voucherFile) {
                         Swal.showValidationMessage('Adjunte la foto del comprobante para transferencia/tarjeta.');
                         return false;
                     }

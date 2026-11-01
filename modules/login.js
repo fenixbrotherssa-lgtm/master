@@ -52,6 +52,7 @@ const LoginModule = {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('refreshToken', response.data.refreshToken);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+                localStorage.removeItem('permisos'); // los del usuario anterior no valen
                 
                 // ÉXITO TOTAL
                 if (window.Alertas) {

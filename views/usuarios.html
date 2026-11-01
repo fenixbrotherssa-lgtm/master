@@ -37,7 +37,7 @@
         margin: 0;
     }
 
-    /* BOTONES NEOM�RFICOS */
+    /* BOTONES NEOMÓRFICOS */
     .btn-neo {
         padding: 12px 25px;
         border: none;
@@ -202,10 +202,32 @@
 
     /* Scrollbar elegante para el modal */
     .modal-content-neo::-webkit-scrollbar { width: 6px; }
-    .modal-content-neo::-webkit-scrollbar-thumb { 
-        background: var(--hotel-shadow-dark); 
-        border-radius: 10px; 
+    .modal-content-neo::-webkit-scrollbar-thumb {
+        background: var(--hotel-shadow-dark);
+        border-radius: 10px;
     }
+
+    /* Roles y permisos */
+    .us-tabs { display: flex; gap: 10px; margin: 0 0 18px; }
+    .us-tab { border: none; background: #e0e0e4; padding: 11px 20px; border-radius: 14px; font-weight: 900; font-size: .78rem;
+              color: #4a5568; cursor: pointer; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; letter-spacing: .5px; }
+    .us-tab.activo { color: #fff; background: #1a365d; box-shadow: inset 2px 2px 6px rgba(0,0,0,.25); }
+    .us-ayuda { font-size: .8rem; color: #4a5568; line-height: 1.7; margin-bottom: 16px; }
+    .nv { display: inline-block; padding: 1px 8px; border-radius: 8px; font-weight: 800; font-size: .72rem; }
+    .nv0 { background: #edf2f7; color: #718096; } .nv1 { background: #e6fffa; color: #2c7a7b; }
+    .nv2 { background: #ebf8ff; color: #2b6cb0; } .nv3 { background: #fefcbf; color: #975a16; }
+    .us-matriz { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .78rem; }
+    .us-matriz th, .us-matriz td { padding: 6px 8px; border-bottom: 1px solid rgba(0,0,0,.06); text-align: center; white-space: nowrap; }
+    .us-matriz th { position: sticky; top: 0; background: #e0e0e4; z-index: 1; vertical-align: bottom; }
+    .us-matriz td.mod { text-align: left; font-weight: 700; color: #2d3748; position: sticky; left: 0; background: #e0e0e4; }
+    .us-matriz tr.grupo td { text-align: left; font-weight: 900; color: #1a365d; text-transform: uppercase; font-size: .7rem;
+                             letter-spacing: 1px; padding-top: 14px; background: #e0e0e4; }
+    .us-rol { font-weight: 900; color: #1a365d; } .us-rol small { display: block; font-weight: 600; color: #718096; }
+    .us-rol.inactivo { opacity: .45; }
+    .us-sel { border: none; border-radius: 9px; padding: 5px 6px; font-weight: 800; font-size: .74rem; cursor: pointer; }
+    .us-sel.cambiado { outline: 2px solid #dd6b20; }
+    .us-mini { border: none; background: transparent; color: #2b6cb0; cursor: pointer; font-size: .8rem; padding: 2px 4px; }
+    .btn-perm { background: #1a365d !important; color: #fff !important; }
 </style>
 
 <div class="modulo-container animate__animated animate__fadeIn">
@@ -215,15 +237,40 @@
             <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="REGRESAR AL DASHBOARD">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <h2><i class="fas fa-users-cog"></i> Administraci�n de Personal</h2>
+            <h2><i class="fas fa-users-cog"></i> Administración de Personal</h2>
         </div>
         
-        <button class="btn-neo" onclick="UsuariosModule.abrirModal()">
-            <i class="fas fa-plus-circle"></i> NUEVO COLABORADOR
-        </button>
+        <div style="display:flex; gap:12px;">
+            <button class="btn-neo" id="btnNuevoRol" style="display:none;" onclick="UsuariosModule.nuevoRol()">
+                <i class="fas fa-user-tag"></i> NUEVO ROL
+            </button>
+            <button class="btn-neo" id="btnNuevoColaborador" onclick="UsuariosModule.abrirModal()">
+                <i class="fas fa-plus-circle"></i> NUEVO COLABORADOR
+            </button>
+        </div>
     </div>
 
-    <div class="tabla-container-neo">
+    <div class="us-tabs">
+        <button class="us-tab activo" id="usTabPersonal" onclick="UsuariosModule.tab('personal')"><i class="fas fa-users"></i> PERSONAL</button>
+        <button class="us-tab" id="usTabPermisos" onclick="UsuariosModule.tab('permisos')"><i class="fas fa-shield-halved"></i> ROLES Y PERMISOS</button>
+    </div>
+
+    <div id="usPanelPermisos" class="tabla-container-neo" style="display:none;">
+        <div class="us-ayuda">
+            <b>Cómo funciona:</b> cada rol tiene un nivel por módulo —
+            <span class="nv nv0">Sin acceso</span> <span class="nv nv1">Ver</span>
+            <span class="nv nv2">Crear / editar</span> <span class="nv nv3">Total</span> (eliminar, anular, cerrar, configurar).
+            A una persona concreta se le puede dar una excepción con el botón <i class="fas fa-key"></i> de la pestaña Personal.
+            El SuperAdmin siempre tiene todo. Todo cambio queda en la bitácora de auditoría.
+        </div>
+        <div id="usMatriz" style="overflow-x:auto;"></div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+            <span id="usCambios" style="align-self:center; font-weight:800; color:#c05621;"></span>
+            <button class="btn-neo btn-save" onclick="UsuariosModule.guardarMatriz()"><i class="fas fa-save"></i> GUARDAR PERMISOS</button>
+        </div>
+    </div>
+
+    <div class="tabla-container-neo" id="usPanelPersonal">
         <table class="tabla-neo">
             <thead>
                 <tr>
@@ -244,7 +291,7 @@
             <h3 id="modalTitulo">Ficha de Registro</h3>
             
             <form id="formUsuario">
-                <label class="label-hint">Informaci�n Legal</label>
+                <label class="label-hint">Información Legal</label>
                 <input type="text" id="nombre" placeholder="NOMBRE COMPLETO" required class="input-neo">
                 
                 <div class="form-row">
@@ -258,7 +305,7 @@
                 <label class="label-hint">Credenciales de Acceso</label>
                 <div class="form-row">
                     <input type="text" id="usuario" placeholder="USUARIO (LOGIN)" required class="input-neo">
-                    <input type="password" id="password" placeholder="CONTRASE�A" class="input-neo">
+                    <input type="password" id="password" placeholder="CONTRASEÑA" class="input-neo">
                 </div>
                 
                 <label class="label-hint">Rol del Sistema</label>

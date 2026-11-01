@@ -197,6 +197,9 @@
             <button class="btn-neo" onclick="InventarioModule.verDesactivados()">
                 <i class="fas fa-eye-slash"></i> DESACTIVADOS
             </button>
+            <button class="btn-neo" onclick="App.renderView('costos', 'viewport')" title="Recetas, producción, mermas, food cost">
+                <i class="fas fa-utensils"></i> COCINA Y COSTOS
+            </button>
             <button class="btn-neo btn-save" onclick="InventarioModule.abrirModalProducto()">
                 <i class="fas fa-plus-circle"></i> NUEVO PRODUCTO
             </button>
@@ -212,6 +215,9 @@
             <option value="TODOS">Todos los Items</option>
             <option value="VENTA">Solo Productos</option>
             <option value="SERVICIO">Solo Servicios</option>
+            <option value="INSUMO">Solo Insumos</option>
+            <option value="PREPARACION">Solo Preparaciones</option>
+            <option value="RECETA">Platos con receta</option>
         </select>
     </div>
 
@@ -259,6 +265,7 @@
                         <option value="VENTA">VENTA</option>
                         <option value="SERVICIO">SERVICIO</option>
                         <option value="INSUMO">INSUMO</option>
+                        <option value="PREPARACION">PREPARACIÓN (cocina)</option>
                     </select>
                 </div>
                 
@@ -271,6 +278,55 @@
                         <label class="label-hint">Stock Ideal</label>
                         <input type="number" id="idealProd" class="input-neo" value="0">
                     </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label class="label-hint">Se controla en</label>
+                    <select id="unidadBaseProd" class="input-neo" title="Unidad en la que se guarda el stock">
+                        <option value="UND">Unidades</option>
+                        <option value="G">Gramos (g / kg)</option>
+                        <option value="ML">Mililitros (ml / l)</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label class="label-hint">Se compra por</label>
+                    <input type="text" id="unidadCompraProd" class="input-neo" list="listaUnidadesCompra" placeholder="Ej: KG, SACO, CAJA x24">
+                    <datalist id="listaUnidadesCompra">
+                        <option value="KG"><option value="LB"><option value="L"><option value="GAL"><option value="DOC"><option value="SACO"><option value="CAJA"><option value="FUNDA">
+                    </datalist>
+                </div>
+                <div style="flex:1">
+                    <label class="label-hint" id="lblFactorProd">Contenido de esa unidad</label>
+                    <input type="number" step="0.001" min="0.001" id="factorProd" class="input-neo" value="1" title="Cuántos gramos / ml / unidades trae la unidad de compra">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label class="label-hint">Estación (comanda)</label>
+                    <select id="estacionProd" class="input-neo">
+                        <option value="">Según categoría</option>
+                        <option value="COCINA">Cocina</option>
+                        <option value="BAR">Bar</option>
+                        <option value="PARRILLA">Parrilla</option>
+                        <option value="POSTRES">Postres</option>
+                        <option value="CAFETERIA">Cafetería</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label class="label-hint">IVA en la factura</label>
+                    <select id="tarifaIvaProd" class="input-neo" title="Tarifa del SRI con la que se factura este producto">
+                        <option value="4">Con IVA</option>
+                        <option value="0">IVA 0 %</option>
+                        <option value="5">IVA 5 %</option>
+                        <option value="6">No objeto</option>
+                        <option value="7">Exento</option>
+                    </select>
+                </div>
+                <div style="flex:1.4; font-size:0.72rem; color:#718096; align-self:center;" id="ayudaCostoProd">
+                    El costo de compra es por la unidad de compra. El costo promedio real lo calcula el kardex con cada ingreso.
                 </div>
             </div>
 

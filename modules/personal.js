@@ -134,6 +134,9 @@ const PersonalModule = {
         document.getElementById('ps-emp-nombre').value  = emp?.NombreCompleto || '';
         document.getElementById('ps-emp-cedula').value  = emp?.Cedula       || '';
         document.getElementById('ps-emp-cargo').value   = emp?.Cargo        || '';
+        // Su nómina y adelantos se cargan a este centro (Habitaciones, A&B, etc.)
+        const ccSel = document.getElementById('ps-emp-centro');
+        if (ccSel) { ccSel.dataset.valor = emp?.CentroCostoID || ''; ccSel.value = String(emp?.CentroCostoID || ''); }
         document.getElementById('ps-emp-salario').value = emp?.SalarioBase   || '';
         document.getElementById('ps-emp-ingreso').value = emp?.FechaIngreso?.slice(0,10) || '';
         document.getElementById('ps-emp-tel').value     = emp?.Telefono     || '';
@@ -267,6 +270,7 @@ const PersonalModule = {
                 nombreCompleto: nombre,
                 cedula:        document.getElementById('ps-emp-cedula').value.trim()  || undefined,
                 cargo:         document.getElementById('ps-emp-cargo').value.trim()   || undefined,
+                centroCostoId: document.getElementById('ps-emp-centro')?.value || null,
                 salarioBase:   document.getElementById('ps-emp-salario').value        || 0,
                 fechaIngreso:  document.getElementById('ps-emp-ingreso').value        || undefined,
                 telefono:      document.getElementById('ps-emp-tel').value.trim()     || undefined,

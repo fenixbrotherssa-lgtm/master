@@ -1,0 +1,147 @@
+<style>
+    #seccion-costohab { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-costohab .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-costohab h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-costohab .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-costohab .cc-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-costohab .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-costohab .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-costohab .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-costohab .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-costohab .cc-btn.mini { padding: 6px 10px; font-size: .7rem; border-radius: 10px; }
+    #seccion-costohab input, #seccion-costohab select, #seccion-costohab textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-costohab .cc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-costohab .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-costohab .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-costohab .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-costohab .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-costohab .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-costohab table { width: 100%; border-collapse: collapse; }
+    #seccion-costohab th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-costohab td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-costohab td input, #seccion-costohab td select { padding: 7px 9px; }
+    #seccion-costohab .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-costohab .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-costohab .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-costohab .tabla-scroll { max-height: 520px; overflow-y: auto; }
+    #seccion-costohab .grid-receta { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    #seccion-costohab .lista-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    #seccion-costohab .lista-item:hover { background: rgba(26,54,93,.06); }
+    #seccion-costohab .lista-item.sel { background: #1a365d; color: #fff; }
+    #seccion-costohab .lista-item.sel .muted { color: #cbd5e1; }
+    #seccion-costohab .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-costohab .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; }
+    #seccion-costohab .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-costohab .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-costohab .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-costohab .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-costohab .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    #seccion-costohab .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-costohab .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-costohab .kpi .v { font-size: 1.25rem; font-weight: 900; color: #1a365d; margin-top: 4px; }
+    #seccion-costohab .campo { display: flex; flex-direction: column; gap: 6px; }
+    #seccion-costohab .campo label { font-size: .64rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-costohab .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    @media (max-width: 1000px) { #seccion-costohab .grid-receta { grid-template-columns: 1fr; } #seccion-costohab { padding: 16px; } }
+</style>
+
+<div id="seccion-costohab">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard','viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-bed"></i> Costo por habitación</h2>
+            <p class="cc-sub">Kit de amenities · lavandería · mantenimiento · gastos fijos → CPOR frente al ingreso por ocupación</p>
+        </div>
+        <div id="sedeSelectorCostoHab" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="cpor" onclick="CostoHabModule.tab('cpor')"><i class="fas fa-scale-balanced"></i> CPOR vs ingreso</button>
+        <button class="cc-tab" data-tab="kits" onclick="CostoHabModule.tab('kits')"><i class="fas fa-pump-soap"></i> Kit por tipo</button>
+        <button class="cc-tab" data-tab="limpiezas" onclick="CostoHabModule.tab('limpiezas')"><i class="fas fa-broom"></i> Limpiezas</button>
+        <button class="cc-tab" data-tab="gastos" onclick="CostoHabModule.tab('gastos')"><i class="fas fa-file-invoice-dollar"></i> Gastos y reparto</button>
+    </div>
+
+    <!-- CPOR -->
+    <div class="cc-tabpanel" data-panel="cpor">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Desde</label><input type="date" id="ch-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="ch-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="CostoHabModule.cargarCpor()"><i class="fas fa-rotate"></i> Calcular</button>
+            </div>
+            <p class="ayuda" id="ch-explica"></p>
+            <div class="kpis" id="ch-kpis"></div>
+            <div id="ch-alertas"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-layer-group"></i> De dónde sale el costo</h3>
+            <p class="ayuda">Directos: lo que de verdad consumió cada habitación. Fijos: gastos del centro de costo Habitaciones (y, si así se configura, su parte de administración, ventas, mantenimiento y servicios), repartidos por ocupación.</p>
+            <div id="ch-componentes"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-shapes"></i> Por tipo de habitación</h3>
+            <div class="tabla-scroll" id="ch-tipos"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-door-closed"></i> Por habitación</h3>
+            <p class="ayuda">Ordenado por costo. Una habitación con mucho mantenimiento o poco ingreso salta a la vista.</p>
+            <div class="tabla-scroll" id="ch-habs"></div>
+        </div>
+    </div>
+
+    <!-- KITS -->
+    <div class="cc-tabpanel" data-panel="kits" style="display:none;">
+        <div class="grid-receta">
+            <div class="cc-panel">
+                <h3><i class="fas fa-shapes"></i> Tipos de habitación</h3>
+                <p class="ayuda">Al terminar la limpieza de salida (LIMPIEZA → DISPONIBLE), el sistema descuenta el kit de ese tipo y guarda su costo en el folio que la originó.</p>
+                <div id="ch-kit-tipos"></div>
+            </div>
+            <div class="cc-panel" id="ch-kit-editor">
+                <div class="vacio">Elija un tipo de habitación para armar su kit.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIMPIEZAS -->
+    <div class="cc-tabpanel" data-panel="limpiezas" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Desde</label><input type="date" id="ch-lim-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="ch-lim-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="CostoHabModule.cargarLimpiezas()"><i class="fas fa-rotate"></i> Ver</button>
+            </div>
+            <p class="ayuda">SALIDA = limpieza después de un check-out (descarga el kit). REPASO = limpieza sin estadía nueva (no consume). Si en el sistema no había stock de un amenity, la línea queda como FALTANTE con su costo estimado: revise ese inventario.</p>
+            <div class="tabla-scroll" id="ch-limpiezas"></div>
+        </div>
+    </div>
+
+    <!-- GASTOS -->
+    <div class="cc-tabpanel" data-panel="gastos" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-sliders"></i> Parámetros del reparto</h3>
+            <div class="fila">
+                <div class="campo" style="width:220px;"><label>Un alquiler por momento cuenta como</label>
+                    <select id="ch-cfg-factor">
+                        <option value="0.25">¼ de ocupación</option><option value="0.5">½ ocupación</option>
+                        <option value="0.75">¾ de ocupación</option><option value="1">1 ocupación completa</option>
+                    </select></div>
+                <div class="campo" style="width:300px;"><label>Gastos no distribuidos (administración, ventas, mantenimiento, servicios)</label>
+                    <select id="ch-cfg-prorrateo">
+                        <option value="INGRESOS">Se reparten según el % de ingresos de habitaciones</option>
+                        <option value="NINGUNO">No se reparten (CPOR solo departamental)</option>
+                    </select></div>
+                <button class="cc-btn ok" onclick="CostoHabModule.guardarConfig()"><i class="fas fa-floppy-disk"></i> Guardar</button>
+            </div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-tags"></i> Egresos del período por centro y rubro</h3>
+            <p class="ayuda">
+                <b>Gasto</b>: cuenta en el costo. <b>Compra a inventario</b>: la compra de amenities, insumos o materiales NO es gasto todavía; se cuesta cuando se consume (kits, recetas, mantenimiento), así no se cuenta dos veces.
+                <b>No es gasto</b>: retiros del propietario, préstamos, traspasos entre cajas. El cambio se aplica al rubro en todos los informes y queda auditado.
+            </p>
+            <div class="tabla-scroll" id="ch-rubros"></div>
+        </div>
+    </div>
+</div>

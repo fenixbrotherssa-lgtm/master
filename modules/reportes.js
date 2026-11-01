@@ -356,7 +356,7 @@ const ReportesModule = {
                     <tr>
                         <td style="font-size:0.75rem;">${fecha}</td>
                         <td>${tagOrigen}</td>
-                        <td><strong style="color:var(--hotel-blue);">${(a.RubroNombre || a.Metodo).toUpperCase()}</strong><br><small style="color:#718096; font-size:0.65rem;">${a.Observacion}</small></td>
+                        <td><strong style="color:var(--hotel-blue);">${(a.RubroNombre || a.Metodo).toUpperCase()}</strong><br><small style="color:#718096; font-size:0.65rem;">${a.Observacion}</small>${a.CentroCodigo ? `<br><span title="${a.CentroNombre}" style="display:inline-block; margin-top:3px; font-size:0.58rem; font-weight:900; padding:2px 7px; border-radius:8px; background:rgba(26,54,93,.08); color:#1a365d;">CC · ${a.CentroCodigo}</span>` : ''}</td>
                         <td style="font-size:0.7rem;">${a.Responsable || 'SISTEMA'}</td>
                         <td style="text-align:right; font-weight:900; color:${isIngreso ? 'var(--hotel-success)' : 'var(--hotel-danger)'};">${isIngreso ? '+' : '-'} $ ${parseFloat(a.Monto).toFixed(2)}</td>
                         <td><div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">${btnesEgreso} ${btnVoucher} ${btnAnular}</div></td>
@@ -543,6 +543,9 @@ const ReportesModule = {
         formData.append('monto', document.getElementById('movMonto').value);
         formData.append('observacion', document.getElementById('movObs').value);
         formData.append('referencia', referenciaVal);
+        formData.append('sedeId', this.getSedeId());
+        const ccSel = document.getElementById('movCentro');
+        if (ccSel && ccSel.value) formData.append('centroCostoId', ccSel.value);
 
         if(tieneVoucher) formData.append('voucher', fileInput.files[0]);
 
@@ -659,7 +662,7 @@ const ReportesModule = {
                 <input id="swal-monto" type="number" step="0.01" class="swal2-input" value="${saldoPendiente.toFixed(2)}" style="margin-bottom:15px; color:var(--hotel-success); font-weight:bold;">
                 
                 <label style="font-size:0.8rem; font-weight:bold; color:var(--hotel-blue); display:block; text-align:left; margin-bottom:5px;">Método de Pago</label>
-                <select id="swal-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('box-voucher-abono').style.display = (this.value == '2' || this.value == '3') ? 'block' : 'none'">
+                <select id="swal-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('box-voucher-abono').style.display = ((window.MetodosPago ? MetodosPago.esNoEfectivo(this.value) : (this.value == '2' || this.value == '3'))) ? 'block' : 'none'" data-metodos-pago>
                     <option value="1">EFECTIVO</option>
                     <option value="2">TRANSFERENCIA</option>
                     <option value="3">TARJETA</option>

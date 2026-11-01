@@ -61,6 +61,11 @@ const CRM = {
                     </div>
                     <span class="clasif-badge badge-${c.Clasificacion}">${CRM._labelClasif(c.Clasificacion)}</span>
                 </div>
+                <div style="margin:-4px 0 6px; font-size:0.7rem; color:#718096;">
+                    ${c.AceptaWhatsApp ? '<i class="fab fa-whatsapp" style="color:#25d366;" title="Acepta promociones por WhatsApp"></i>' : ''}
+                    ${c.AceptaCorreo ? '<i class="fas fa-envelope" style="color:#3498db;" title="Acepta promociones por correo"></i>' : ''}
+                    ${c.Segmento ? `<span class="seg-mini">${CRM._labelSegmento(c.Segmento)}</span>` : ''}
+                </div>
                 <div class="card-footer">
                     <div class="c-stat">
                         <span>Visitas</span>
@@ -256,6 +261,66 @@ const CRM = {
         if (btn) btn.classList.add('active');
         document.getElementById('mt-historial').style.display = tab === 'historial' ? '' : 'none';
         document.getElementById('mt-notas').style.display     = tab === 'notas'     ? '' : 'none';
+        document.getElementById('mt-promos').style.display    = tab === 'promos'    ? '' : 'none';
+        if (tab === 'promos') CRM.cargarPromos();
+    },
+
+    _labelSegmento(s) {
+        return { CAMPEON: 'Campeón', LEAL: 'Leal', PROMETEDOR: 'Prometedor', EN_RIESGO: 'En riesgo', DORMIDO: 'Dormido',
+                 OCASIONAL: 'Ocasional', PROSPECTO: 'Prospecto' }[s] || s;
+    },
+
+    // ── PROMOCIONES (Fase 6): permiso para campañas ───────────────────
+    // Sin permiso explícito el cliente no recibe campañas. Cada cambio queda en el historial.
+    async cargarPromos() {
+        const el = document.getElementById('mt-promos');
+        if (!_clienteActual) return;
+        el.innerHTML = '<p style="text-align:center;color:#718096;"><i class="fas fa-spinner fa-spin"></i></p>';
+        try {
+            const [perfil, h] = await Promise.all([api.get(`/crm/clientes/${_clienteActual}`), api.get(`/crm/clientes/${_clienteActual}/consentimientos`)]);
+            const p = perfil.data.perfil;
+            const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const fila = (canal, icono, valor, tiene) => {
+                const est = valor === true ? '<span class="estado" style="color:#27ae60;">Acepta</span>'
+                          : valor === false ? '<span class="estado" style="color:#e74c3c;">No acepta</span>'
+                          : '<span class="estado" style="color:#a0aec0;">Sin preguntar</span>';
+                return `<div class="consent-fila"><i class="${icono}" style="width:18px;"></i> <b>${canal === 'WHATSAPP' ? 'WhatsApp' : 'Correo'}</b> ${est}
+                    ${tiene ? '' : `<span style="color:#e67e22;font-size:0.72rem;">(sin ${canal === 'WHATSAPP' ? 'celular' : 'correo'} en la ficha)</span>`}
+                    <span style="flex:1;"></span>
+                    <button class="btn-modal-action primary" onclick="CRM.cambiarConsent('${canal}', true)" ${valor === true ? 'disabled' : ''}>Acepta</button>
+                    <button class="btn-modal-action" onclick="CRM.cambiarConsent('${canal}', false)" ${valor === false ? 'disabled' : ''}>No acepta</button></div>`;
+            };
+            const hist = h.data.consentimientos.map(x => `<tr><td>${esc(x.Fecha)}</td><td>${x.Canal === 'WHATSAPP' ? 'WhatsApp' : 'Correo'}</td>
+                <td style="color:${x.Acepta ? '#27ae60' : '#e74c3c'};font-weight:700;">${x.Acepta ? 'Acepta' : 'No acepta'}</td><td>${esc(x.Origen)}</td>
+                <td>${esc(x.NombreUsuario)}</td><td>${esc(x.Nota || '')}</td></tr>`).join('');
+            const camps = h.data.campanas.map(x => `<tr><td>${esc(x.FechaEnvio || '—')}</td><td>${esc(x.Nombre)}</td><td>${x.Canal === 'WHATSAPP' ? 'WhatsApp' : 'Correo'}</td>
+                <td>${esc(x.Estado)}${x.Error ? ` <span style="color:#a0aec0;">(${esc(x.Error)})</span>` : ''}</td><td>${x.FechaRespuesta ? 'Respondió' : ''}</td></tr>`).join('');
+            const tabla = (cab, filas, vacio) => filas
+                ? `<table style="width:100%;border-collapse:collapse;font-size:0.76rem;"><thead><tr style="text-align:left;color:#718096;">${cab.map(c => `<th style="padding:4px;">${c}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>`
+                : `<p style="color:#a0aec0;font-size:0.8rem;">${vacio}</p>`;
+            el.innerHTML = `${fila('WHATSAPP', 'fab fa-whatsapp', p.AceptaWhatsApp, !!p.Telefono)}${fila('CORREO', 'fas fa-envelope', p.AceptaCorreo, !!p.Correo)}
+                <p style="font-size:0.72rem;color:#718096;margin:4px 0 14px;">Márquelo solo si el huésped lo dijo. Él mismo puede salir escribiendo SALIR al WhatsApp del hotel o con el enlace del correo.</p>
+                <h4 style="font-size:0.78rem;color:#1a365d;margin:8px 0;">Historial del permiso</h4>${tabla(['Fecha', 'Canal', '', 'Origen', 'Quién', 'Nota'], hist, 'Sin cambios registrados.')}
+                <h4 style="font-size:0.78rem;color:#1a365d;margin:14px 0 8px;">Campañas recibidas</h4>${tabla(['Envío', 'Campaña', 'Canal', 'Estado', ''], camps, 'Ninguna.')}`;
+        } catch (e) {
+            el.innerHTML = '<p style="color:#e74c3c;text-align:center;">No se pudo cargar.</p>';
+        }
+    },
+
+    async cambiarConsent(canal, acepta) {
+        const r = await Swal.fire({
+            title: acepta ? `¿El huésped acepta recibir promociones por ${canal === 'WHATSAPP' ? 'WhatsApp' : 'correo'}?` : '¿Registrar que NO acepta?',
+            input: 'text', inputPlaceholder: 'Nota (opcional): cómo lo dijo', showCancelButton: true,
+            confirmButtonText: 'Registrar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a365d'
+        });
+        if (!r.isConfirmed) return;
+        try {
+            await api.put(`/crm/clientes/${_clienteActual}/consentimiento`, { canal, acepta, nota: r.value || null });
+            window.Toast && window.Toast.fire({ icon: 'success', title: 'Registrado' });
+            CRM.cargarPromos();
+        } catch (e) {
+            Swal.fire('Error', (e.response && e.response.data && e.response.data.error) || 'No se pudo registrar.', 'error');
+        }
     },
 
     toggleEdit() {

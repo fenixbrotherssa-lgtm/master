@@ -21,6 +21,8 @@ function createWindow() {
     } catch (err) {
         console.error("ERROR LEYENDO CONFIGURACION:", err.message);
     }
+    // Solo desarrollo: apuntar a otro backend sin tocar config.js (ej. un backend de prueba).
+    if (!app.isPackaged && process.env.MH_API_URL) apiFinal = process.env.MH_API_URL;
 
     // 2. CREACION DE LA VENTANA
     const win = new BrowserWindow({

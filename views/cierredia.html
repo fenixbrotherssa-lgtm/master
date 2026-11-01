@@ -1,0 +1,79 @@
+<style>
+    #seccion-cierre { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-cierre .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; flex-wrap: wrap; }
+    #seccion-cierre h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-cierre .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-cierre .cc-btn { padding: 10px 16px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .76rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-cierre .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-cierre .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-cierre .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-cierre .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-cierre .cc-btn.mini { padding: 6px 10px; font-size: .68rem; border-radius: 10px; }
+    #seccion-cierre input, #seccion-cierre select { padding: 9px 11px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-cierre input[type=checkbox] { box-shadow: none; padding: 0; }
+    #seccion-cierre .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 18px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 18px; }
+    #seccion-cierre .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-cierre .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 12px; line-height: 1.45; }
+    #seccion-cierre table { width: 100%; border-collapse: collapse; }
+    #seccion-cierre th { text-align: left; font-size: .62rem; color: #7f8c8d; text-transform: uppercase; padding: 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-cierre td { padding: 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .78rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-cierre .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-cierre .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-cierre .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-cierre .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; white-space: nowrap; }
+    #seccion-cierre .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-cierre .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-cierre .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-cierre .b-azul { background: #d6eaf8; color: #1f618d; }
+    #seccion-cierre .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-cierre .grid { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+    #seccion-cierre .dias tr { cursor: pointer; }
+    #seccion-cierre .dias tr.sel td { background: rgba(26,54,93,.09); }
+    #seccion-cierre .dias tr:hover td { background: rgba(26,54,93,.05); }
+    #seccion-cierre .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    #seccion-cierre .kpi { background: #e0e0e4; border-radius: 14px; padding: 11px 12px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-cierre .kpi .t { font-size: .6rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-cierre .kpi .v { font-size: 1.05rem; font-weight: 900; color: #1a365d; margin-top: 3px; font-variant-numeric: tabular-nums; }
+    #seccion-cierre .hall { border-left: 5px solid #95a5a6; background: rgba(255,255,255,.35); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+    #seccion-cierre .hall.ALTA { border-left-color: #e74c3c; }
+    #seccion-cierre .hall.MEDIA { border-left-color: #f39c12; }
+    #seccion-cierre .hall.INFO { border-left-color: #3498db; }
+    #seccion-cierre .hall .tt { font-weight: 900; color: #2c3e50; font-size: .8rem; display: flex; gap: 8px; align-items: center; }
+    #seccion-cierre .hall details summary { cursor: pointer; font-size: .7rem; color: #1a365d; font-weight: 800; margin-top: 6px; }
+    #seccion-cierre .sello { border: 2px dashed #27ae60; border-radius: 14px; padding: 10px 14px; font-size: .76rem; color: #1e8449; margin-bottom: 14px; }
+    #seccion-cierre .sello.reab { border-color: #e67e22; color: #a04000; }
+    #seccion-cierre .acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+    @media (max-width: 1100px) { #seccion-cierre .grid { grid-template-columns: 1fr; } #seccion-cierre { padding: 16px; } }
+</style>
+
+<div id="seccion-cierre">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard', 'viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-moon"></i> Cierre del día</h2>
+            <p class="cc-sub">Auditoría nocturna · hallazgos · cifras selladas · reapertura con motivo</p>
+        </div>
+        <div id="sedeSelectorCierre" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="cc-panel">
+                <h3><i class="fas fa-calendar-days"></i> Últimos 31 días</h3>
+                <p class="ayuda">Elija un día para revisarlo. Un día cerrado guarda sus cifras con una huella: si algo cambia después, se nota.</p>
+                <div id="cd-dias" class="dias" style="max-height:620px; overflow-y:auto;"><div class="vacio">Cargando…</div></div>
+            </div>
+            <div class="cc-panel">
+                <h3><i class="fas fa-robot"></i> Cierre automático</h3>
+                <p class="ayuda">Si nadie cierra el día, el sistema lo cierra solo al día siguiente desde la hora indicada, con los hallazgos que haya. Un día reabierto a mano no lo toca.</p>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <label style="display:flex; gap:6px; align-items:center; font-size:.76rem; font-weight:800; color:#1a365d;"><input type="checkbox" id="cd-auto"> Activo</label>
+                    <span class="muted">desde las</span>
+                    <select id="cd-hora"></select>
+                    <button class="cc-btn mini primary" onclick="CierreDiaModule.guardarConfig()"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </div>
+        </div>
+        <div id="cd-detalle"><div class="cc-panel"><div class="vacio">Elija un día de la lista.</div></div></div>
+    </div>
+</div>

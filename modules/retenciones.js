@@ -459,7 +459,8 @@ const RetencionesModule = {
             SustentoTributario: document.getElementById('cpSustento').value,
             RegistrarPago: registrarPago,
             MetodoPagoID: registrarPago ? parseInt(document.getElementById('cpMetodoPago').value) : null,
-            RubroID: registrarPago ? parseInt(document.getElementById('cpRubro').value) : null
+            RubroID: registrarPago ? parseInt(document.getElementById('cpRubro').value) : null,
+            CentroCostoID: parseInt(document.getElementById('cpCentroCosto')?.value) || null
         };
 
         try {

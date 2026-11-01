@@ -73,9 +73,10 @@ const CajaMovilModule = {
             movs.forEach(m => {
                 const monto = parseFloat(m.Monto);
                 const metodo = parseInt(m.MetodoID) || 1;
-                if (metodo === 1) { if (m.TipoMovimiento === 'Ingreso') inEfe += monto; else outEfe += monto; }
-                else if (metodo === 2 && m.TipoMovimiento === 'Ingreso') inTransf += monto;
-                else if (metodo === 3 && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
+                const grupo = m.MetodoGrupo || ({ 1: 'EFECTIVO', 2: 'TRANSFERENCIA', 3: 'TARJETA' }[metodo] || 'DIGITAL');
+                if (grupo === 'EFECTIVO') { if (m.TipoMovimiento === 'Ingreso') inEfe += monto; else outEfe += monto; }
+                else if ((grupo === 'TRANSFERENCIA' || grupo === 'DIGITAL') && m.TipoMovimiento === 'Ingreso') inTransf += monto;
+                else if (grupo === 'TARJETA' && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
             });
             const apertura = parseFloat(this.cajaActiva.MontoApertura);
             const esperado = (apertura + inEfe + inTransf + inTarjeta) - outEfe;
@@ -159,7 +160,7 @@ const CajaMovilModule = {
     gestionarVoucher() {
         const metodo = document.getElementById('mov-metodo').value;
         const box = document.getElementById('mov-box-voucher');
-        const requiere = (metodo === '2' || metodo === '3');
+        const requiere = ((window.MetodosPago ? MetodosPago.esNoEfectivo(metodo) : (metodo == '2' || metodo == '3')));
         if (box) box.style.display = requiere ? 'block' : 'none';
         if (!requiere) {
             this._voucherFile = null;
@@ -186,7 +187,7 @@ const CajaMovilModule = {
         if (isNaN(monto) || monto <= 0) {
             return window.Toast.fire({ icon: 'warning', title: 'Ingrese un monto válido' });
         }
-        if ((metodo === '2' || metodo === '3') && !this._voucherFile) {
+        if (((window.MetodosPago ? MetodosPago.esNoEfectivo(metodo) : (metodo == '2' || metodo == '3'))) && !this._voucherFile) {
             return window.Toast.fire({ icon: 'warning', title: 'Adjunte el comprobante' });
         }
 
@@ -223,9 +224,10 @@ const CajaMovilModule = {
             (res.data || []).forEach(m => {
                 const monto = parseFloat(m.Monto);
                 const metodo = parseInt(m.MetodoID) || 1;
-                if (metodo === 1) { if (m.TipoMovimiento === 'Ingreso') inEfe += monto; else outEfe += monto; }
-                else if (metodo === 2 && m.TipoMovimiento === 'Ingreso') inTransf += monto;
-                else if (metodo === 3 && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
+                const grupo = m.MetodoGrupo || ({ 1: 'EFECTIVO', 2: 'TRANSFERENCIA', 3: 'TARJETA' }[metodo] || 'DIGITAL');
+                if (grupo === 'EFECTIVO') { if (m.TipoMovimiento === 'Ingreso') inEfe += monto; else outEfe += monto; }
+                else if ((grupo === 'TRANSFERENCIA' || grupo === 'DIGITAL') && m.TipoMovimiento === 'Ingreso') inTransf += monto;
+                else if (grupo === 'TARJETA' && m.TipoMovimiento === 'Ingreso') inTarjeta += monto;
             });
 
             this.saldoEsperado = parseFloat(((inicial + inEfe + inTransf + inTarjeta) - outEfe).toFixed(2));

@@ -5,6 +5,8 @@ const CocinaMovilModule = {
     entregados: [],
     pedidosPos: [],
     sedeId: null,
+    // Comanda por estación: cada pantalla ve solo lo suyo (se recuerda por dispositivo).
+    estacion: 'COCINA',
 
     async init() {
         console.log('🍳 Módulo Cocina iniciado...');
@@ -13,6 +15,9 @@ const CocinaMovilModule = {
 
         const label = document.getElementById('cocina-sede-label');
         if (label) label.textContent = `Sede ${this.sedeId}`;
+        try { this.estacion = localStorage.getItem('cocinaEstacion') || 'COCINA'; } catch (_) { this.estacion = 'COCINA'; }
+        const sel = document.getElementById('cocina-estacion');
+        if (sel) sel.value = this.estacion;
 
         await this.cargarPedidos();
         this.setupSocket();
@@ -21,7 +26,7 @@ const CocinaMovilModule = {
 
     async cargarPedidos() {
         try {
-            const res = await api.get(`/restaurante/cocina/${this.sedeId}`);
+            const res = await api.get(`/restaurante/cocina/${this.sedeId}?estacion=${encodeURIComponent(this.estacion)}`);
             const todos = res.data;
             this.pendientes = todos.filter(p => p.Estado !== 'LISTO');
             this.entregados = todos.filter(p => p.Estado === 'LISTO');
@@ -201,10 +206,18 @@ const CocinaMovilModule = {
 
     pedidosPosEntregados: [],
 
+    cambiarEstacion(est) {
+        this.estacion = est || 'COCINA';
+        try { localStorage.setItem('cocinaEstacion', this.estacion); } catch (_) { }
+        this.cargarPedidos();
+    },
+
     setupSocket() {
         if (!window.socket) return;
 
-        window.socket.on('cocina:pedido_nuevo', () => {
+        window.socket.on('cocina:pedido_nuevo', (data) => {
+            // Solo suena en la estación a la que va el ítem (o en TODAS).
+            if (data && data.estacion && this.estacion !== 'TODAS' && data.estacion !== this.estacion) return;
             if (window.Alertas) window.Alertas.notificar('cocina', 'Nuevo pedido en cocina');
             this.cargarPedidos();
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);

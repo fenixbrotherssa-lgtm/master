@@ -1,0 +1,207 @@
+<style>
+    #seccion-costos { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-costos .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-costos h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-costos .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-costos .cc-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-costos .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-costos .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-costos .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-costos .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-costos .cc-btn.mini { padding: 6px 10px; font-size: .7rem; border-radius: 10px; }
+    #seccion-costos input, #seccion-costos select, #seccion-costos textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-costos .cc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-costos .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-costos .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-costos .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-costos .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-costos .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-costos table { width: 100%; border-collapse: collapse; }
+    #seccion-costos th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-costos td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-costos td input, #seccion-costos td select { padding: 7px 9px; }
+    #seccion-costos .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-costos .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-costos .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-costos .tabla-scroll { max-height: 520px; overflow-y: auto; }
+    #seccion-costos .grid-receta { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    #seccion-costos .lista-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    #seccion-costos .lista-item:hover { background: rgba(26,54,93,.06); }
+    #seccion-costos .lista-item.sel { background: #1a365d; color: #fff; }
+    #seccion-costos .lista-item.sel .muted { color: #cbd5e1; }
+    #seccion-costos .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-costos .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; }
+    #seccion-costos .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-costos .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-costos .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-costos .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-costos .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    #seccion-costos .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-costos .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-costos .kpi .v { font-size: 1.25rem; font-weight: 900; color: #1a365d; margin-top: 4px; }
+    #seccion-costos .campo { display: flex; flex-direction: column; gap: 6px; }
+    #seccion-costos .campo label { font-size: .64rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-costos .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    @media (max-width: 1000px) { #seccion-costos .grid-receta { grid-template-columns: 1fr; } #seccion-costos { padding: 16px; } }
+</style>
+
+<div id="seccion-costos">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('inventario','viewport')" title="Volver a inventario"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-utensils"></i> Cocina y Costos</h2>
+            <p class="cc-sub">Recetas por gramos · compras con costo · producción · mermas · food cost · kardex</p>
+        </div>
+        <div id="sedeSelectorCostos" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="recetas" onclick="CostosModule.tab('recetas')"><i class="fas fa-book-open"></i> Recetas</button>
+        <button class="cc-tab" data-tab="ingreso" onclick="CostosModule.tab('ingreso')"><i class="fas fa-truck-ramp-box"></i> Ingreso de compra</button>
+        <button class="cc-tab" data-tab="produccion" onclick="CostosModule.tab('produccion')"><i class="fas fa-blender"></i> Producción</button>
+        <button class="cc-tab" data-tab="mermas" onclick="CostosModule.tab('mermas')"><i class="fas fa-trash-can"></i> Mermas</button>
+        <button class="cc-tab" data-tab="foodcost" onclick="CostosModule.tab('foodcost')"><i class="fas fa-chart-pie"></i> Food cost</button>
+        <button class="cc-tab" data-tab="valorizado" onclick="CostosModule.tab('valorizado')"><i class="fas fa-warehouse"></i> Inventario valorizado</button>
+        <button class="cc-tab" data-tab="kardex" onclick="CostosModule.tab('kardex')"><i class="fas fa-list-ol"></i> Kardex</button>
+    </div>
+
+    <!-- RECETAS -->
+    <div class="cc-tabpanel" data-panel="recetas">
+        <div class="grid-receta">
+            <div class="cc-panel">
+                <h3><i class="fas fa-book-open"></i> Platos y preparaciones</h3>
+                <p class="ayuda">Un plato con receta no lleva stock propio: al venderlo se descuentan sus insumos en gramos, mililitros o unidades.</p>
+                <input type="text" id="cc-rec-buscar" placeholder="Buscar…" style="width:100%; margin-bottom:10px;" oninput="CostosModule.renderListaRecetas()">
+                <div id="cc-rec-lista" class="tabla-scroll"></div>
+            </div>
+            <div class="cc-panel" id="cc-rec-editor">
+                <div class="vacio">Elija un plato o una preparación para ver o armar su receta.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INGRESO DE COMPRA -->
+    <div class="cc-tabpanel" data-panel="ingreso" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-truck-ramp-box"></i> Ingreso de compra con costo</h3>
+            <p class="ayuda">Cada línea entra al stock y recalcula el costo promedio ponderado del producto. Puede escribir la cantidad en la unidad de compra (saco, caja, kg) o en gramos / mililitros / unidades.</p>
+            <div class="fila">
+                <div class="campo" style="flex:2; min-width:220px;"><label>Proveedor (opcional)</label><select id="cc-ing-prov"><option value="">— Sin proveedor —</option></select></div>
+                <div class="campo" style="flex:1; min-width:160px;"><label>Factura / referencia</label><input type="text" id="cc-ing-ref" maxlength="100" placeholder="001-001-000123"></div>
+            </div>
+            <table>
+                <thead><tr><th>Producto</th><th style="width:110px;">Cantidad</th><th style="width:170px;">Unidad</th><th style="width:130px;">Costo x unidad</th><th class="num" style="width:110px;">Subtotal</th><th style="width:40px;"></th></tr></thead>
+                <tbody id="cc-ing-lineas"></tbody>
+            </table>
+            <div class="barra" style="margin-top:12px;">
+                <button class="cc-btn" onclick="CostosModule.agregarLineaIngreso()"><i class="fas fa-plus"></i> Agregar línea</button>
+                <div style="margin-left:auto; font-weight:900; color:#1a365d;">TOTAL: <span id="cc-ing-total">$0.00</span></div>
+                <button class="cc-btn ok" onclick="CostosModule.registrarIngreso()"><i class="fas fa-save"></i> Registrar ingreso</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCCIÓN -->
+    <div class="cc-tabpanel" data-panel="produccion" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-blender"></i> Producir una preparación</h3>
+            <p class="ayuda">Salsas, masas, fondos, postres base… Consume los insumos de su receta y suma lo producido al stock con su costo real. Si salió más o menos de lo esperado, escriba la cantidad real.</p>
+            <div class="fila">
+                <div class="campo" style="flex:2; min-width:220px;"><label>Preparación</label><select id="cc-prd-prod" onchange="CostosModule.previewProduccion()"></select></div>
+                <div class="campo" style="width:110px;"><label>Lotes</label><input type="number" id="cc-prd-lotes" min="0.001" step="any" value="1" oninput="CostosModule.previewProduccion()"></div>
+                <div class="campo" style="width:170px;"><label>Cantidad real (opcional)</label><input type="number" id="cc-prd-real" min="0" step="any" placeholder="en unidad base"></div>
+                <div class="campo" style="flex:1; min-width:160px;"><label>Notas</label><input type="text" id="cc-prd-notas" maxlength="300"></div>
+                <button class="cc-btn ok" onclick="CostosModule.producir()"><i class="fas fa-check"></i> Registrar producción</button>
+            </div>
+            <div id="cc-prd-preview"></div>
+        </div>
+        <div class="cc-panel">
+            <div class="barra">
+                <h3 style="margin:0;"><i class="fas fa-clock-rotate-left"></i> Producciones</h3>
+                <input type="date" id="cc-prd-desde"> <input type="date" id="cc-prd-hasta">
+                <button class="cc-btn mini" onclick="CostosModule.cargarProducciones()"><i class="fas fa-rotate"></i></button>
+            </div>
+            <div id="cc-prd-lista" class="tabla-scroll"></div>
+        </div>
+    </div>
+
+    <!-- MERMAS -->
+    <div class="cc-tabpanel" data-panel="mermas" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-trash-can"></i> Registrar merma</h3>
+            <p class="ayuda">Lo que se pierde (vencido, dañado, derrame, recorte de preparación) sale del stock a su costo y queda en el reporte. Nunca se borra: así se sabe cuánto cuesta lo que se bota.</p>
+            <div class="fila">
+                <div class="campo" style="flex:2; min-width:220px;"><label>Producto</label><select id="cc-mer-prod" onchange="CostosModule.unidadesMerma()"></select></div>
+                <div class="campo" style="width:110px;"><label>Cantidad</label><input type="number" id="cc-mer-cant" min="0" step="any"></div>
+                <div class="campo" style="width:120px;"><label>Unidad</label><select id="cc-mer-unidad"></select></div>
+                <div class="campo" style="width:170px;"><label>Categoría</label>
+                    <select id="cc-mer-cat">
+                        <option value="VENCIDO">Vencido</option><option value="DANADO">Dañado</option><option value="PREPARACION">Recorte de preparación</option>
+                        <option value="DERRAME">Derrame</option><option value="DEVOLUCION_CLIENTE">Devuelto por cliente</option>
+                        <option value="CONSUMO_PERSONAL">Consumo del personal</option><option value="OTRO">Otro</option>
+                    </select></div>
+                <div class="campo" style="flex:2; min-width:200px;"><label>Motivo</label><input type="text" id="cc-mer-motivo" maxlength="200"></div>
+                <button class="cc-btn danger" onclick="CostosModule.registrarMerma()"><i class="fas fa-minus"></i> Registrar</button>
+            </div>
+        </div>
+        <div class="cc-panel">
+            <div class="barra">
+                <h3 style="margin:0;"><i class="fas fa-list"></i> Mermas del período</h3>
+                <input type="date" id="cc-mer-desde"> <input type="date" id="cc-mer-hasta">
+                <button class="cc-btn mini" onclick="CostosModule.cargarMermas()"><i class="fas fa-rotate"></i></button>
+                <div style="margin-left:auto; font-weight:900; color:#b03a2e;">Total: <span id="cc-mer-total">$0.00</span></div>
+            </div>
+            <div id="cc-mer-lista" class="tabla-scroll"></div>
+        </div>
+    </div>
+
+    <!-- FOOD COST -->
+    <div class="cc-tabpanel" data-panel="foodcost" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <h3 style="margin:0;"><i class="fas fa-chart-pie"></i> Food cost y margen por producto</h3>
+                <input type="date" id="cc-fc-desde"> <input type="date" id="cc-fc-hasta">
+                <button class="cc-btn primary mini" onclick="CostosModule.cargarFoodCost()"><i class="fas fa-magnifying-glass-chart"></i> Calcular</button>
+            </div>
+            <p class="ayuda" id="cc-fc-nota"></p>
+            <div class="kpis" id="cc-fc-kpis"></div>
+            <div id="cc-fc-tabla" class="tabla-scroll"></div>
+        </div>
+        <div class="cc-panel admin-only" id="cc-fc-config">
+            <h3><i class="fas fa-bullseye"></i> Meta y precios</h3>
+            <p class="ayuda">La meta de food cost colorea los platos (verde dentro de la meta). El IVA se descuenta del precio de carta para calcular el costo sobre la venta neta.</p>
+            <div class="fila">
+                <div class="campo" style="width:170px;"><label>Meta food cost (%)</label><input type="number" id="cc-cfg-meta" min="1" max="90" step="0.5"></div>
+                <div class="campo" style="width:200px;"><label>Precios de carta</label><select id="cc-cfg-iva-incl"><option value="1">Incluyen IVA</option><option value="0">Sin IVA</option></select></div>
+                <div class="campo" style="width:110px;"><label>IVA (%)</label><input type="number" id="cc-cfg-iva" min="0" max="30" step="0.5"></div>
+                <button class="cc-btn ok" onclick="CostosModule.guardarConfig()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VALORIZADO -->
+    <div class="cc-tabpanel" data-panel="valorizado" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <h3 style="margin:0;"><i class="fas fa-warehouse"></i> Inventario valorizado (stock × costo promedio)</h3>
+                <label style="font-size:.74rem; font-weight:800; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="cc-val-bajo" onchange="CostosModule.renderValorizado()"> Solo bajo mínimo</label>
+                <div style="margin-left:auto; font-weight:900; color:#1a365d; font-size:1.05rem;">TOTAL: <span id="cc-val-total">$0.00</span></div>
+            </div>
+            <div id="cc-val-tabla" class="tabla-scroll"></div>
+        </div>
+    </div>
+
+    <!-- KARDEX -->
+    <div class="cc-tabpanel" data-panel="kardex" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <h3 style="margin:0;"><i class="fas fa-list-ol"></i> Kardex valorizado</h3>
+                <select id="cc-kdx-prod" style="min-width:260px;"></select>
+                <input type="date" id="cc-kdx-desde"> <input type="date" id="cc-kdx-hasta">
+                <button class="cc-btn primary mini" onclick="CostosModule.cargarKardex()"><i class="fas fa-magnifying-glass"></i> Ver</button>
+            </div>
+            <div id="cc-kdx-cab"></div>
+            <div id="cc-kdx-tabla" class="tabla-scroll"></div>
+        </div>
+    </div>
+</div>

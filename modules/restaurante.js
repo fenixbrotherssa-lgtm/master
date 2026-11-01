@@ -13,7 +13,7 @@ const RestauranteModule = {
         console.log("🚀 Módulo Restaurante Online...");
 
         const user = JSON.parse(localStorage.getItem('user'));
-        this._isAdmin = user && parseInt(user.RolID) === 1;
+        this._isAdmin = require('./permisos').puede('restaurante', 3);   // permiso "Total" en Restaurante (mesas)
 
         if (!this._isAdmin) {
             const btnCrear = document.querySelector('button[onclick="RestauranteModule.abrirModalMesa()"]');
@@ -662,15 +662,48 @@ const RestauranteModule = {
     // ==========================================
     // SISTEMA DE COBROS MULTI-CANAL
     // ==========================================
-    async finalizarCuenta() {
+    // Dividir cuenta: se eligen las líneas a cobrar; el backend las pasa a una comanda
+    // hija (ComandaPadreID) y la mesa sigue abierta con el resto.
+    async dividirCuenta() {
+        if (!this.mesaSeleccionada || !this.mesaSeleccionada.ComandaID) return;
+        let items = [];
+        try { items = (await api.get(`/restaurante/detalle/${this.mesaSeleccionada.ComandaID}`)).data || []; } catch (e) { return; }
+        if (items.length < 2) return window.Toast.fire({ icon: 'info', title: 'Para dividir, la mesa necesita al menos 2 líneas' });
+        const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        const { value: ids } = await Swal.fire({
+            title: 'DIVIDIR CUENTA',
+            html: `<p style="font-size:0.85rem; color:#718096; margin-bottom:10px;">Marque lo que paga esta persona. El resto queda en la mesa.</p>
+                <div style="text-align:left; max-height:320px; overflow-y:auto;">${items.map(i => `
+                    <label style="display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #e2e8f0; cursor:pointer;">
+                        <input type="checkbox" class="div-item" value="${i.DetalleID}" data-sub="${(i.Cantidad * i.PrecioUnitario).toFixed(2)}"
+                               onchange="document.getElementById('div-total').textContent='$'+[...document.querySelectorAll('.div-item:checked')].reduce((a,c)=>a+parseFloat(c.dataset.sub),0).toFixed(2)">
+                        <span style="flex:1;"><strong>${i.Cantidad}x</strong> ${esc(i.NombreProducto)}</span>
+                        <strong>$${(i.Cantidad * i.PrecioUnitario).toFixed(2)}</strong>
+                    </label>`).join('')}</div>
+                <p style="margin-top:12px; font-weight:900; font-size:1.1rem; color:var(--hotel-blue);">A COBRAR: <span id="div-total">$0.00</span></p>`,
+            showCancelButton: true, confirmButtonText: 'CONTINUAR AL COBRO', cancelButtonText: 'CANCELAR',
+            confirmButtonColor: 'var(--hotel-blue)', background: 'var(--hotel-bg)',
+            preConfirm: () => {
+                const sel = [...document.querySelectorAll('.div-item:checked')];
+                if (sel.length === 0) { Swal.showValidationMessage('Marque al menos un ítem'); return false; }
+                if (sel.length === items.length) { Swal.showValidationMessage('Marcó todo: use COBRAR para la mesa completa'); return false; }
+                return sel.map(c => parseInt(c.value));
+            }
+        });
+        if (!ids) return;
+        const total = items.filter(i => ids.includes(i.DetalleID)).reduce((a, i) => a + i.Cantidad * i.PrecioUnitario, 0);
+        this.finalizarCuenta({ detalleIds: ids, total });
+    },
+
+    async finalizarCuenta(division = null) {
         if (!this.mesaSeleccionada || !this.mesaSeleccionada.ComandaID) return;
 
         const totalStr = document.getElementById('ui-total-comanda').textContent.replace('$', '');
-        const total = parseFloat(totalStr);
+        const total = division ? division.total : parseFloat(totalStr);
         if (total <= 0) return window.Toast.fire({ icon: 'warning', title: 'La comanda está vacía' });
 
         const { value: tipoCobro } = await Swal.fire({
-            title: '¿CÓMO PAGARÁ LA MESA?',
+            title: division ? '¿CÓMO PAGA ESTA PARTE?' : '¿CÓMO PAGARÁ LA MESA?',
             html: `<p style="font-size:1.2rem; font-weight:bold; color:var(--hotel-blue); margin-bottom:15px;">TOTAL: $${total.toFixed(2)}</p>`,
             icon: 'question',
             showCancelButton: true,
@@ -705,7 +738,8 @@ const RestauranteModule = {
                 });
 
                 if (recepcionId) {
-                    this.procesarCobroBackend({ comandaId: this.mesaSeleccionada.ComandaID, tipoCobro: 'HABITACION', recepcionId: recepcionId });
+                    this.procesarCobroBackend({ comandaId: this.mesaSeleccionada.ComandaID, tipoCobro: 'HABITACION', recepcionId: recepcionId,
+                                                ...(division ? { detalleIds: division.detalleIds } : {}) });
                 }
             } catch(e) {
                 console.error("Error cargando rack", e);
@@ -719,7 +753,7 @@ const RestauranteModule = {
                 title: 'COBRO EN RESTAURANTE',
                 html: `
                     <label style="display:block; text-align:left; font-weight:bold; font-size:0.8rem; margin-bottom:5px;">Método de Pago</label>
-                    <select id="res-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('res-box-voucher').style.display = (this.value == '2' || this.value == '3') ? 'block' : 'none'">
+                    <select id="res-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('res-box-voucher').style.display = ((window.MetodosPago ? MetodosPago.esNoEfectivo(this.value) : (this.value == '2' || this.value == '3'))) ? 'block' : 'none'" data-metodos-pago>
                         <option value="1">EFECTIVO</option>
                         <option value="2">TRANSFERENCIA</option>
                         <option value="3">TARJETA</option>
@@ -769,6 +803,7 @@ const RestauranteModule = {
                 formData.append('referencia', formPago.referencia);
                 formData.append('propina', (formPago.propina || 0).toFixed(2));
                 formData.append('monto', total);
+                if (division) formData.append('detalleIds', JSON.stringify(division.detalleIds));
 
                 if (formPago.voucherFile) {
                     formData.append('voucher', formPago.voucherFile);
@@ -790,7 +825,7 @@ const RestauranteModule = {
                 const comandaId = res.data.comandaId;
                 const r = await Swal.fire({
                     icon: 'success', title: '¡CUENTA CERRADA!',
-                    html: `Mesa liberada e inventario descontado.${res.data.propina > 0 ? `<br><small>Propina $${Number(res.data.propina).toFixed(2)} — la custodia el cajero.</small>` : ''}`,
+                    html: `${res.data.cuentaDividida ? 'Parte cobrada. La mesa sigue abierta con el resto de la cuenta.' : 'Mesa liberada e inventario descontado.'}${res.data.propina > 0 ? `<br><small>Propina $${Number(res.data.propina).toFixed(2)} — la custodia el cajero.</small>` : ''}`,
                     showCancelButton: true,
                     confirmButtonText: '<i class="fas fa-print"></i> IMPRIMIR RECIBO',
                     cancelButtonText: 'LISTO',
@@ -798,8 +833,14 @@ const RestauranteModule = {
                 });
                 if (r.isConfirmed && comandaId) this.imprimirReciboComanda(comandaId);
 
-                this.resetUICompleto();
-                await this.cargarMesas();
+                if (res.data.cuentaDividida && this.mesaSeleccionada) {
+                    const mesaId = this.mesaSeleccionada.MesaID;
+                    await this.cargarMesas();
+                    await this.seleccionarMesa(mesaId);
+                } else {
+                    this.resetUICompleto();
+                    await this.cargarMesas();
+                }
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error al cobrar', text: err.response?.data?.error || 'Error de conexión' });

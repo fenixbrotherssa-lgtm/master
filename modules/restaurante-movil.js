@@ -444,7 +444,7 @@ const RestauranteModule = {
                 title: 'COBRO EN RESTAURANTE',
                 html: `
                     <label style="display:block; text-align:left; font-weight:bold; font-size:0.8rem; margin-bottom:5px;">Método de Pago</label>
-                    <select id="res-metodo" class="swal2-input" style="margin-bottom:15px;">
+                    <select id="res-metodo" class="swal2-input" style="margin-bottom:15px;" data-metodos-pago>
                         <option value="1">EFECTIVO</option>
                         <option value="2">TRANSFERENCIA</option>
                         <option value="3">TARJETA</option>

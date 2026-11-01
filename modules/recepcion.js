@@ -273,16 +273,46 @@ const RecepcionModule = {
     // ==========================================
     // CHECK-IN LÓGICA
     // ==========================================
+    // Consentimiento para promociones (Fase 6). Se recuerda lo que ya tenía la ficha: marcar envía
+    // "acepta"; desmarcar solo envía "no acepta" si antes había aceptado; sin tocar no se registra nada.
+    cargarConsentimiento(c) {
+        this._consentPrevio = { wa: c ? c.AceptaWhatsApp : null, correo: c ? c.AceptaCorreo : null };
+        const wa = document.getElementById('in-acepta-wa'), co = document.getElementById('in-acepta-correo');
+        if (wa) wa.checked = this._consentPrevio.wa === true;
+        if (co) co.checked = this._consentPrevio.correo === true;
+    },
+
+    consentimientoForm() {
+        const prev = this._consentPrevio || {};
+        const valor = (id, antes) => {
+            const el = document.getElementById(id);
+            if (!el) return undefined;
+            if (el.checked) return true;
+            return antes === true ? false : undefined;
+        };
+        const out = {};
+        const wa = valor('in-acepta-wa', prev.wa), co = valor('in-acepta-correo', prev.correo);
+        if (wa !== undefined) out.AceptaWhatsApp = wa;
+        if (co !== undefined) out.AceptaCorreo = co;
+        return out;
+    },
+
     abrirCheckIn(hab) {
         const modal = document.getElementById('modalCheckIn');
         const form = document.getElementById('formCheckIn');
         form.reset();
+        this.cargarConsentimiento(null);
         
         this.acompanantesActuales = []; 
         this.renderAcompanantes();
         
         document.getElementById('modalCheckInTitulo').textContent = `CHECK-IN: HABITACIÓN ${hab.NroHabitacion}`;
         document.getElementById('in-habitacionId').value = hab.HabitacionID;
+
+        // Tarifa del día (Fase 5): se carga aparte y recalcula al llegar
+        this.tarifaHab = null;
+        this.tarifaReserva = null;
+        this.cargarTarifaHab(hab.HabitacionID);
 
         // Por defecto un check-in NO viene de reserva. Si llega de una, se setea después.
         const inResv = document.getElementById('in-reservaId');
@@ -303,6 +333,16 @@ const RecepcionModule = {
         this.cargarEspaciosParqueoLibres(); // 🚗 SE CARGAN LOS PARQUEADEROS AL ABRIR
         
         modal.classList.remove('hidden');
+    },
+
+    async cargarTarifaHab(habitacionId) {
+        try {
+            const res = await api.get(`/tarifas/habitacion/${habitacionId}?dias=90`);
+            if (this.habSeleccionada && this.habSeleccionada.HabitacionID == habitacionId) {
+                this.tarifaHab = res.data;
+                this.recalcularPrecios();
+            }
+        } catch (e) { console.warn('Tarifa del día no disponible, se usa el precio de la ficha', e); }
     },
 
     toggleMigracion() {
@@ -365,7 +405,44 @@ const RecepcionModule = {
             txtSalida = `${baseDate.toLocaleDateString()} a las ${horaSalida}`;
         }
 
-        let totalFinal = Math.max(0, (precioUnitario * tiempo) - descuento);
+        // Tarifa del día (Fase 5): cada noche con el ajuste aprobado de su tipo.
+        // El servidor recalcula la misma lista y guarda la diferencia como descuento.
+        let subtotal = precioUnitario * tiempo;
+        let nota = '';
+        const th = this.tarifaHab;
+        if (!esMigracion && th && th.HabitacionID == this.habSeleccionada.HabitacionID &&
+            (tipo === 'Dia' || (tipo === 'Momento' && th.aplicaMomento))) {
+            const pad = n => String(n).padStart(2, '0');
+            const clave = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+            const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+            const d = new Date();
+            if (d.getHours() < 8) d.setDate(d.getDate() - 1);   // madrugada = noche anterior
+            let ajustadas = 0;
+            if (tipo === 'Dia') {
+                subtotal = 0;
+                for (let i = 0; i < tiempo; i++) {
+                    const pct = th.ajustes[clave(d)] || 0;
+                    if (pct) ajustadas++;
+                    subtotal += r2(precioUnitario * (1 + pct / 100));
+                    d.setDate(d.getDate() + 1);
+                }
+            } else {
+                const pct = th.ajustes[clave(d)] || 0;
+                if (pct) ajustadas = 1;
+                subtotal = r2(precioUnitario * (1 + pct / 100)) * tiempo;
+            }
+            subtotal = r2(subtotal);
+            if (ajustadas) nota = `Tarifa del día: ${ajustadas} ${tipo === 'Dia' ? 'noche(s)' : 'momento'} con ajuste · precio base $${(precioUnitario * tiempo).toFixed(2)}`;
+        }
+        const tr = this.tarifaReserva;
+        if (!esMigracion && tr && tipo === 'Dia' && tiempo === tr.noches && tr.total > 0) {
+            subtotal = tr.total;
+            nota = `Tarifa garantizada de la reserva ${tr.codigo || ''}`;
+        }
+        const uiNota = document.getElementById('ui-tarifa-nota');
+        if (uiNota) uiNota.textContent = nota;
+
+        let totalFinal = Math.max(0, subtotal - descuento);
         document.getElementById('ui-total-hospedaje').textContent = `$${totalFinal.toFixed(2)}`;
         document.getElementById('in-montoAbono').value = totalFinal.toFixed(2);
         
@@ -405,6 +482,7 @@ const RecepcionModule = {
                 document.getElementById('in-telefono').value = c.Telefono || '';
                 document.getElementById('in-procedencia').value = c.Procedencia || '';
                 document.getElementById('in-correo').value = c.Correo || '';
+                this.cargarConsentimiento(c);
                 
                 if (c.FechaNacimiento) {
                     document.getElementById('in-nacimiento').value = c.FechaNacimiento.split('T')[0];
@@ -440,6 +518,7 @@ const RecepcionModule = {
                 document.getElementById('in-correo').value = '';
                 document.getElementById('in-nacimiento').value = '';
                 document.getElementById('lbl-edad').textContent = 'EDAD: --';
+                this.cargarConsentimiento(null);
                 
                 window.Toast.fire({ icon: 'info', title: 'NUEVO CLIENTE', text: 'No existe en registros. Por favor, complete los datos manualmente.' });
             }
@@ -482,7 +561,7 @@ const RecepcionModule = {
         const metodoSelect = document.getElementById('in-metodoPago');
         const fileContainer = document.getElementById('container-voucher-rec');
         if(!metodoSelect || !fileContainer) return;
-        if(metodoSelect.value === '2' || metodoSelect.value === '3') {
+        if((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoSelect.value) : (metodoSelect.value == '2' || metodoSelect.value == '3'))) {
             fileContainer.style.display = 'block';
         } else {
             fileContainer.style.display = 'none';
@@ -1149,7 +1228,7 @@ const RecepcionModule = {
                 <input id="swal-monto" type="number" step="0.01" class="swal2-input" value="${saldoPendiente.toFixed(2)}" style="margin-bottom:15px; color:var(--hotel-success); font-weight:bold;">
                 
                 <label style="font-size:0.8rem; font-weight:bold; color:var(--hotel-blue); display:block; text-align:left; margin-bottom:5px;">Método de Pago</label>
-                <select id="swal-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('box-voucher-abono').style.display = (this.value == '2' || this.value == '3') ? 'block' : 'none'">
+                <select id="swal-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('box-voucher-abono').style.display = ((window.MetodosPago ? MetodosPago.esNoEfectivo(this.value) : (this.value == '2' || this.value == '3'))) ? 'block' : 'none'" data-metodos-pago>
                     <option value="1">EFECTIVO</option>
                     <option value="2">TRANSFERENCIA</option>
                     <option value="3">TARJETA</option>
@@ -1220,7 +1299,7 @@ const RecepcionModule = {
         const fileContainer = document.getElementById('container-voucher-out');
         if(!metodoSelect || !fileContainer) return;
         
-        if(metodoSelect.value === '2' || metodoSelect.value === '3') {
+        if((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoSelect.value) : (metodoSelect.value == '2' || metodoSelect.value == '3'))) {
             fileContainer.style.display = 'block';
         } else {
             fileContainer.style.display = 'none';
@@ -1479,6 +1558,9 @@ const RecepcionModule = {
             if (inAdultos) inAdultos.value = rv.NroAdultos || 1;
             if (inNinos) inNinos.value = rv.NroNinos || 0;
 
+            // Lo que se le cotizó al huésped al reservar se respeta (tarifa garantizada)
+            this.tarifaReserva = { total: parseFloat(rv.TotalEstimado) || 0, noches, codigo: rv.CodigoReserva };
+
             this.recalcularPrecios();
 
             document.getElementById('modalCheckInTitulo').textContent =
@@ -1550,7 +1632,7 @@ const RecepcionModule = {
 
             sel.innerHTML = '<option value="">-- Elige un tipo --</option>' + conCupo.map(t =>
                 `<option value="${t.TipoID}" data-total="${t.TotalEstimado}">
-                    ${t.Descripcion} · $${parseFloat(t.PrecioBase).toFixed(2)}/noche · ${t.Disponibles} libre(s) · Total ~$${parseFloat(t.TotalEstimado).toFixed(2)}
+                    ${t.Descripcion} · $${parseFloat(t.PrecioNoche ?? t.PrecioBase).toFixed(2)}/noche · ${t.Disponibles} libre(s) · Total $${parseFloat(t.TotalEstimado).toFixed(2)}
                 </option>`
             ).join('');
         } catch (err) {
@@ -1674,7 +1756,8 @@ const RecepcionModule = {
                     Telefono: document.getElementById('in-telefono').value,
                     Procedencia: document.getElementById('in-procedencia').value,
                     Correo: document.getElementById('in-correo').value,
-                    FechaNacimiento: document.getElementById('in-nacimiento').value || null
+                    FechaNacimiento: document.getElementById('in-nacimiento').value || null,
+                    ...this.consentimientoForm()
                 };
                 formData.append('cliente', JSON.stringify(clienteObj));
 
@@ -1770,7 +1853,7 @@ const RecepcionModule = {
 
                 const metodoID = document.getElementById('out-metodoPago') ? document.getElementById('out-metodoPago').value : '1';
                 let formaPagoSRI = '01'; 
-                if (metodoID === '2' || metodoID === '3') {
+                if ((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoID) : (metodoID == '2' || metodoID == '3'))) {
                     formaPagoSRI = '20'; 
                 }
 

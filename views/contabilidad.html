@@ -1,0 +1,163 @@
+<style>
+    #seccion-conta { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-conta .cc-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-conta h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-conta .cc-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-conta .cc-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-conta .cc-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-conta .cc-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-conta .cc-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-conta .cc-btn.danger { background: #e74c3c; color: #fff; }
+    #seccion-conta .cc-btn.mini { padding: 6px 10px; font-size: .7rem; border-radius: 10px; }
+    #seccion-conta input, #seccion-conta select, #seccion-conta textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-conta .cc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-conta .cc-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-conta .cc-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-conta .cc-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-conta .cc-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-conta .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-conta table { width: 100%; border-collapse: collapse; }
+    #seccion-conta th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-conta td { padding: 7px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .8rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-conta td input, #seccion-conta td select { padding: 7px 9px; }
+    #seccion-conta .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #seccion-conta .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-conta .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-conta .tabla-scroll { max-height: 520px; overflow-y: auto; }
+    #seccion-conta .grid-receta { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    #seccion-conta .lista-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    #seccion-conta .lista-item:hover { background: rgba(26,54,93,.06); }
+    #seccion-conta .lista-item.sel { background: #1a365d; color: #fff; }
+    #seccion-conta .lista-item.sel .muted { color: #cbd5e1; }
+    #seccion-conta .muted { color: #7f8c8d; font-size: .7rem; }
+    #seccion-conta .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .62rem; font-weight: 900; letter-spacing: .4px; }
+    #seccion-conta .b-ok { background: #d5f5e3; color: #1e8449; }
+    #seccion-conta .b-alto { background: #fadbd8; color: #b03a2e; }
+    #seccion-conta .b-medio { background: #fdebd0; color: #b9770e; }
+    #seccion-conta .b-gris { background: #eef0f2; color: #566573; }
+    #seccion-conta .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    #seccion-conta .kpi { background: #e0e0e4; border-radius: 16px; padding: 14px; box-shadow: inset 3px 3px 7px #bebebe, inset -3px -3px 7px #fff; }
+    #seccion-conta .kpi .t { font-size: .62rem; font-weight: 900; color: #7f8c8d; text-transform: uppercase; }
+    #seccion-conta .kpi .v { font-size: 1.25rem; font-weight: 900; color: #1a365d; margin-top: 4px; }
+    #seccion-conta .campo { display: flex; flex-direction: column; gap: 6px; }
+    #seccion-conta .campo label { font-size: .64rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-conta .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    @media (max-width: 1000px) { #seccion-conta .grid-receta { grid-template-columns: 1fr; } #seccion-conta { padding: 16px; } }
+    #seccion-conta .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    #seccion-conta tr.grupo td { font-weight: 900; color: #1a365d; }
+    #seccion-conta tr.total td { font-weight: 900; border-top: 2px solid rgba(26,54,93,.25); }
+    #seccion-conta tr.anulado td { opacity: .5; text-decoration: line-through; }
+    #seccion-conta .ok-txt { color: #1e8449; font-weight: 900; }
+    #seccion-conta .mal-txt { color: #b03a2e; font-weight: 900; }
+    #seccion-conta tr.clic { cursor: pointer; }
+    #seccion-conta tr.clic:hover td { background: rgba(26,54,93,.05); }
+</style>
+
+<div id="seccion-conta">
+    <div class="cc-head">
+        <button class="cc-btn" onclick="App.renderView('dashboard','viewport')" title="Volver"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-book"></i> Contabilidad</h2>
+            <p class="cc-sub">Partida doble · asientos automáticos · libros · balances · resultados por centro de costo · cierre de periodos</p>
+        </div>
+        <div id="sedeSelectorConta" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cc-tabs">
+        <button class="cc-tab activa" data-tab="estado" onclick="ContaModule.tab('estado')"><i class="fas fa-gauge"></i> Estado</button>
+        <button class="cc-tab" data-tab="diario" onclick="ContaModule.tab('diario')"><i class="fas fa-book-open"></i> Libro diario</button>
+        <button class="cc-tab" data-tab="mayor" onclick="ContaModule.tab('mayor')"><i class="fas fa-list"></i> Libro mayor</button>
+        <button class="cc-tab" data-tab="balances" onclick="ContaModule.tab('balances')"><i class="fas fa-scale-balanced"></i> Balances</button>
+        <button class="cc-tab" data-tab="plan" onclick="ContaModule.tab('plan')"><i class="fas fa-sitemap"></i> Plan de cuentas</button>
+        <button class="cc-tab" data-tab="mapeo" onclick="ContaModule.tab('mapeo')"><i class="fas fa-link"></i> Cuentas automáticas</button>
+        <button class="cc-tab" data-tab="periodos" onclick="ContaModule.tab('periodos')"><i class="fas fa-lock"></i> Periodos</button>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="estado"><div id="ct-estado"></div></div>
+
+    <div class="cc-tabpanel" data-panel="diario" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo"><label>Desde</label><input type="date" id="ct-d-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="ct-d-hasta"></div>
+                <div class="campo"><label>Origen</label><select id="ct-d-origen">
+                    <option value="">Todos</option><option value="CAJA">Caja</option><option value="PAGO">Pagos</option><option value="COMPRA">Compras</option>
+                    <option value="INVENTARIO">Inventario</option><option value="DEPRECIACION">Depreciación</option><option value="APERTURA">Apertura</option>
+                    <option value="MANUAL">Manuales</option><option value="REVERSO">Reversos</option></select></div>
+                <div class="campo"><label>Buscar</label><input type="text" id="ct-d-buscar" placeholder="Glosa o referencia"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="ContaModule.cargarDiario()"><i class="fas fa-rotate"></i> Ver</button>
+                <button class="cc-btn ok" style="align-self:flex-end; margin-left:auto;" onclick="ContaModule.nuevoAsiento()"><i class="fas fa-plus"></i> Asiento manual</button>
+            </div>
+            <div id="ct-nuevo"></div>
+            <div class="tabla-scroll" id="ct-diario" style="max-height:640px;"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="mayor" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="campo" style="min-width:320px;"><label>Cuenta</label><select id="ct-m-cuenta"></select></div>
+                <div class="campo"><label>Desde</label><input type="date" id="ct-m-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="ct-m-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="ContaModule.cargarMayor()"><i class="fas fa-rotate"></i> Ver</button>
+            </div>
+            <div class="tabla-scroll" id="ct-mayor" style="max-height:640px;"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="balances" style="display:none;">
+        <div class="cc-panel">
+            <div class="barra">
+                <div class="sub-tabs" style="margin:0;">
+                    <button class="cc-btn mini primary" data-sub="resultados" onclick="ContaModule.subBalance('resultados')">Resultados por centro</button>
+                    <button class="cc-btn mini" data-sub="comprobacion" onclick="ContaModule.subBalance('comprobacion')">Comprobación</button>
+                    <button class="cc-btn mini" data-sub="general" onclick="ContaModule.subBalance('general')">Balance general</button>
+                </div>
+                <div class="campo"><label>Desde</label><input type="date" id="ct-b-desde"></div>
+                <div class="campo"><label>Hasta</label><input type="date" id="ct-b-hasta"></div>
+                <button class="cc-btn primary" style="align-self:flex-end;" onclick="ContaModule.cargarBalance()"><i class="fas fa-rotate"></i> Ver</button>
+                <button class="cc-btn" style="align-self:flex-end;" onclick="ContaModule.csv()"><i class="fas fa-file-csv"></i> CSV</button>
+            </div>
+            <div id="ct-balance"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="plan" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-sitemap"></i> Plan de cuentas</h3>
+            <p class="ayuda">Base NIIF PYMES de OmniCore con cuentas hoteleras. Su contador puede renombrar cuentas, crear subcuentas y desactivar las que no use. Las cuentas en negrita son de agrupación (no reciben movimientos).</p>
+            <div class="fila">
+                <div class="campo" style="width:140px;"><label>Código nuevo</label><input type="text" id="ct-p-codigo" placeholder="5.2.16"></div>
+                <div class="campo" style="flex:1; min-width:240px;"><label>Nombre</label><input type="text" id="ct-p-nombre" placeholder="Nombre de la cuenta"></div>
+                <button class="cc-btn ok" onclick="ContaModule.crearCuenta()"><i class="fas fa-plus"></i> Crear cuenta</button>
+            </div>
+            <div class="tabla-scroll" id="ct-plan" style="max-height:640px;"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="mapeo" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-gears"></i> Cuentas de los asientos automáticos</h3>
+            <p class="ayuda">Qué cuenta usa el sistema al contabilizar cada cosa. El cambio vale para lo que se contabilice desde ahora; para corregir lo ya contabilizado en un periodo abierto use "Rehacer desde" en la pestaña Estado.</p>
+            <div class="tabla-scroll" id="ct-claves" style="max-height:520px;"></div>
+        </div>
+        <div class="cc-panel">
+            <h3><i class="fas fa-tags"></i> Cuenta de cada rubro de caja y finanzas</h3>
+            <p class="ayuda">Si un rubro no tiene cuenta, el egreso va a "Otros gastos" (o a la cuenta puente si es compra a inventario, o a "Pendientes de clasificar" si no es gasto). Asignar la cuenta correcta a cada rubro es lo que hace útil el estado de resultados.</p>
+            <div class="tabla-scroll" id="ct-rubros" style="max-height:520px;"></div>
+        </div>
+    </div>
+
+    <div class="cc-tabpanel" data-panel="periodos" style="display:none;">
+        <div class="cc-panel">
+            <h3><i class="fas fa-lock"></i> Cierre de periodos</h3>
+            <p class="ayuda">Cerrar un mes contabiliza todo lo pendiente de ese mes y lo congela: no se registran asientos con esa fecha y la base de datos impide borrar sus movimientos de caja. Si algo llega tarde, se contabiliza en el mes abierto y lo dice en la glosa. Reabrir exige un motivo y queda auditado.</p>
+            <div class="fila">
+                <div class="campo"><label>Año</label><input type="number" id="ct-per-anio" style="width:100px;"></div>
+                <div class="campo"><label>Mes</label><select id="ct-per-mes"></select></div>
+                <button class="cc-btn danger" onclick="ContaModule.cerrarPeriodo()"><i class="fas fa-lock"></i> Cerrar mes</button>
+            </div>
+            <div id="ct-periodos"></div>
+        </div>
+    </div>
+</div>

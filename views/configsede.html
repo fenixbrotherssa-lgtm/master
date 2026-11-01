@@ -1,0 +1,206 @@
+<style>
+    #seccion-configsede { padding: 32px; background: var(--hotel-bg, #e0e0e4); min-height: 100%; animation: fadeIn .3s ease-out; }
+    #seccion-configsede .cs-head { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-configsede h2 { font-size: 1.4rem; color: #1a365d; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    #seccion-configsede .cs-sub { font-size: .72rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; margin: 0; }
+    #seccion-configsede .cs-btn { padding: 10px 18px; border: none; border-radius: 14px; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; cursor: pointer; font-weight: 800; color: #1a365d; font-size: .78rem; display: inline-flex; align-items: center; gap: 8px; }
+    #seccion-configsede .cs-btn:active { box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #fff; }
+    #seccion-configsede .cs-btn.primary { background: #1a365d; color: #fff; }
+    #seccion-configsede .cs-btn.ok { background: #27ae60; color: #fff; }
+    #seccion-configsede input, #seccion-configsede select, #seccion-configsede textarea { padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: #e0e0e4; box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #fff; color: #2c3e50; font-weight: 600; outline: none; font-family: inherit; }
+    #seccion-configsede .cs-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #seccion-configsede .cs-tab { padding: 11px 18px; border-radius: 14px; cursor: pointer; font-weight: 900; font-size: .74rem; color: #1a365d; text-transform: uppercase; background: #e0e0e4; box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #fff; border: none; display: inline-flex; gap: 8px; align-items: center; }
+    #seccion-configsede .cs-tab.activa { background: #1a365d; color: #fff; box-shadow: inset 3px 3px 8px rgba(0,0,0,.35); }
+    #seccion-configsede .cs-tab .pill { background: #e74c3c; color: #fff; border-radius: 10px; padding: 1px 7px; font-size: .62rem; }
+    #seccion-configsede .cs-panel { background: #e0e0e4; border-radius: 20px; padding: 20px; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #fff; margin-bottom: 20px; }
+    #seccion-configsede .cs-panel h3 { font-size: .85rem; color: #1a365d; font-weight: 900; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    #seccion-configsede .cs-panel .ayuda { font-size: .72rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.45; }
+    #seccion-configsede table { width: 100%; border-collapse: collapse; }
+    #seccion-configsede th { text-align: left; font-size: .64rem; color: #7f8c8d; text-transform: uppercase; padding: 8px 6px; font-weight: 900; border-bottom: 2px solid rgba(26,54,93,.12); }
+    #seccion-configsede td { padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,.06); font-size: .82rem; color: #2c3e50; vertical-align: middle; }
+    #seccion-configsede td input[type=number] { width: 80px; text-align: right; padding: 7px 9px; }
+    #seccion-configsede td input[type=text] { width: 100%; padding: 7px 9px; }
+    #seccion-configsede .badge { display: inline-block; padding: 3px 9px; border-radius: 9px; font-size: .6rem; font-weight: 900; letter-spacing: .5px; }
+    #seccion-configsede .b-EFECTIVO { background: #d5f5e3; color: #1e8449; }
+    #seccion-configsede .b-TRANSFERENCIA { background: #d6eaf8; color: #1f618d; }
+    #seccion-configsede .b-TARJETA { background: #fdebd0; color: #b9770e; }
+    #seccion-configsede .b-DIGITAL { background: #e8daef; color: #7d3c98; }
+    #seccion-configsede .b-OPERATIVO { background: #d6eaf8; color: #1f618d; }
+    #seccion-configsede .b-NO_DISTRIBUIDO { background: #f2f3f4; color: #566573; }
+    #seccion-configsede .switch { position: relative; width: 42px; height: 22px; display: inline-block; }
+    #seccion-configsede .switch input { opacity: 0; width: 0; height: 0; }
+    #seccion-configsede .switch span { position: absolute; inset: 0; border-radius: 22px; background: #c8ccd2; transition: .2s; cursor: pointer; }
+    #seccion-configsede .switch span::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: .2s; }
+    #seccion-configsede .switch input:checked + span { background: #27ae60; }
+    #seccion-configsede .switch input:checked + span::before { transform: translateX(20px); }
+    #seccion-configsede .switch input:disabled + span { opacity: .5; cursor: not-allowed; }
+    #seccion-configsede .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    #seccion-configsede .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    #seccion-configsede .campo label { font-size: .66rem; font-weight: 900; color: #1a365d; text-transform: uppercase; }
+    #seccion-configsede .codigo { font-family: Consolas, monospace; font-size: .74rem; background: rgba(26,54,93,.06); padding: 10px 12px; border-radius: 10px; word-break: break-all; color: #1a365d; }
+    #seccion-configsede .vacio { text-align: center; color: #94a3b8; padding: 26px 10px; font-weight: 700; font-size: .8rem; }
+    #seccion-configsede .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    #seccion-configsede .num { text-align: right; font-variant-numeric: tabular-nums; }
+    #seccion-configsede .tabla-scroll { max-height: 460px; overflow-y: auto; }
+    @media (max-width: 900px) { #seccion-configsede .grid2 { grid-template-columns: 1fr; } #seccion-configsede { padding: 16px; } }
+</style>
+
+<div id="seccion-configsede">
+    <div class="cs-head">
+        <button class="cs-btn" onclick="App.renderView('dashboard','viewport')"><i class="fas fa-arrow-left"></i></button>
+        <div>
+            <h2><i class="fas fa-sliders"></i> Configuración de Sede</h2>
+            <p class="cs-sub">Métodos de pago · canales y motores de reserva · centros de costo · políticas</p>
+        </div>
+        <div id="sedeSelectorConfig" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="cs-tabs">
+        <button class="cs-tab activa" data-tab="metodos" onclick="ConfigSedeModule.tab('metodos')"><i class="fas fa-credit-card"></i> Métodos de pago</button>
+        <button class="cs-tab" data-tab="canales" onclick="ConfigSedeModule.tab('canales')"><i class="fas fa-globe"></i> Canales y motores</button>
+        <button class="cs-tab" data-tab="centros" onclick="ConfigSedeModule.tab('centros')"><i class="fas fa-sitemap"></i> Centros de costo</button>
+        <button class="cs-tab" data-tab="clasificar" onclick="ConfigSedeModule.tab('clasificar')"><i class="fas fa-tags"></i> Clasificar movimientos <span id="cs-pill-sin" class="pill" style="display:none;"></span></button>
+        <button class="cs-tab" data-tab="politicas" onclick="ConfigSedeModule.tab('politicas')"><i class="fas fa-file-contract"></i> Políticas</button>
+    </div>
+
+    <!-- ============ MÉTODOS DE PAGO ============ -->
+    <div class="cs-tabpanel" data-panel="metodos">
+        <div class="cs-panel">
+            <h3><i class="fas fa-credit-card"></i> Métodos de pago de esta sede</h3>
+            <p class="ayuda">Los desactivados no aparecen en caja, recepción, restaurante ni parqueadero. La <b>comisión</b> (ej. 4,5% del datáfono)
+                se usará para calcular el ingreso neto en los KPI. El <b>grupo</b> decide en qué columna del arqueo cae y si pide comprobante
+                (todo lo que no es efectivo lo pide).</p>
+            <div class="barra">
+                <button class="cs-btn" onclick="ConfigSedeModule.nuevoMetodo()"><i class="fas fa-plus"></i> Nuevo método</button>
+                <button class="cs-btn ok" style="margin-left:auto;" onclick="ConfigSedeModule.guardarMetodos()"><i class="fas fa-save"></i> Guardar métodos</button>
+            </div>
+            <table>
+                <thead><tr><th style="width:60px;">Activo</th><th>Método</th><th>Grupo</th><th style="width:120px;">Comisión %</th><th style="width:90px;">Orden</th></tr></thead>
+                <tbody id="cs-metodos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============ CANALES Y MOTORES ============ -->
+    <div class="cs-tabpanel" data-panel="canales" style="display:none;">
+        <div class="cs-panel">
+            <h3><i class="fas fa-globe"></i> Canales de venta</h3>
+            <p class="ayuda">De dónde llegan las reservas. La <b>comisión</b> de cada OTA (Booking, Expedia…) permite ver cuánto te queda realmente
+                por canal. El código es el que se guarda en cada reserva (<code>Reservas.Origen</code>) y el que debe mandar el channel manager en <code>fuente</code>.</p>
+            <div class="barra">
+                <button class="cs-btn" onclick="ConfigSedeModule.nuevoCanal()"><i class="fas fa-plus"></i> Nuevo canal</button>
+                <button class="cs-btn ok" style="margin-left:auto;" onclick="ConfigSedeModule.guardarCanales()"><i class="fas fa-save"></i> Guardar canales</button>
+            </div>
+            <table>
+                <thead><tr><th style="width:60px;">Activo</th><th>Canal</th><th>Código</th><th style="width:120px;">Comisión %</th><th class="num" style="width:90px;">Reservas</th></tr></thead>
+                <tbody id="cs-canales"></tbody>
+            </table>
+        </div>
+
+        <div class="cs-panel">
+            <h3><i class="fas fa-plug"></i> Conexión del channel manager / motor de reservas</h3>
+            <p class="ayuda">Datos para el técnico del channel manager. Cada sede puede tener su propia clave; si la dejas vacía se usa la clave general del servidor.</p>
+            <div class="grid2">
+                <div>
+                    <div class="campo"><label>Channel manager que usa la sede</label><input type="text" data-param="CHANNEL_MANAGER_NOMBRE" placeholder="Ej: Cloudbeds, SiteMinder, Channex…"></div>
+                    <div class="campo"><label>URL del motor de reservas (botón "Reservar" de la web)</label><input type="text" data-param="MOTOR_RESERVAS_URL" placeholder="https://…"></div>
+                    <div class="campo">
+                        <label>Clave del webhook de esta sede (X-Webhook-Secret)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="cs-webhook-secret" data-param="WEBHOOK_SECRET" placeholder="(vacío = clave general del servidor)" style="flex:1;">
+                            <button class="cs-btn" onclick="ConfigSedeModule.generarClave()" title="Generar una clave segura"><i class="fas fa-key"></i></button>
+                        </div>
+                        <small id="cs-webhook-estado" style="font-size:.66rem; color:#7f8c8d;"></small>
+                    </div>
+                    <button class="cs-btn ok" onclick="ConfigSedeModule.guardarParametros(['CHANNEL_MANAGER_NOMBRE','MOTOR_RESERVAS_URL','WEBHOOK_SECRET'])"><i class="fas fa-save"></i> Guardar conexión</button>
+                </div>
+                <div>
+                    <div class="campo"><label>Endpoint</label><div class="codigo" id="cs-webhook-url"></div></div>
+                    <div class="campo"><label>Ejemplo de envío (JSON)</label><div class="codigo" id="cs-webhook-ejemplo" style="white-space:pre;"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CENTROS DE COSTO ============ -->
+    <div class="cs-tabpanel" data-panel="centros" style="display:none;">
+        <div class="cs-panel">
+            <h3><i class="fas fa-sitemap"></i> Centros de costo (estándar hotelero USALI)</h3>
+            <p class="ayuda"><b>Operativos</b> = áreas que venden (Habitaciones, A&B, Eventos, Parqueadero): cada una tendrá su propio estado de resultados.
+                <b>No distribuidos</b> = gastos generales del hotel (administración, marketing, mantenimiento, servicios básicos).
+                Recepción, restaurante y parqueadero etiquetan solos sus cobros; los estándar se pueden renombrar pero no desactivar.</p>
+            <div class="barra">
+                <button class="cs-btn" onclick="ConfigSedeModule.nuevoCentro()"><i class="fas fa-plus"></i> Nuevo centro</button>
+            </div>
+            <table>
+                <thead><tr><th style="width:60px;">Activo</th><th style="width:80px;">Código</th><th>Nombre</th><th>Tipo</th><th class="num" style="width:110px;">Movimientos</th><th style="width:60px;"></th></tr></thead>
+                <tbody id="cs-centros"></tbody>
+            </table>
+        </div>
+
+        <div class="grid2">
+            <div class="cs-panel">
+                <h3><i class="fas fa-list"></i> Rubros → centro por defecto</h3>
+                <p class="ayuda">Si al registrar un gasto en Finanzas no eliges centro, se usa el del rubro.</p>
+                <div class="tabla-scroll"><table><tbody id="cs-rubros"></tbody></table></div>
+            </div>
+            <div class="cs-panel">
+                <h3><i class="fas fa-chart-column"></i> Resultado por centro</h3>
+                <div class="barra">
+                    <input type="date" id="cs-res-desde"> <input type="date" id="cs-res-hasta">
+                    <button class="cs-btn" onclick="ConfigSedeModule.cargarResumen()"><i class="fas fa-rotate"></i></button>
+                </div>
+                <table>
+                    <thead><tr><th>Centro</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Neto</th></tr></thead>
+                    <tbody id="cs-resumen"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CLASIFICAR MOVIMIENTOS ============ -->
+    <div class="cs-tabpanel" data-panel="clasificar" style="display:none;">
+        <div class="cs-panel">
+            <h3><i class="fas fa-tags"></i> Movimientos sin centro de costo</h3>
+            <p class="ayuda">Egresos e ingresos escritos a mano antes de esta versión. Marca los que van al mismo centro y asígnalos de una vez.
+                Solo cambia la clasificación (nunca montos ni fechas) y queda registrado en la auditoría.</p>
+            <div class="barra">
+                <input type="date" id="cs-cl-desde"> <input type="date" id="cs-cl-hasta">
+                <select id="cs-cl-tipo"><option value="">Ingresos y egresos</option><option value="Egreso">Solo egresos</option><option value="Ingreso">Solo ingresos</option></select>
+                <input type="text" id="cs-cl-buscar" placeholder="🔍 Filtrar por texto (ej. pasaje, retiro…)" oninput="ConfigSedeModule.renderSinCentro()" style="flex:1; min-width:200px;">
+                <button class="cs-btn" onclick="ConfigSedeModule.cargarSinCentro()"><i class="fas fa-rotate"></i> Buscar</button>
+            </div>
+            <div class="barra" style="background:rgba(26,54,93,.05); padding:10px; border-radius:14px;">
+                <span id="cs-cl-sel" style="font-weight:900; color:#1a365d; font-size:.78rem;">0 seleccionados</span>
+                <select id="cs-cl-centro" data-centros-costo style="min-width:260px;"></select>
+                <button class="cs-btn primary" onclick="ConfigSedeModule.asignarSeleccionados()"><i class="fas fa-check"></i> Asignar centro</button>
+            </div>
+            <div class="tabla-scroll">
+                <table>
+                    <thead><tr><th style="width:34px;"><input type="checkbox" id="cs-cl-todos" onchange="ConfigSedeModule.marcarTodos(this.checked)"></th><th>Fecha</th><th>Tipo</th><th>Observación</th><th>Rubro</th><th class="num">Monto</th></tr></thead>
+                    <tbody id="cs-sin-centro"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ POLÍTICAS ============ -->
+    <div class="cs-tabpanel" data-panel="politicas" style="display:none;">
+        <div class="cs-panel">
+            <h3><i class="fas fa-file-contract"></i> Políticas de la sede</h3>
+            <p class="ayuda">Se usan en reservas, el portal público, el bot de WhatsApp y los recibos.</p>
+            <div class="grid2">
+                <div>
+                    <div class="campo"><label>Hora de check-in</label><input type="time" data-param="HORA_CHECKIN"></div>
+                    <div class="campo"><label>Hora de check-out</label><input type="time" data-param="HORA_CHECKOUT"></div>
+                    <div class="campo"><label>Depósito para confirmar reserva (%)</label><input type="number" min="0" max="100" step="1" data-param="RESERVA_DEPOSITO_PCT"></div>
+                    <div class="campo"><label>Propina sugerida en restaurante (%)</label><input type="number" min="0" max="100" step="1" data-param="PROPINA_SUGERIDA_PCT"></div>
+                </div>
+                <div>
+                    <div class="campo"><label>Política de cancelación</label><textarea rows="8" data-param="POLITICA_CANCELACION" placeholder="Ej: Cancelación gratuita hasta 48 h antes de la llegada…"></textarea></div>
+                </div>
+            </div>
+            <button class="cs-btn ok" onclick="ConfigSedeModule.guardarParametros(['HORA_CHECKIN','HORA_CHECKOUT','RESERVA_DEPOSITO_PCT','PROPINA_SUGERIDA_PCT','POLITICA_CANCELACION'])"><i class="fas fa-save"></i> Guardar políticas</button>
+        </div>
+    </div>
+</div>

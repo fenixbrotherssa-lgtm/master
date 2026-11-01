@@ -1,6 +1,8 @@
 ﻿const fs = require('fs');
 const path = require('path');
 const api = require('./modules/api');
+require('./modules/metodosPago'); // llena los <select data-metodos-pago> con los métodos de la sede
+const Permisos = require('./modules/permisos'); // permisos por módulo del usuario (roles)
 const { io } = require('socket.io-client');
 
 const App = {
@@ -301,6 +303,11 @@ const App = {
     },
 
     renderView(viewName, targetId) {
+        // Permisos por módulo: una pantalla sin permiso no se abre (el servidor también la niega)
+        if (targetId === 'viewport' && (window.Permisos || Permisos).vistaBloqueada(viewName)) {
+            if (window.Swal) Swal.fire('Sin permiso', 'Tu usuario no tiene acceso a esta sección. Pídeselo al administrador.', 'info');
+            return;
+        }
         try {
             const viewPath = path.join(__dirname, 'views', `${viewName}.html`);
             if (!fs.existsSync(viewPath)) throw new Error(`HTML no encontrado: ${viewPath}`);
@@ -380,7 +387,8 @@ const App = {
     },
 
     clearSession() {
-        localStorage.clear();
+        // Solo la sesión: el formato de impresión, las alertas por voz y demás preferencias del equipo se conservan
+        ['token', 'refreshToken', 'user', 'permisos', 'currentSedeId'].forEach(k => localStorage.removeItem(k));
         window.location.reload();
     }
 };

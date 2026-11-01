@@ -13,7 +13,7 @@ const HabitacionesModule = {
         const user = JSON.parse(localStorage.getItem('user'));
 
         // Determinar si el usuario actual tiene rol administrativo (RolID === 1)
-        this.isAdmin = isSuperAdmin || (user && user.RolID === 1);
+        this.isAdmin = isSuperAdmin || require('./permisos').puede('habitaciones', 3);   // permiso "Total" en Habitaciones
 
         const btnDesactivadas = document.getElementById('btnVerDesactivadas');
         if (btnDesactivadas) btnDesactivadas.classList.toggle('hidden', !this.isAdmin);

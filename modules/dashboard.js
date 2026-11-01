@@ -31,11 +31,12 @@ const DashboardModule = {
         }
     },
 
+    // Tarjetas según los permisos del usuario (roles): primero con lo guardado, luego con lo del servidor.
     _adminOnlyCards() {
-        const isAdmin = App.user && parseInt(App.user.RolID) === 1;
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = isAdmin ? '' : 'none';
-        });
+        const Permisos = require('./permisos');
+        const panel = document.getElementById('viewport') || document;
+        Permisos.aplicarPanel(panel);
+        Permisos.cargar().then(() => Permisos.aplicarPanel(panel)).catch(() => {});
     },
 
     async _verificarCaja() {
