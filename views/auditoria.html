@@ -19,11 +19,36 @@
                 <small style="color:#718096; font-size:0.7rem;">Registro de acciones críticas del sistema</small>
             </div>
         </div>
-        <div id="audit-badge" style="background:#e74c3c; color:white; border-radius:20px; padding:6px 16px; font-size:0.75rem; font-weight:900;">
-            0 registros
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button id="audit-btn-integridad" onclick="AuditoriaModule.alternarIntegridad()"
+                style="background:#1a365d; color:white; border:none; padding:10px 18px; border-radius:15px; cursor:pointer; font-size:0.75rem; font-weight:800; box-shadow:4px 4px 8px #bebebe;">
+                <i class="fas fa-stethoscope"></i> PRUEBA DE INTEGRIDAD
+            </button>
+            <div id="audit-badge" style="background:#e74c3c; color:white; border-radius:20px; padding:6px 16px; font-size:0.75rem; font-weight:900;">
+                0 registros
+            </div>
         </div>
     </div>
 
+    <!-- Prueba de integridad (se muestra con el botón; solo lectura) -->
+    <div id="audit-integridad" style="display:none;">
+        <div style="background:#e0e0e4; border-radius:20px; padding:20px 25px; margin-bottom:20px; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-weight:900; color:#1a365d; font-size:0.9rem;">Revisión de que las cifras cuadren entre módulos</div>
+                    <small style="color:#718096; font-size:0.7rem;">Solo lee: no cambia nada. Cada hallazgo dice cómo corregirlo.</small>
+                </div>
+                <button onclick="AuditoriaModule.correrIntegridad()"
+                    style="background:#27ae60; color:white; border:none; padding:12px 22px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:700; box-shadow:4px 4px 8px #bebebe;">
+                    <i class="fas fa-play"></i> REVISAR AHORA
+                </button>
+            </div>
+            <div id="int-resumen" style="margin-top:15px;"></div>
+        </div>
+        <div id="int-lista"></div>
+    </div>
+
+    <div id="audit-bitacora">
     <!-- Filtros -->
     <div style="background:#e0e0e4; border-radius:20px; padding:20px 25px; margin-bottom:20px; box-shadow:6px 6px 12px #bebebe,-6px -6px 12px #ffffff;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:15px; align-items:end;">
@@ -77,6 +102,7 @@
                 </tr>
             </tbody>
         </table>
+    </div>
     </div>
 </div>
 
