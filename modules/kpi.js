@@ -63,7 +63,9 @@ const KpiModule = {
 
     _poblarKpisprincipales(mh, pa) {
         document.getElementById('kpi-ocupacion').textContent     = `${parseFloat(mh.OcupacionPorcentaje||0).toFixed(2)} %`;
-        document.getElementById('kpi-habs-text').textContent     = `${mh.HabitacionesOcupadas||0} / ${mh.TotalHabitaciones||0} habitaciones`;
+        document.getElementById('kpi-habs-text').textContent     = mh.NochesOcupadas != null
+            ? `${mh.NochesOcupadas} noches ocupadas · ahora ${mh.HabitacionesOcupadas||0}/${mh.TotalHabitaciones||0}`
+            : `${mh.HabitacionesOcupadas||0} / ${mh.TotalHabitaciones||0} habitaciones`;
         document.getElementById('kpi-adr').textContent           = `$ ${parseFloat(mh.ADR||0).toFixed(2)}`;
         document.getElementById('kpi-revpar').textContent        = `$ ${parseFloat(mh.RevPAR||0).toFixed(2)}`;
         document.getElementById('kpi-prod-hospedaje').textContent = `$ ${parseFloat(mh.IngresoHospedaje||0).toFixed(2)}`;

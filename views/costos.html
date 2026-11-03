@@ -84,13 +84,13 @@
     <div class="cc-tabpanel" data-panel="ingreso" style="display:none;">
         <div class="cc-panel">
             <h3><i class="fas fa-truck-ramp-box"></i> Ingreso de compra con costo</h3>
-            <p class="ayuda">Cada línea entra al stock y recalcula el costo promedio ponderado del producto. Puede escribir la cantidad en la unidad de compra (saco, caja, kg) o en gramos / mililitros / unidades.</p>
+            <p class="ayuda">Cada línea entra al stock y recalcula el costo promedio ponderado del producto. Puede escribir la cantidad en la unidad de compra (saco, caja, kg) o en gramos / mililitros / unidades. <b>El costo va SIN IVA</b> (el IVA de la factura de compra es crédito tributario; si lo incluye, el food cost sale 15 % más alto).</p>
             <div class="fila">
                 <div class="campo" style="flex:2; min-width:220px;"><label>Proveedor (opcional)</label><select id="cc-ing-prov"><option value="">— Sin proveedor —</option></select></div>
                 <div class="campo" style="flex:1; min-width:160px;"><label>Factura / referencia</label><input type="text" id="cc-ing-ref" maxlength="100" placeholder="001-001-000123"></div>
             </div>
             <table>
-                <thead><tr><th>Producto</th><th style="width:110px;">Cantidad</th><th style="width:170px;">Unidad</th><th style="width:130px;">Costo x unidad</th><th class="num" style="width:110px;">Subtotal</th><th style="width:40px;"></th></tr></thead>
+                <thead><tr><th>Producto</th><th style="width:110px;">Cantidad</th><th style="width:170px;">Unidad</th><th style="width:130px;">Costo x unidad (sin IVA)</th><th class="num" style="width:110px;">Subtotal</th><th style="width:40px;"></th></tr></thead>
                 <tbody id="cc-ing-lineas"></tbody>
             </table>
             <div class="barra" style="margin-top:12px;">

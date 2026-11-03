@@ -760,6 +760,8 @@ const RecepcionModule = {
 
         if (!recepcionId) {
             if (!this.cajaId) return Swal.fire({ icon: 'error', title: 'CAJA CERRADA', text: 'Debe aperturar caja para ventas directas al público.' });
+            const totalPOS = this.carritoPOS.reduce((acc, item) => acc + (item.EsCortesia ? 0 : item.PrecioVenta * item.Cantidad), 0);
+            if (monto < totalPOS - 0.005) return Swal.fire({ icon: 'warning', title: 'PAGO INCOMPLETO', text: `Recibido $${monto.toFixed(2)} de $${totalPOS.toFixed(2)}. Para dejarlo a cuenta, cárguelo a una habitación.` });
             const refPOS = document.getElementById('pos-referencia') ? document.getElementById('pos-referencia').value : '';
             pagoInmediato = { Monto: monto, MetodoID: metodoPago, Referencia: refPOS };
         }
@@ -988,7 +990,6 @@ const RecepcionModule = {
         
         let totalCargos = parseFloat(this.folioActual.recepcion.TotalHospedaje);
         let totalAbonos = 0;
-        let abonosCheckIn = 0;
         
         let htmlConsumos = `<tr><td>Alojamiento (${this.folioActual.recepcion.TipoAlquiler})</td><td class="text-right">$${totalCargos.toFixed(2)}</td></tr>`;
         
@@ -998,28 +999,27 @@ const RecepcionModule = {
         this.folioActual.consumos.forEach(c => {
             const meta = [c.FechaRegistroFmt && `📅 ${c.FechaRegistroFmt}`, ORIGEN[c.Origen], c.CargadoPor]
                 .filter(Boolean).join(' · ');
-            htmlConsumos += `<tr><td>${c.Cantidad}x ${c.Producto}${c.EsCortesia ? ' <small>(cortesía)</small>' : ''}
+            htmlConsumos += `<tr><td>${c.Cantidad}x ${c.Producto}${c.EsCortesia ? ' <small>(cortesía)</small>' : ''}${c.PagadoEnCaja ? ' <small>(pagado en caja)</small>' : ''}
                 ${meta ? `<div style="font-size:.72rem; color:#718096; margin-top:2px;">${meta}</div>` : ''}</td>
                 <td class="text-right">$${c.Subtotal.toFixed(2)}</td></tr>`;
-            totalCargos += parseFloat(c.Subtotal);
+            if (!c.PagadoEnCaja) totalCargos += parseFloat(c.Subtotal);
         });
 
         let htmlAbonos = '';
         this.folioActual.abonos.forEach(a => {
-            htmlAbonos += `<tr><td>${a.Observacion}</td><td class="text-right text-success">+$${a.Monto.toFixed(2)}</td></tr>`;
-            totalAbonos += parseFloat(a.Monto);
-            if (a.Observacion.includes('CHECK-IN')) abonosCheckIn += parseFloat(a.Monto);
+            const m = parseFloat(a.Monto) || 0;   // las devoluciones al huésped llegan en negativo
+            htmlAbonos += `<tr><td>${a.Observacion}</td><td class="text-right ${m < 0 ? 'text-danger' : 'text-success'}">${m < 0 ? '−' : '+'}$${Math.abs(m).toFixed(2)}</td></tr>`;
+            totalAbonos += m;
         });
 
-        // ✅ LOGICA MATEMÁTICA DE MIGRACIÓN: Si el Hospedaje está pagado, pero en sistema los pagos de CHECK-IN no lo cubren
-        const costoHospedaje = parseFloat(this.folioActual.recepcion.TotalHospedaje);
-        if (this.folioActual.recepcion.EstadoPago === 'Pagado' && abonosCheckIn < costoHospedaje) {
-            const abonoMigracion = costoHospedaje - abonosCheckIn;
-            htmlAbonos = `<tr><td><i class="fas fa-history"></i> Saldo a favor (Migración/Pago Previo)</td><td class="text-right text-success">+$${abonoMigracion.toFixed(2)}</td></tr>` + htmlAbonos;
-            totalAbonos += abonoMigracion;
+        // Estadía cobrada antes del sistema (check-in de migración): el servidor la guarda en PagadoFuera.
+        const pagadoFuera = parseFloat(this.folioActual.pagadoFuera) || 0;
+        if (pagadoFuera > 0) {
+            htmlAbonos = `<tr><td><i class="fas fa-history"></i> Pagado antes del sistema (migración)</td><td class="text-right text-success">+$${pagadoFuera.toFixed(2)}</td></tr>` + htmlAbonos;
+            totalAbonos += pagadoFuera;
         }
 
-        if (totalAbonos === 0) {
+        if (!this.folioActual.abonos.length && pagadoFuera === 0) {
             htmlAbonos = `<tr><td colspan="2" class="text-center" style="opacity:0.5;">No hay pagos registrados</td></tr>`;
         }
 
@@ -1036,7 +1036,8 @@ const RecepcionModule = {
         const sectionPago = document.getElementById('section-pago-checkout');
         const btnAbonar = document.getElementById('btn-abonar-cuenta');
 
-        const saldoPendiente = totalCargos - totalAbonos;
+        // El saldo lo calcula el servidor (misma fórmula en caja, deudores y reportes); si no viene, se calcula aquí.
+        const saldoPendiente = this.folioActual.saldo != null ? parseFloat(this.folioActual.saldo) : totalCargos - totalAbonos;
 
         if (saldoPendiente > 0) {
             uiSaldo.textContent = `$${saldoPendiente.toFixed(2)}`;

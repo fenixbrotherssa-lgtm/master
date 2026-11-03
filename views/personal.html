@@ -62,9 +62,14 @@
                 <p style="margin:4px 0 0;color:#718096;font-size:.8rem;">Nómina, adelantos y movimientos del equipo</p>
             </div>
         </div>
-        <button class="btn-neo btn-gold" onclick="PersonalModule.abrirModalEmpleado()">
-            <i class="fas fa-user-plus"></i> Nuevo Empleado
-        </button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-neo" onclick="PersonalModule.abrirVincularEgresos()" title="Adelantos y pagos registrados a mano en Finanzas/Caja que no constan en Personal">
+                <i class="fas fa-link"></i> Egresos sin vincular
+            </button>
+            <button class="btn-neo btn-gold" onclick="PersonalModule.abrirModalEmpleado()">
+                <i class="fas fa-user-plus"></i> Nuevo Empleado
+            </button>
+        </div>
     </div>
 
     <div class="tabla-wrap">

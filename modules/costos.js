@@ -64,6 +64,7 @@ const CostosModule = {
             const [p, r] = await Promise.all([api.get(`/inventario/sede/${sedeId}`), api.get(`/costos/recetas/${sedeId}`)]);
             this.productos = p.data || [];
             this.recetas = r.data.items || [];
+            this.avisosRecetas = r.data.avisos || null;
             this.config = r.data.config || {};
         } catch (e) { return Swal.fire('Error', errMsg(e), 'error'); }
         this.renderListaRecetas();
@@ -109,8 +110,13 @@ const CostosModule = {
         const q = (document.getElementById('cc-rec-buscar').value || '').toLowerCase();
         const box = document.getElementById('cc-rec-lista');
         const items = this.recetas.filter(r => r.Nombre.toLowerCase().includes(q));
-        if (!items.length) { box.innerHTML = '<div class="vacio">Sin platos ni preparaciones. Cree productos de categoría Alimento/Bebida o tipo PREPARACIÓN.</div>'; return; }
-        box.innerHTML = items.map(r => {
+        const av = this.avisosRecetas;
+        const avisos = !av ? '' : [
+            !av.Insumos ? '<b>No hay insumos.</b> Una receta se arma con productos tipo INSUMO (arroz, pollo, aceite…): créelos en Inventario y deles entrada en "Ingreso de compra".' : '',
+            av.CategoriasSinTipo ? `<b>${av.CategoriasSinTipo} categoría(s) sin tipo.</b> En Inventario → Categorías márquelas ALIMENTO o BEBIDA: así el food cost las separa y la cocina recibe sus pedidos.` : '',
+        ].filter(Boolean).map(t => `<div class="ayuda" style="background:#fff7e6;border-radius:10px;padding:8px 10px;margin-bottom:8px;">${t}</div>`).join('');
+        if (!items.length) { box.innerHTML = avisos + '<div class="vacio">Sin productos de venta ni preparaciones. Cree el plato en Inventario (tipo VENTA) o una PREPARACIÓN.</div>'; return; }
+        box.innerHTML = avisos + items.map(r => {
             const tiene = !!r.RecetaID;
             const fc = tiene && r.TipoItem !== 'PREPARACION' && Number(r.PrecioVenta) > 0 ? Number(r.CostoPorcion) / this.precioNeto(r.PrecioVenta) * 100 : null;
             const sel = this.recetaSel && this.recetaSel.cab.ProductoID === r.ProductoID ? 'sel' : '';
@@ -409,19 +415,21 @@ const CostosModule = {
             const d = r.data;
             const estimadas = d.items.reduce((a, x) => a + (x.LineasEstimadas || 0), 0);
             document.getElementById('cc-fc-nota').innerHTML = `Ventas ${d.config.PRECIO_INCLUYE_IVA === '0' ? 'sin IVA' : `sin IVA (${d.config.IVA_PCT}% descontado del precio)`}. Meta de food cost: <strong>${d.config.FOOD_COST_OBJETIVO_PCT}%</strong>.` +
-                (estimadas ? ` <span class="badge b-medio">${estimadas} venta(s) anteriores a la Fase 2 con costo ESTIMADO (costo promedio actual)</span>` : '');
-            const nombres = { ALIMENTO: 'Alimentos', BEBIDA: 'Bebidas', COMERCIAL: 'Comercial / tienda' };
-            const tot = d.porTipo.reduce((a, t) => ({ v: a.v + t.VentasNetas, c: a.c + t.Costo }), { v: 0, c: 0 });
+                (estimadas ? ` <span class="badge b-medio">${estimadas} venta(s) sin costo grabado (antes de instalar la versión 2.1): costo ESTIMADO con el promedio actual</span>` : '');
+            const sinCosto = d.items.filter(x => x.SinCosto);
+            if (sinCosto.length) document.getElementById('cc-fc-nota').innerHTML += ` <span class="badge b-alto">${sinCosto.length} producto(s) SIN COSTO: no entran al % — cárguelos con su costo en "Ingreso de compra"</span>`;
+            const nombres = { ALIMENTO: 'Alimentos', BEBIDA: 'Bebidas', COMERCIAL: 'Comercial / tienda', SIN_TIPO: 'Categoría sin tipo' };
+            const tot = d.porTipo.reduce((a, t) => ({ v: a.v + t.VentasNetas, c: a.c + t.Costo, vc: a.vc + (t.VentasConCosto ?? t.VentasNetas) }), { v: 0, c: 0, vc: 0 });
             document.getElementById('cc-fc-kpis').innerHTML = [
                 `<div class="kpi"><div class="t">Venta neta total</div><div class="v">${money(tot.v)}</div></div>`,
                 `<div class="kpi"><div class="t">Costo de lo vendido</div><div class="v">${money(tot.c)}</div></div>`,
-                `<div class="kpi"><div class="t">Margen bruto</div><div class="v">${money(tot.v - tot.c)}</div></div>`,
+                `<div class="kpi"><div class="t">Margen bruto${tot.vc < tot.v - 0.005 ? ' (con costo)' : ''}</div><div class="v">${money(tot.vc - tot.c)}</div></div>`,
                 ...d.porTipo.map(t => `<div class="kpi"><div class="t">${nombres[t.Tipo] || esc(t.Tipo)} · costo</div><div class="v"><span class="badge ${this.semaforo(t.CostoPct)}" style="font-size:1rem;">${pct(t.CostoPct)}</span></div></div>`),
             ].join('');
             box.innerHTML = d.items.length ? `<table><thead><tr><th>Producto</th><th>Categoría</th><th class="num">Unid.</th><th class="num">Venta neta</th><th class="num">Costo</th><th class="num">Margen</th><th class="num">Costo %</th></tr></thead><tbody>
-                ${d.items.map(x => `<tr><td>${esc(x.Nombre)}${x.LineasEstimadas ? ' <span class="badge b-medio" title="Vendido antes de la Fase 2">EST.</span>' : ''}${x.Cortesias ? ` <span class="muted">(${x.Cortesias} cortesía)</span>` : ''}</td>
+                ${d.items.map(x => `<tr><td>${esc(x.Nombre)}${x.SinCosto ? ' <span class="badge b-alto" title="Sin costo: cárguelo en Ingreso de compra">SIN COSTO</span>' : x.LineasEstimadas ? ' <span class="badge b-medio" title="Vendido sin costo grabado (antes de la versión 2.1)">EST.</span>' : ''}${x.Cortesias ? ` <span class="muted">(${x.Cortesias} cortesía)</span>` : ''}</td>
                     <td>${esc(x.Categoria)}</td><td class="num">${x.Unidades}</td><td class="num">${money(x.VentasNetas)}</td><td class="num">${money(x.Costo)}</td>
-                    <td class="num">${money(x.Margen)}</td><td class="num"><span class="badge ${this.semaforo(x.CostoPct)}">${pct(x.CostoPct)}</span></td></tr>`).join('')}
+                    <td class="num">${x.SinCosto ? '—' : money(x.Margen)}</td><td class="num">${x.SinCosto ? '<span class="badge b-alto">—</span>' : `<span class="badge ${this.semaforo(x.CostoPct)}">${pct(x.CostoPct)}</span>`}</td></tr>`).join('')}
                 </tbody></table>` : '<div class="vacio">Sin ventas en el período.</div>';
         } catch (e) { box.innerHTML = `<div class="vacio">${esc(errMsg(e))}</div>`; }
     },

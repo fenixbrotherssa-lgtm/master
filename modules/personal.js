@@ -239,7 +239,7 @@ const PersonalModule = {
     async eliminarMovimiento(movimientoId, personalId) {
         const conf = await Swal.fire({
             icon: 'warning', title: '¿Eliminar este movimiento?',
-            text: 'Si estaba registrado en Caja, también se elimina ese egreso. Esta acción no se puede deshacer.',
+            text: 'Si estaba registrado en Caja, también se elimina ese egreso (salvo que se haya vinculado desde Caja: ahí solo se deshace el vínculo). Esta acción no se puede deshacer.',
             showCancelButton: true, confirmButtonText: 'Sí, eliminar', confirmButtonColor: '#e74c3c', cancelButtonText: 'Cancelar'
         });
         if (!conf.isConfirmed) return;
@@ -251,6 +251,58 @@ const PersonalModule = {
             await this.cargarPersonal();
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Error', text: e.response?.data?.error || e.message, confirmButtonColor: '#1a365d' });
+        }
+    },
+
+    // ===== Egresos de caja sin vincular (adelantos escritos a mano en Finanzas/Caja) =====
+    async abrirVincularEgresos(todos = false) {
+        const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        let egresos;
+        try {
+            const res = await api.get(`/personal/egresos-sin-vincular/${this._sedeId}${todos ? '?todos=1' : ''}`);
+            egresos = res.data.egresos || [];
+        } catch (e) {
+            return Swal.fire({ icon: 'error', title: 'Error', text: e.response?.data?.error || e.message, confirmButtonColor: '#1a365d' });
+        }
+        this._egresosSV = egresos;
+        const emps = this._personal.map(p => `<option value="${p.PersonalID}">${esc(p.NombreCompleto)}</option>`).join('');
+        const total = egresos.reduce((a, x) => a + Number(x.Monto), 0);
+        const filas = egresos.map(x => `<tr id="sv-${x.MovimientoID}">
+            <td style="white-space:nowrap">${esc(x.Fecha)}</td>
+            <td style="text-align:left">${esc(x.Observacion)}<div style="font-size:.68rem;color:#718096">${esc(x.Metodo)} · ${esc(x.Registro)}</div></td>
+            <td style="text-align:right;font-weight:800">$${Number(x.Monto).toFixed(2)}</td>
+            <td><select id="sv-emp-${x.MovimientoID}" style="max-width:170px"><option value="">— Empleado —</option>${emps}</select></td>
+            <td><select id="sv-tipo-${x.MovimientoID}"><option value="ADELANTO">Adelanto</option><option value="BONO">Bono</option><option value="PAGO_NOMINA">Pago de nómina</option><option value="LIQUIDACION_FINAL">Liquidación</option></select></td>
+            <td><input type="month" id="sv-per-${x.MovimientoID}" value="${esc(x.Periodo)}" style="width:130px"></td>
+            <td><button class="btn-neo btn-prim btn-sm" onclick="PersonalModule.vincularEgreso(${x.MovimientoID})"><i class="fas fa-link"></i></button></td></tr>`).join('');
+        Swal.fire({
+            title: 'Egresos de caja sin vincular a Personal', width: 1100, confirmButtonText: 'Cerrar', confirmButtonColor: '#1a365d',
+            showDenyButton: true, denyButtonText: todos ? 'Solo los que parecen de personal' : 'Ver todos los egresos (120 días)', denyButtonColor: '#718096',
+            html: `<p style="font-size:.8rem;color:#4a5568;text-align:left;margin:0 0 10px">
+                    ${todos ? 'Todos los egresos de los últimos 120 días' : 'Egresos cuyo texto dice adelanto, sueldo, quincena, bono…'} que <b>no</b> constan en Personal:
+                    <b>${egresos.length}</b> por <b>$${total.toFixed(2)}</b>. Vincularlos no mueve dinero: solo los asigna al empleado para que
+                    cuenten en sus adelantos y se descuenten en la nómina del período elegido. Si la sede usa contabilidad, luego
+                    "Rehacer desde" en Contabilidad para que pasen a anticipos.</p>
+                <div style="max-height:60vh;overflow:auto"><table style="width:100%;font-size:.78rem;border-collapse:collapse">
+                <thead><tr style="color:#718096;font-size:.68rem;text-transform:uppercase"><th>Fecha</th><th style="text-align:left">Detalle</th><th>Monto</th><th>Empleado</th><th>Tipo</th><th>Período</th><th></th></tr></thead>
+                <tbody>${filas || '<tr><td colspan="7" style="padding:20px;color:#27ae60">No hay egresos sin vincular.</td></tr>'}</tbody></table></div>`
+        }).then(r => { if (r.isDenied) this.abrirVincularEgresos(!todos); });
+    },
+
+    async vincularEgreso(movId) {
+        const personalId = document.getElementById(`sv-emp-${movId}`)?.value;
+        const tipo = document.getElementById(`sv-tipo-${movId}`)?.value;
+        const periodo = document.getElementById(`sv-per-${movId}`)?.value;
+        const fila = document.getElementById(`sv-${movId}`);
+        if (!personalId) { if (fila) fila.style.background = '#fff3f3'; return; }
+        try {
+            await api.post('/personal/vincular-egreso', { movimientoCajaId: movId, personalId, tipo, periodo });
+            if (fila) { fila.style.background = '#e8f8ef'; fila.querySelectorAll('select,input,button').forEach(el => { el.disabled = true; }); }
+            this.cargarPersonal();
+        } catch (e) {
+            if (fila) { fila.style.background = '#fff3f3'; fila.title = e.response?.data?.error || e.message; }
+            window.Toast ? window.Toast.fire({ icon: 'error', title: e.response?.data?.error || e.message })
+                         : console.error(e.response?.data?.error || e.message);
         }
     },
 
