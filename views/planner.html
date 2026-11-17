@@ -1,0 +1,82 @@
+<style>
+    #seccion-planner { padding: 22px 26px; }
+    #seccion-planner .cab { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    #seccion-planner .cab h2 { margin: 0; color: #1a365d; font-weight: 900; letter-spacing: 1px; }
+    #seccion-planner .cab p { margin: 2px 0 0; color: #718096; font-size: .74rem; font-weight: 700; text-transform: uppercase; }
+    .pl-barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: auto; }
+    .pl-btn { border: none; border-radius: 10px; padding: 9px 13px; font-weight: 900; cursor: pointer; background: #e0e0e4; color: #1a365d;
+              box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; font-size: .78rem; }
+    .pl-btn.on { background: #1a365d; color: #fff; box-shadow: none; }
+    .pl-sel, .pl-fecha { padding: 8px 10px; border-radius: 10px; border: none; background: #e0e0e4; font-weight: 800; color: #1a365d;
+              box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff; font-size: .8rem; }
+    .pl-leyenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem; font-weight: 800; color: #4a5568; margin: 0 0 10px; }
+    .pl-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+    .pl-leyenda i.c { width: 14px; height: 10px; border-radius: 3px; display: inline-block; }
+    .pl-resumen { font-size: .76rem; font-weight: 800; color: #2d3748; margin-bottom: 8px; }
+
+    .pl-cont { position: relative; overflow: auto; max-height: calc(100vh - 230px); background: #fff; border-radius: 14px;
+               box-shadow: 6px 6px 14px #bebebe, -6px -6px 14px #ffffff; }
+    .pl-tabla { position: relative; min-width: max-content; }
+    .pl-head { position: sticky; top: 0; z-index: 5; display: flex; background: #1a365d; color: #fff; }
+    .pl-head .pl-izq { background: #1a365d; color: #fff; z-index: 6; }
+    .pl-dia { flex: none; text-align: center; font-size: .7rem; font-weight: 800; padding: 6px 0; border-left: 1px solid rgba(255,255,255,.15); }
+    .pl-dia small { display: block; font-weight: 600; opacity: .8; font-size: .62rem; text-transform: uppercase; }
+    .pl-dia.hoy { background: #c5a059; color: #1a202c; }
+    .pl-izq { position: sticky; left: 0; z-index: 3; flex: none; width: 190px; background: #f7f8fa; border-right: 2px solid #e2e8f0;
+              padding: 0 10px; display: flex; flex-direction: column; justify-content: center; }
+    .pl-fila { display: flex; border-bottom: 1px solid #edf2f7; }
+    .pl-fila:hover .pl-izq { background: #eef2f7; }
+    .pl-grupo { display: flex; background: #e2e8f0; border-bottom: 1px solid #cbd5e0; }
+    .pl-grupo .pl-izq { background: #e2e8f0; font-weight: 900; color: #1a365d; font-size: .78rem; text-transform: uppercase; padding: 7px 10px; }
+    .pl-grupo .pl-info { padding: 7px 10px; font-size: .72rem; font-weight: 800; color: #4a5568; }
+    .pl-nro { font-weight: 900; color: #1a202c; font-size: .86rem; }
+    .pl-sub { font-size: .66rem; color: #718096; font-weight: 700; }
+    .pl-punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .pl-pista { position: relative; flex: none; }
+    .pl-col { position: absolute; top: 0; bottom: 0; border-left: 1px solid #edf2f7; }
+    .pl-col.finde { background: rgba(197,160,89,.07); }
+    .pl-ahora { position: absolute; top: 0; bottom: 0; width: 2px; background: #e53e3e; z-index: 2; pointer-events: none; }
+    .pl-item { position: absolute; height: 22px; border-radius: 6px; color: #fff; font-size: .7rem; font-weight: 800; padding: 0 6px;
+               display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; cursor: pointer; z-index: 1;
+               box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+    .pl-item:hover { filter: brightness(1.1); z-index: 4; }
+    .pl-item.choque { outline: 2px solid #e53e3e; outline-offset: 1px; }
+    .pl-item .saldo { background: rgba(0,0,0,.28); border-radius: 4px; padding: 0 4px; }
+    .t-encasa { background: #2f855a; } .t-salehoy { background: #dd6b20; } .t-vencida { background: #c53030; }
+    .t-salio { background: #a0aec0; color: #1a202c; } .t-momento { background: #6b46c1; }
+    .t-abierto { background: repeating-linear-gradient(45deg, #975a16, #975a16 6px, #b7791f 6px, #b7791f 12px); }
+    .t-confirmada { background: #2b6cb0; } .t-pendiente { background: #bee3f8; color: #1a365d; border: 1px dashed #2b6cb0; }
+    .pl-vacio { padding: 40px; text-align: center; color: #718096; font-weight: 800; }
+</style>
+
+<div id="seccion-planner">
+    <div class="cab">
+        <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="Regresar"><i class="fas fa-arrow-left"></i></button>
+        <div><h2><i class="fas fa-calendar-days"></i> AGENDA</h2><p>Ocupación y reservas por habitación</p></div>
+        <div class="pl-barra">
+            <button class="pl-btn" onclick="PlannerModule.mover(-1)" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+            <button class="pl-btn" onclick="PlannerModule.hoy()">HOY</button>
+            <button class="pl-btn" onclick="PlannerModule.mover(1)" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+            <input type="date" class="pl-fecha" id="pl-fecha" onchange="PlannerModule.irA(this.value)">
+            <button class="pl-btn" data-dias="7" onclick="PlannerModule.zoom(7)">7 DÍAS</button>
+            <button class="pl-btn" data-dias="14" onclick="PlannerModule.zoom(14)">14 DÍAS</button>
+            <button class="pl-btn" data-dias="31" onclick="PlannerModule.zoom(31)">MES</button>
+            <select class="pl-sel" id="pl-tipo" onchange="PlannerModule.pintar()"><option value="">Todos los tipos</option></select>
+            <button class="pl-btn" onclick="PlannerModule.cargar()" title="Actualizar"><i class="fas fa-rotate"></i></button>
+        </div>
+    </div>
+    <div class="pl-leyenda">
+        <span><i class="c t-encasa"></i> En casa</span>
+        <span><i class="c t-salehoy"></i> Sale hoy</span>
+        <span><i class="c t-vencida"></i> Salida vencida</span>
+        <span><i class="c t-salio"></i> Ya salió</span>
+        <span><i class="c t-momento"></i> Momento</span>
+        <span><i class="c t-confirmada"></i> Reserva confirmada</span>
+        <span><i class="c t-pendiente"></i> Reserva pendiente</span>
+        <span><b>$</b> Con saldo</span>
+        <span><i class="c t-abierto"></i> Folio abierto sin salida (revisar)</span>
+        <span><i class="c" style="outline:2px solid #e53e3e; background:#fff;"></i> Se cruzan (posible sobreventa)</span>
+    </div>
+    <div class="pl-resumen" id="pl-resumen"></div>
+    <div class="pl-cont" id="pl-cont"><div class="pl-vacio">Cargando agenda...</div></div>
+</div>

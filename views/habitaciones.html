@@ -348,8 +348,38 @@
                     </div>
                 </div>
 
-                <label class="label-hint">Precio Base de Referencia</label>
+                <label class="label-hint">Se vende por</label>
+                <select id="unidadVentaTipo" class="input-neo">
+                    <option value="HABITACION">HABITACIÓN (un huésped o grupo por habitación)</option>
+                    <option value="CAMA">CAMA (habitación compartida / dormitorio)</option>
+                </select>
+                <div style="font-size:.68rem;color:#718096;margin:-6px 0 10px;">Por cama: cada cama tiene su check-in, su cuenta y su salida; precios y disponibilidad son por cama. Solo se puede cambiar sin huéspedes en las habitaciones del tipo.</div>
+
+                <label class="label-hint">Precio Base de Referencia (por cama si se vende por cama)</label>
                 <input type="number" step="0.01" id="precioBaseTipo" class="input-neo" required placeholder="0.00">
+
+                <!-- Desayuno (2.4.0) -->
+                <label class="label-hint">☕ Desayuno</label>
+                <select id="desayunoModoTipo" class="input-neo" onchange="HabitacionesModule.toggleDesayunoTipo()">
+                    <option value="NINGUNO">SIN DESAYUNO</option>
+                    <option value="INCLUIDO">INCLUIDO en la tarifa</option>
+                    <option value="OPCIONAL">OPCIONAL (el huésped lo agrega con precio)</option>
+                </select>
+                <div id="box-desayuno-tipo" style="display:none;">
+                    <div style="display:flex; gap:15px;">
+                        <div style="flex:1" id="box-desayuno-personas">
+                            <label class="label-hint">Incluido para (personas)</label>
+                            <input type="number" min="1" max="50" id="desayunoPersonasTipo" class="input-neo" placeholder="Vacío = todos los huéspedes">
+                        </div>
+                        <div style="flex:1" id="box-desayuno-precio">
+                            <label class="label-hint">Precio por persona y día</label>
+                            <input type="number" step="0.01" min="0" id="desayunoPrecioTipo" class="input-neo" placeholder="0.00">
+                        </div>
+                    </div>
+                    <label class="label-hint">Plato del inventario que se sirve</label>
+                    <select id="desayunoProductoTipo" class="input-neo"><option value="">— sin producto (no descarga inventario) —</option></select>
+                    <div style="font-size:.68rem;color:#718096;margin:-6px 0 10px;">Cada desayuno servido descarga este plato (con receta, sus insumos por gramos). Incluido: el costo va a Habitaciones (CPOR). Opcional: se carga al folio al servirlo. Los huéspedes que ya están en casa conservan lo pactado en su check-in.</div>
+                </div>
 
                 <div style="display:flex; gap:20px; margin-top:20px;">
                     <button type="button" class="btn-neo" style="flex:1; justify-content:center;" onclick="HabitacionesModule.cerrarModales()">

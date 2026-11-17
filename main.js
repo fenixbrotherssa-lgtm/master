@@ -116,6 +116,83 @@ ipcMain.handle('mh:actualizar-escritorio', async (e, versionServidor) => {
     return { ok: true, version: m.version };
 });
 
+// ============================================================================
+//  IMPRESIÓN DIRECTA (2.1.4) — térmicas / matriciales ESC/POS y etiquetadoras TSPL
+//  El renderer arma los bytes (modules/impresion.js) y aquí se mandan TAL CUAL a la cola de Windows
+//  (RAW: sin pasar por el driver). Así funciona igual con cualquier marca (Epson, 3nStar, Xprinter...)
+//  y con la cola "Generic / Text Only". En Mac/Linux: `lp -o raw`.
+// ============================================================================
+const RAW_CS = `
+using System; using System.IO; using System.Runtime.InteropServices;
+public static class P {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] public class DI { public string n; public string o; public string t; }
+  [DllImport("winspool.drv", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool OpenPrinter(string n, out IntPtr h, IntPtr d);
+  [DllImport("winspool.drv", SetLastError = true)] static extern bool ClosePrinter(IntPtr h);
+  [DllImport("winspool.drv", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool StartDocPrinter(IntPtr h, int l, [In] DI d);
+  [DllImport("winspool.drv", SetLastError = true)] static extern bool EndDocPrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] static extern bool StartPagePrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] static extern bool EndPagePrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] static extern bool WritePrinter(IntPtr h, byte[] b, int c, out int w);
+  public static int Main(string[] a) {
+    if (a.Length < 2) { Console.Error.WriteLine("uso: rawprint <impresora> <archivo> [documento]"); return 2; }
+    byte[] datos = File.ReadAllBytes(a[1]); IntPtr h;
+    if (!OpenPrinter(a[0], out h, IntPtr.Zero)) { Console.Error.WriteLine("No se pudo abrir la impresora (error " + Marshal.GetLastWin32Error() + ")"); return 3; }
+    try {
+      if (!StartDocPrinter(h, 1, new DI { n = a.Length > 2 ? a[2] : "MasterHotel", t = "RAW" })) { Console.Error.WriteLine("StartDoc error " + Marshal.GetLastWin32Error()); return 4; }
+      StartPagePrinter(h); int w; bool ok = WritePrinter(h, datos, datos.Length, out w); EndPagePrinter(h); EndDocPrinter(h);
+      if (!ok) { Console.Error.WriteLine("WritePrinter error " + Marshal.GetLastWin32Error()); return 5; }
+      Console.Write(w); return 0;
+    } finally { ClosePrinter(h); }
+  }
+}`;
+let _rawExe = null;
+// El ayudante se compila UNA vez con el compilador C# que trae Windows (.NET Framework 4, presente en Windows 10/11)
+// y queda en la carpeta de datos de la app: imprimir después tarda milisegundos, no segundos.
+function ayudanteRaw() {
+    if (_rawExe && fs.existsSync(_rawExe)) return _rawExe;
+    const dir = app.getPath('userData');
+    const exe = path.join(dir, 'mh_rawprint_v1.exe');
+    if (fs.existsSync(exe)) return (_rawExe = exe);
+    const win = process.env.SystemRoot || 'C:\\Windows';
+    const csc = [path.join(win, 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe'),
+                 path.join(win, 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe')].find(p => fs.existsSync(p));
+    if (!csc) throw new Error('No se encontró el compilador de .NET de Windows para la impresión directa.');
+    const fuente = path.join(dir, 'mh_rawprint_v1.cs');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(fuente, RAW_CS, 'utf8');
+    require('child_process').execFileSync(csc, ['/nologo', '/target:exe', '/optimize', `/out:${exe}`, fuente], { windowsHide: true, timeout: 60000 });
+    return (_rawExe = exe);
+}
+
+ipcMain.handle('mh:impresoras', async (e) => {
+    const lista = await e.sender.getPrintersAsync();
+    return lista.map(p => ({ nombre: p.name, descripcion: p.description || p.displayName || '', predeterminada: !!p.isDefault }));
+});
+
+ipcMain.handle('mh:imprimir-raw', async (e, impresora, base64, documento) => {
+    if (!impresora || typeof impresora !== 'string') throw new Error('Falta la impresora.');
+    const datos = Buffer.from(String(base64 || ''), 'base64');
+    if (!datos.length) throw new Error('No hay nada que imprimir.');
+    if (datos.length > 8 * 1024 * 1024) throw new Error('El trabajo de impresión es demasiado grande.');
+    const tmp = path.join(require('os').tmpdir(), `mh_imp_${process.pid}_${Date.now()}.bin`);
+    fs.writeFileSync(tmp, datos);
+    try {
+        const cp = require('child_process');
+        if (process.platform === 'win32') {
+            const exe = ayudanteRaw();
+            await new Promise((resolve, reject) => cp.execFile(exe, [impresora, tmp, String(documento || 'MasterHotel').slice(0, 60)],
+                { windowsHide: true, timeout: 30000 }, (err, stdout, stderr) =>
+                    err ? reject(new Error((stderr || err.message).toString().trim())) : resolve(stdout)));
+        } else {
+            await new Promise((resolve, reject) => cp.execFile('lp', ['-d', impresora, '-o', 'raw', tmp], { timeout: 30000 },
+                (err, stdout, stderr) => err ? reject(new Error((stderr || err.message).toString().trim())) : resolve(stdout)));
+        }
+        return { ok: true, bytes: datos.length };
+    } finally {
+        try { fs.unlinkSync(tmp); } catch (_) {}
+    }
+});
+
 // Una sola instancia: evita procesos colgados que impiden actualizar.
 if (!app.requestSingleInstanceLock()) {
     app.quit();

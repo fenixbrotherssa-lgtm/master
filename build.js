@@ -25,6 +25,7 @@ const COPIAR_TAL_CUAL = [
     'assets',
     'node_modules',
     'public',
+    'i18n',
     'estructura.html',
     'index.html',
     'package.json',

@@ -13,7 +13,7 @@ const errMsg = e => (e && e.response && e.response.data && (e.response.data.erro
 const TIPOS_MOV = {
     INGRESO: 'Ingreso', AJUSTE_POSITIVO: 'Ajuste +', SALIDA: 'Salida', AJUSTE_NEGATIVO: 'Ajuste −', MERMA: 'Merma',
     DEVOLUCION: 'Devolución', PRODUCCION: 'Producción', PRODUCCION_CONSUMO: 'Consumo producción', ANULA_PRODUCCION: 'Anula producción',
-    CONSUMO_HAB: 'Kit de habitación', CONSUMO_MANT: 'Mantenimiento', CONSUMO_EVE: 'Evento',
+    CONSUMO_HAB: 'Kit de habitación', CONSUMO_MANT: 'Mantenimiento', CONSUMO_EVE: 'Evento', CONSUMO_DES: 'Desayuno incluido',
 };
 
 const CostosModule = {

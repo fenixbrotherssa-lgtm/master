@@ -8,9 +8,13 @@ const ETIQUETA_EVENTO = {
     BLOQUEO_MANUAL: '🔒 Cerró por dentro', BLOQUEO_REMOTO: '🔒 Cerrada desde el sistema',
     BLOQUEO_AUTOMATICO: '🔒 Cierre automático', ATASCADA: '⚠️ Cerrojo atascado',
     TECLADO_BLOQUEADO: '⛔ Teclado bloqueado (intentos fallidos)', CODIGO_INVALIDO: '⛔ Código incorrecto',
-    MANIPULACION: '🚨 Manipulación de la cerradura'
+    MANIPULACION: '🚨 Manipulación de la cerradura',
+    // 2.1.3
+    SIN_REGISTRO: '⏸️ Sin registro (sistema detenido)',
+    CODIGOS_BORRADOS_TODOS: '⚠️ La cerradura borró todos sus códigos (se recargan)',
+    CODIGO_DUPLICADO: '⚠️ La cerradura rechazó un código repetido'
 };
-const EVENTOS_ALERTA = ['CODIGO_INVALIDO', 'TECLADO_BLOQUEADO', 'MANIPULACION'];
+const EVENTOS_ALERTA = ['CODIGO_INVALIDO', 'TECLADO_BLOQUEADO', 'MANIPULACION', 'SIN_REGISTRO', 'CODIGOS_BORRADOS_TODOS', 'CODIGO_DUPLICADO'];
 // Apertura por teclado SIN número de usuario: la cerradura no dijo qué slot abrió →
 // un código que el sistema no cargó (programado a mano en la cerradura o de fábrica)
 const codigoDesconocido = e => e.Tipo === 'APERTURA_TECLADO' && !e.Slot;
@@ -779,7 +783,7 @@ const CerradurasModule = {
                                    : e.TipoCodigo === 'PERSONAL' ? 'background:rgba(197,160,89,.08)' : ''}">
                     <td>${e.FechaFmt}</td>
                     <td><b>${e.NroHabitacion}</b></td>
-                    <td>${etiqueta[e.Tipo] || e.Detalle || e.Tipo}</td>
+                    <td>${e.Tipo === 'SIN_REGISTRO' && e.Detalle ? '⏸️ ' + String(e.Detalle).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) : (etiqueta[e.Tipo] || e.Detalle || e.Tipo)}</td>
                     <td>${quien(e)}</td>
                     <td>${apertura ? (e.CierreFmt || '<span style="color:#c5a059">sigue abierta</span>') : ''}</td>
                     <td><b>${apertura ? dur(e.DuracionSeg) : ''}</b></td>
@@ -833,7 +837,7 @@ const CerradurasModule = {
                     return `<tr style="border-bottom:1px solid #ddd;${alerta ? ' color:#c0392b; font-weight:bold;' : ''}">
                         <td>${esc(e.FechaFmt.slice(11))}</td>
                         <td>${esc(e.NroHabitacion)}</td>
-                        <td>${esc(sinIcono(ETIQUETA_EVENTO[e.Tipo]) || e.Detalle || e.Tipo)}</td>
+                        <td>${esc(e.Tipo === 'SIN_REGISTRO' && e.Detalle ? e.Detalle : (sinIcono(ETIQUETA_EVENTO[e.Tipo]) || e.Detalle || e.Tipo))}</td>
                         <td>${esc(sinIcono(quienEvento(e)))}</td>
                         <td>${apertura ? esc(e.CierreFmt || 'sigue abierta') : ''}</td>
                         <td class="t-right">${apertura ? esc(duracionTxt(e.DuracionSeg)) : ''}</td></tr>`;

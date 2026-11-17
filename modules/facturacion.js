@@ -24,6 +24,8 @@ const FacturacionModule = {
         this.cargarProductosManual();
         const selFmt = document.getElementById('facFormatoTicket');
         if (selFmt) selFmt.innerHTML = pt.selectorHTML('fac-formato-ticket');
+        const selIdi = document.getElementById('facIdiomaRide');
+        if (selIdi) selIdi.value = this.idiomaRide();
         
         this.setupEventListeners();
         this.verificarPermisosConfig();
@@ -535,6 +537,14 @@ const FacturacionModule = {
         }
     },
 
+    // Idioma del PDF (RIDE) y del correo, recordado por equipo. 'auto' = lo decide el servidor por el comprador.
+    idiomaRide() {
+        try { return localStorage.getItem('mh_idioma_ride') || 'auto'; } catch (e) { return 'auto'; }
+    },
+    guardarIdiomaRide(v) {
+        try { localStorage.setItem('mh_idioma_ride', v || 'auto'); } catch (e) { /* sin almacenamiento */ }
+    },
+
     async imprimirFactura(id, recienEmitida) {
         const factura = this.comprobantes.find(f => f.FacturaID == id);
         if (!factura && !recienEmitida) return;
@@ -547,7 +557,7 @@ const FacturacionModule = {
         });
         
         try {
-            const res = await api.get(`/facturacion/documento/ride/${id}`);
+            const res = await api.get(`/facturacion/documento/ride/${id}`, { params: { idioma: this.idiomaRide() } });
             if (res.data.success) {
                 Swal.close();
                 const baseUrl = api.defaults.baseURL.replace('/api', '');
@@ -637,7 +647,8 @@ const FacturacionModule = {
                 try {
                     const res = await api.post('/facturacion/documento/enviar-correo', {
                         facturaId: factura.FacturaID,
-                        emailDestino: email
+                        emailDestino: email,
+                        idioma: this.idiomaRide()
                     });
                     if (!res.data.success) {
                         Swal.showValidationMessage(`Error del servidor: ${res.data.error}`);

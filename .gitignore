@@ -21,3 +21,6 @@ Setup_MasterHotel_Cliente_*.exe
 Thumbs.db
 *.log
 _test_*
+
+# APK compilados (se publican en casrodsoft.com, no en el repo)
+*.apk

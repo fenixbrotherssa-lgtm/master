@@ -13,7 +13,9 @@ const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'O
 
 // Indicadores de las tarjetas. `alto`: true = más es mejor (para el color de la variación y la meta).
 const KPIS = [
-    { k: 'ocupacion', t: 'Ocupación', f: pct, meta: 'OCUPACION', alto: true, v: d => d.ocupacion },
+    { k: 'ocupacion', t: 'Ocupación', f: pct, meta: 'OCUPACION', alto: true, v: d => d.ocupacion,
+      // Dormitorios (2.3.0): cada cama cuenta como fracción de su habitación; aparte, la ocupación por camas
+      extra: d => d.camas ? `Por camas: ${pct(d.camas.ocupacion)} (${d.camas.ocupadas} de ${d.camas.camasNoche} camas-noche)` : '' },
     { k: 'adr', t: 'ADR (tarifa promedio)', f: money, meta: 'ADR', alto: true, v: d => d.adr },
     { k: 'revpar', t: 'RevPAR', f: money, meta: 'REVPAR', alto: true, v: d => d.revpar },
     { k: 'trevpar', t: 'TRevPAR', f: money, meta: 'TREVPAR', alto: true, v: d => d.trevpar },

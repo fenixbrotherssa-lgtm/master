@@ -1,4 +1,5 @@
 const api = require('./api');
+const AnticiposReserva = require('./anticiposReserva');   // anticipo = dinero en caja (2.2.0)
 
 const ReservasModule = {
     _sedeId: null,
@@ -97,7 +98,8 @@ const ReservasModule = {
                 <td style="font-size:.78rem;white-space:nowrap">${rv.SalidaFmt  || (rv.FechaSalida  || '').split('T')[0] || '—'}</td>
                 <td><span class="badge ${bdgCls}">${rv.Estado}</span></td>
                 <td><span class="origen-badge">${icon} ${rv.Origen || '—'}</span></td>
-                <td style="font-weight:800;color:#27ae60">$${parseFloat(rv.TotalEstimado || 0).toFixed(2)}</td>
+                <td style="font-weight:800;color:#27ae60">$${parseFloat(rv.TotalEstimado || 0).toFixed(2)}
+                    ${AnticiposReserva.etiqueta(rv) ? `<div style="font-size:.68rem">${AnticiposReserva.etiqueta(rv)}</div>` : ''}</td>
                 <td>${this._renderAcciones(rv)}</td>
             </tr>`;
         }).join('');
@@ -123,11 +125,19 @@ const ReservasModule = {
             btns.push(`<button class="btn-neo btn-sm btn-danger"
                 onclick="ReservasModule.cancelar(${rv.ReservaID},'${rv.CodigoReserva}')" title="Cancelar">
                 <i class="fas fa-times"></i></button>`);
+        if (['PENDIENTE','CONFIRMADA'].includes(rv.Estado) || (Number(rv.AnticipoCaja) || 0) > 0.009 || (Number(rv.AnticipoPagado) || 0) > 0.009)
+            btns.push(`<button class="btn-neo btn-sm" style="background:#2f855a;color:white"
+                onclick="ReservasModule.anticipo(${rv.ReservaID})" title="Anticipo (dinero en caja)">
+                <i class="fas fa-hand-holding-usd"></i></button>`);
         if (rv.Estado === 'CONFIRMADA')
             btns.push(`<button class="btn-neo btn-sm" style="background:#718096;color:white"
                 onclick="ReservasModule.noshow(${rv.ReservaID},'${rv.CodigoReserva}')" title="No-Show">
                 <i class="fas fa-user-slash"></i></button>`);
         return `<div style="display:flex;gap:6px">${btns.join('')}</div>`;
+    },
+
+    anticipo(id) {
+        return AnticiposReserva.abrir(id, { alCambiar: () => this.cargarReservas() });
     },
 
     async confirmar(id, codigo) {
@@ -239,12 +249,17 @@ const ReservasModule = {
                 sedeId: this._sedeId, tipoId: parseInt(tipoId),
                 nombre, telefono: tel, correo: correo || undefined,
                 fechaLlegada: llegada, fechaSalida: salida, origen,
-                anticipoPagado: anticipo, notas: notas || undefined,
+                anticipoPagado: 0, notas: notas || undefined,   // el anticipo se registra en caja con el diálogo
                 usuarioId: App.user?.id
             });
             this.cerrarModal();
-            Swal.fire({ icon:'success', title:`Reserva ${res.data.codigoReserva} registrada`, timer:2500, showConfirmButton:false });
             this.cargarReservas();
+            if (anticipo > 0 && res.data.reservaId) {
+                await Swal.fire({ icon:'success', title:`Reserva ${res.data.codigoReserva} registrada`, text:'Ahora registre el anticipo en caja (método y comprobante).', confirmButtonColor:'#1a365d' });
+                await AnticiposReserva.abrir(res.data.reservaId, { montoSugerido: anticipo, alCambiar: () => this.cargarReservas() });
+            } else {
+                Swal.fire({ icon:'success', title:`Reserva ${res.data.codigoReserva} registrada`, timer:2500, showConfirmButton:false });
+            }
         } catch (e) {
             const disp = document.getElementById('rv-form-disponibilidad');
             const msg = e.response?.data?.message || e.message;

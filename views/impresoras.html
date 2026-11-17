@@ -1,0 +1,37 @@
+<style>
+    #seccion-impresoras { padding: 30px 35px; max-width: 1150px; margin: 0 auto; }
+    #seccion-impresoras .cab { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    #seccion-impresoras .cab h2 { margin: 0; color: #1a365d; font-weight: 900; letter-spacing: 1px; }
+    #seccion-impresoras .cab p { margin: 2px 0 0; color: #718096; font-size: .78rem; font-weight: 700; text-transform: uppercase; }
+    .imp-aviso { background: rgba(26,54,93,.07); border-radius: 14px; padding: 12px 16px; font-size: .82rem; color: #2d3748; line-height: 1.55; margin-bottom: 20px; }
+    .imp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .imp-card { background: #e0e0e4; border-radius: 22px; padding: 20px 22px; box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff; }
+    .imp-card h3 { margin: 0 0 2px; color: #1a365d; font-size: .95rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+    .imp-card .ayuda { color: #718096; font-size: .76rem; font-weight: 700; margin-bottom: 12px; }
+    .imp-campo { margin-bottom: 10px; }
+    .imp-campo label { display: block; font-size: .72rem; font-weight: 900; color: #4a5568; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .4px; }
+    .imp-campo select, .imp-campo input { width: 100%; padding: 10px 12px; border-radius: 12px; border: none; background: #e0e0e4;
+        box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff; font-weight: 700; color: #1a365d; font-size: .85rem; }
+    .imp-fila2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .imp-check { display: flex; gap: 16px; flex-wrap: wrap; font-size: .8rem; font-weight: 800; color: #2d3748; margin: 6px 0 12px; }
+    .imp-check label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .imp-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .imp-btn { border: none; border-radius: 12px; padding: 11px 16px; font-weight: 900; cursor: pointer; background: #1a365d; color: #fff; font-size: .78rem; letter-spacing: .4px; }
+    .imp-btn.sec { background: #e0e0e4; color: #1a365d; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; }
+    .imp-estado { font-size: .76rem; font-weight: 800; margin-top: 8px; min-height: 1em; }
+    .imp-oculto { display: none; }
+    @media (max-width: 950px) { .imp-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div id="seccion-impresoras">
+    <div class="cab">
+        <button class="btn-neo btn-back" onclick="App.renderView('dashboard', 'viewport')" title="Regresar"><i class="fas fa-arrow-left"></i></button>
+        <div><h2><i class="fas fa-print"></i> IMPRESORAS DE ESTE EQUIPO</h2><p>Qué impresora usa esta computadora para cada cosa</p></div>
+    </div>
+    <div class="imp-aviso">
+        <b>Impresión directa:</b> con una térmica o matricial elegida aquí, los tickets salen solos, sin el cuadro de impresión.
+        Esta configuración es de <b>esta computadora</b>: cada equipo elige sus impresoras. Si un uso queda en
+        "Cuadro de impresión de Windows", funciona como siempre. Después de configurar, use <b>Imprimir prueba</b>.
+    </div>
+    <div class="imp-grid" id="imp-grid"></div>
+</div>

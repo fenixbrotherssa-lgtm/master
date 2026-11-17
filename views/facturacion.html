@@ -124,6 +124,16 @@
                 <input type="text" id="histFacturaBuscar" class="input-neo" style="flex:1;" placeholder="Nombre, cédula/RUC o secuencial..." onkeyup="FacturacionModule.renderHistorial()">
                 <span style="font-size:.75rem; font-weight:700; opacity:.7; white-space:nowrap;"><i class="fas fa-receipt"></i> Ticket:</span>
                 <span id="facFormatoTicket"></span>
+                <span style="font-size:.75rem; font-weight:700; opacity:.7; white-space:nowrap;" title="Idioma del PDF y del correo. Automático: según el documento y la procedencia del cliente. El XML del SRI siempre va en español."><i class="fas fa-language"></i> PDF:</span>
+                <select id="facIdiomaRide" class="input-neo" style="width:auto; padding:6px 10px;" onchange="FacturacionModule.guardarIdiomaRide(this.value)">
+                    <option value="auto">Automático</option>
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                    <option value="pt">Português</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
+                </select>
             </div>
             <table class="tabla-neo">
                 <thead>

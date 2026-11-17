@@ -117,7 +117,9 @@ const DashboardModule = {
                 }
             }
 
-            const habitaciones = resRack.data || [];
+            // Dormitorios (2.3.0): el rack trae una fila por cama ocupada; aquí cuenta cada habitación una vez
+            const vistos = new Set();
+            const habitaciones = (resRack.data || []).filter(h => !h.EsDormitorio || (!vistos.has(h.HabitacionID) && vistos.add(h.HabitacionID)));
             if (habitaciones.length > 0) {
                 const total   = habitaciones.length;
                 const ocupadas = habitaciones.filter(h => h.Estado === 'OCUPADA').length;

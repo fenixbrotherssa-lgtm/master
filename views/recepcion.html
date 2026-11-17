@@ -87,6 +87,15 @@
         100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
     }
     .room-card-rack.vencida { border-left: 8px solid var(--hotel-danger) !important; animation: pulse 1.5s infinite; }
+    /* Dormitorios (2.3.0): la tarjeta lleva sus camas */
+    .room-card-rack.dormitorio { border-left-color: #6b46c1; }
+    .room-card-rack.dormitorio.ocupada { border-left: 8px solid #6b46c1; }
+    .camas-rack { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 5px; margin-top: 8px; }
+    .cama-rack { border-radius: 9px; color: #fff; padding: 4px 3px; text-align: center; cursor: pointer; line-height: 1.1; transition: transform .15s; }
+    .cama-rack:hover { transform: scale(1.08); }
+    .cama-rack.vencida { outline: 3px solid #e74c3c; animation: pulse 1.5s infinite; }
+    .cama-cod { font-size: .8rem; font-weight: 900; }
+    .cama-hues { font-size: .55rem; font-weight: 700; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .room-number { font-size: 2rem; font-weight: 900; color: var(--hotel-blue); margin: 5px 0; }
     .room-type { font-size: 0.65rem; font-weight: 800; color: #718096; text-transform: uppercase; }
@@ -255,7 +264,8 @@
                     <div class="form-row">
                         <div style="flex: 1;">
                             <label class="label-hint">TELÉFONO</label>
-                            <input type="text" id="in-telefono" class="input-neo" placeholder="Celular">
+                            <input type="text" id="in-telefono" class="input-neo" placeholder="Celular (extranjero: +código país)">
+                            <div id="ui-tel-wa" style="font-size:.66rem; margin:-8px 0 8px; min-height:12px;"></div>
                         </div>
                         <div style="flex: 1;">
                             <label class="label-hint">PROCEDENCIA</label>
@@ -325,11 +335,24 @@
                     <div class="form-row">
                         <div style="flex: 1;">
                             <label class="label-hint">ADULTOS</label>
-                            <input type="number" id="in-adultos" class="input-neo" value="1" min="1" required>
+                            <input type="number" id="in-adultos" class="input-neo" value="1" min="1" required oninput="RecepcionModule.renderDesayunoCheckIn()">
                         </div>
                         <div style="flex: 1;">
                             <label class="label-hint">NIÑOS</label>
-                            <input type="number" id="in-ninos" class="input-neo" value="0" min="0" required>
+                            <input type="number" id="in-ninos" class="input-neo" value="0" min="0" required oninput="RecepcionModule.renderDesayunoCheckIn()">
+                        </div>
+                    </div>
+
+                    <!-- Desayuno (2.4.0): lo configura el tipo de habitación; aquí solo se confirma -->
+                    <div id="box-desayuno-checkin" style="display:none; background: rgba(183, 121, 31, 0.08); padding: 12px 15px; border-radius: 15px; border: 1px dashed #b7791f; margin-bottom: 15px;">
+                        <label style="display:flex; align-items:center; gap:12px; cursor:pointer; font-weight:900; color:#975a16; font-size:.8rem;">
+                            <input type="checkbox" id="in-desayuno-tomar" style="width:20px; height:20px;" onchange="RecepcionModule.renderDesayunoCheckIn()">
+                            <span id="lbl-desayuno-checkin">☕ DESAYUNO</span>
+                        </label>
+                        <div id="box-desayuno-personas" style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                            <label class="label-hint" style="margin:0;">PERSONAS</label>
+                            <input type="number" id="in-desayuno-personas" class="input-neo" min="1" max="50" style="width:90px; margin:0;" oninput="RecepcionModule.renderDesayunoCheckIn(true)">
+                            <span id="ui-desayuno-nota" style="font-size:.66rem; color:#718096; font-weight:700;"></span>
                         </div>
                     </div>
 
@@ -375,6 +398,7 @@
                         <small style="opacity: 0.8; font-weight: 800; font-size: 0.6rem; letter-spacing: 1px;">VALOR TOTAL A COBRAR</small>
                         <h2 id="ui-total-hospedaje" style="font-size: 2.2rem; margin: 5px 0;">$0.00</h2>
                         <div id="ui-tarifa-nota" style="font-size: 0.68rem; font-weight: 700; opacity: 0.85;"></div>
+                        <div id="ui-anticipo-reserva" style="display:none; font-size: 0.72rem; font-weight: 800; margin-top: 6px; line-height: 1.5;"></div>
                     </div>
 
                     <div id="seccion-pago-checkin">
@@ -499,6 +523,11 @@
                         <button type="button" class="btn-neo" id="btn-abonar-cuenta" style="width: 100%; justify-content: center; font-size:0.85rem; color: var(--hotel-success);" onclick="RecepcionModule.registrarAbonoParcial()">
                             <i class="fas fa-hand-holding-usd"></i> REGISTRAR PAGO PARCIAL (ABONO)
                         </button>
+                        <button type="button" class="btn-neo" id="btn-extender-estadia" style="width: 100%; justify-content: center; font-size:0.85rem; color: var(--hotel-blue); margin-top:10px; display:none;" onclick="RecepcionModule.extenderEstadia()">
+                            <i class="fas fa-calendar-plus"></i> EXTENDER ESTADÍA
+                        </button>
+                        <div id="out-extensiones" style="display:none; margin-top:12px; text-align:left; font-size:0.75rem; color:#4a5568;"></div>
+                        <div id="out-desayunos" style="display:none; margin-top:12px; text-align:left; font-size:0.75rem; color:#4a5568;"></div>
                     </div>
 
                     <div id="section-pago-checkout" style="display: none;">
@@ -646,7 +675,7 @@
                     <input type="text" id="nr-notas" class="input-neo" placeholder="Ej: pidió cama extra">
                 </div>
                 <div style="flex:1;">
-                    <label class="label-hint" style="color: var(--hotel-success);">ANTICIPO RECIBIDO ($)</label>
+                    <label class="label-hint" style="color: var(--hotel-success);" title="Al guardar se registra en caja con su método y comprobante">ANTICIPO RECIBIDO ($) → CAJA</label>
                     <input type="number" id="nr-anticipo" class="input-neo" value="0" min="0" step="0.01" style="color: var(--hotel-success); font-weight:900;">
                 </div>
             </div>

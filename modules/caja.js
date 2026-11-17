@@ -472,8 +472,8 @@ const CajaModule = {
                    <p style="margin: 3px 0; font-size: 11px; word-wrap: break-word;">${infoCaja.ObservacionesCierre}</p>` 
                 : '';
 
-            const win = window.open('', '_blank', 'width=400,height=800');
-            win.document.write(`
+            // 2.1.4: con impresora directa configurada en este equipo, el ticket va directo (térmica / matricial)
+            const _html = `
                 <html>
                 <head>
                     <title>Ticket Arqueo #${cajaId}</title>
@@ -520,7 +520,11 @@ const CajaModule = {
                     <p class="text-center">--- FIN DEL REPORTE ---</p>
                 </body>
                 </html>
-            `);
+            `;
+            const _I = window.Impresion || require('./impresion');
+            if (await _I.directo('RECIBO', _html, `Arqueo #${cajaId}`)) return;
+            const win = window.open('', '_blank', 'width=400,height=800');
+            win.document.write(_html);
             win.document.close();
         } catch (e) { 
             console.error(e);
@@ -575,8 +579,8 @@ const CajaModule = {
 
             const now = new Date().toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' });
 
-            const win = window.open('', '_blank', 'width=420,height=900');
-            win.document.write(`
+            // 2.1.4: con impresora directa configurada en este equipo, el ticket va directo (térmica / matricial)
+            const _html = `
                 <html>
                 <head>
                     <title>Entrega de Turno #${cajaId}</title>
@@ -639,7 +643,11 @@ const CajaModule = {
                     <p class="text-center" style="margin-top:10px; font-size:10px;">--- FIN DE ENTREGA DE TURNO ---</p>
                 </body>
                 </html>
-            `);
+            `;
+            const _I = window.Impresion || require('./impresion');
+            if (await _I.directo('RECIBO', _html, `Entrega de turno #${cajaId}`)) return;
+            const win = window.open('', '_blank', 'width=420,height=900');
+            win.document.write(_html);
             win.document.close();
 
         } catch (e) {

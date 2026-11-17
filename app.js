@@ -2,6 +2,7 @@
 const path = require('path');
 const api = require('./modules/api');
 require('./modules/metodosPago'); // llena los <select data-metodos-pago> con los métodos de la sede
+require('./modules/telefonoWA');  // validación en vivo del WhatsApp del huésped (cualquier país, 2.4.0)
 const Permisos = require('./modules/permisos'); // permisos por módulo del usuario (roles)
 const { io } = require('socket.io-client');
 
@@ -261,6 +262,10 @@ const App = {
             this.conectarSocket();
         }
 
+        // Una sola cabecera: la barra del sistema (con su versión) reemplaza la franja del login
+        const cabeceraLogin = document.getElementById('main-header');
+        if (cabeceraLogin) cabeceraLogin.remove();
+
         document.getElementById('app-root').innerHTML = `
             <div class="app-wrapper" style="display:flex; height:100vh; background:#e0e0e4; font-family: 'Segoe UI', sans-serif; overflow:hidden;">
                 <main style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
@@ -268,6 +273,7 @@ const App = {
                         <div style="display:flex; align-items:center; gap:15px;">
                             <h2 style="color:#2c3e50; letter-spacing:3px; font-size:1.2rem; margin:0; font-weight:900;">
                                 MASTERHOTEL <span style="color:#007bff; font-weight:300;">| CORE</span>
+                                <small id="mh-version-top" class="notranslate" style="color:#718096; font-size:0.65rem; font-weight:700; letter-spacing:1px; margin-left:6px;">${window.AppConfig && AppConfig.version ? 'v' + AppConfig.version : ''}</small>
                             </h2>
                         </div>
                         <div style="display:flex; align-items:center; gap:25px;">
@@ -283,6 +289,7 @@ const App = {
                                 <span id="socket-status-indicator" style="width:10px; height:10px; border-radius:50%; background:#27ae60; display:inline-block; box-shadow:0 0 6px rgba(39,174,96,0.6); transition:background 0.3s;"></span>
                                 <span style="font-size:0.65rem; color:#718096; font-weight:700;">SERVIDOR</span>
                             </div>
+                            ${window.Idioma ? Idioma.botonHTML('background:#e0e0e4; color:#007bff; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:.8rem; font-weight:800; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;') : ''}
                             <button id="btn-alertas-toggle" type="button" onclick="window.Alertas && Alertas.toggle()" title="Alertas sonoras / voz"
                                 style="background:#e0e0e4; color:#27ae60; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:1rem; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;">
                                 <i class="fas fa-volume-high"></i>

@@ -1,4 +1,5 @@
 const api = require('./api');
+const AnticiposReserva = require('./anticiposReserva');   // anticipo de reserva = dinero en caja (2.2.0)
 const { marcarBuscando } = require('./uiLoading');
 const pt  = require('./printTicket');
 
@@ -6,8 +7,8 @@ const RecepcionModule = {
     habitacionesCache: [],
     habSeleccionada: null,
     cajaId: null,
-    acompanantesActuales: [], 
-    
+    acompanantesActuales: [],
+
     // VARIABLES PARA EL POS (TIENDA)
     productosPOS: [],
     carritoPOS: [],
@@ -102,24 +103,33 @@ const RecepcionModule = {
 
         const pisos = [...new Set(this.habitacionesCache.map(h => h.Piso))].sort((a,b) => a-b);
         const ahora = new Date();
-        
+        // Dormitorios (2.3.0): el servidor manda una fila por cama ocupada (para que los cargos a la habitación elijan
+        // la cuenta correcta); aquí se dibuja UNA tarjeta por habitación con sus camas.
+        const unidades = this.unidadesRack();
+        const vencida = (f) => {
+            if (!f) return false;
+            const s = new Date(String(f).replace('T', ' ').replace('Z', ''));
+            return !isNaN(s) && s < ahora;
+        };
+
         viewport.innerHTML = pisos.map(piso => `
             <div class="piso-header"><i class="fas fa-layer-group"></i> Planta ${piso}</div>
             <div class="grid-habitaciones">
-                ${this.habitacionesCache.filter(h => h.Piso === piso).map(h => {
+                ${unidades.filter(h => h.Piso === piso).map(h => {
+                    if (h.EsDormitorio) return this.tarjetaDormitorio(h, vencida);
                     let statusClass = h.Estado.toLowerCase();
                     let infoHuesped = '';
                     let timer = '';
 
                     if (h.Estado === 'OCUPADA') {
                         infoHuesped = `<div class="huesped-name"><i class="fas fa-user"></i> ${h.Huesped}</div>`;
-                        
+
                         const fechaLimpia = h.FechaSalidaProgramada ? h.FechaSalidaProgramada.replace('T', ' ').replace('Z', '') : '';
                         const salida = new Date(fechaLimpia);
                         const estaVencida = salida < ahora;
-                        
+
                         if (estaVencida) {
-                            statusClass = 'ocupada vencida'; 
+                            statusClass = 'ocupada vencida';
                             timer = `<div class="timer-badge" style="background:var(--hotel-danger); animation: pulse 1.5s infinite;"><i class="fas fa-exclamation-triangle"></i> ¡VENCIDO!</div>`;
                         } else {
                             timer = `<div class="timer-badge"><i class="far fa-clock"></i> ${h.FechaSalidaFmt || '--:--'}</div>`;
@@ -140,9 +150,95 @@ const RecepcionModule = {
         `).join('');
     },
 
+    // Una entrada por habitación (los dormitorios llegan con una fila por cama ocupada)
+    unidadesRack() {
+        const vistos = new Set();
+        return this.habitacionesCache.filter(h => {
+            if (!h.EsDormitorio) return true;
+            if (vistos.has(h.HabitacionID)) return false;
+            vistos.add(h.HabitacionID);
+            return true;
+        });
+    },
+
+    tarjetaDormitorio(h, vencida) {
+        const camas = h.Camas || [];
+        const ocupadas = camas.filter(c => c.Estado === 'OCUPADA').length;
+        const libres = camas.filter(c => c.Estado === 'DISPONIBLE').length;
+        const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const color = { DISPONIBLE: '#27ae60', OCUPADA: '#c0392b', LIMPIEZA: '#3498db', MANTENIMIENTO: '#b7950b' };
+        const mant = h.Estado === 'MANTENIMIENTO';
+        const algunaVencida = camas.some(c => c.Estado === 'OCUPADA' && vencida(c.FechaSalidaProgramada));
+        const cuadros = camas.map(c => {
+            const venc = c.Estado === 'OCUPADA' && vencida(c.FechaSalidaProgramada);
+            const tt = c.Estado === 'OCUPADA' ? `${c.Huesped || ''} · sale ${c.FechaSalidaFmt || ''}${venc ? ' · VENCIDO' : ''}`
+                     : `${c.Estado}${c.Descripcion ? ' · ' + c.Descripcion : ''} · $${Number(c.PrecioDia || 0).toFixed(2)}/noche`;
+            return `<div class="cama-rack ${venc ? 'vencida' : ''}" title="${esc(tt)}"
+                         style="background:${mant ? '#cbd5e0' : (color[c.Estado] || '#a0aec0')}"
+                         onclick="event.stopPropagation(); RecepcionModule.gestionarCama(${h.HabitacionID}, ${c.CamaID})">
+                        <div class="cama-cod">${esc(c.Codigo)}</div>
+                        <div class="cama-hues">${c.Estado === 'OCUPADA' ? esc((c.Huesped || '').split(' ')[0]) : (c.Estado === 'LIMPIEZA' ? 'limpiar' : (c.Estado === 'DISPONIBLE' ? 'libre' : 'mant.'))}</div>
+                    </div>`;
+        }).join('');
+        const estado = mant ? 'mantenimiento' : (ocupadas ? 'ocupada' : (h.Estado || '').toLowerCase());
+        return `
+            <div class="room-card-rack dormitorio ${estado} ${algunaVencida ? 'vencida' : ''}" onclick="RecepcionModule.gestionarHabitacion(${h.HabitacionID})">
+                <div class="timer-badge" style="background:#6b46c1;"><i class="fas fa-bed"></i> ${ocupadas}/${camas.length}</div>
+                <div class="room-type">${esc(h.Categoria)} · por cama</div>
+                <div class="room-number">${esc(h.NroHabitacionBase || h.NroHabitacion)}</div>
+                <div style="font-size:0.6rem; font-weight:900; opacity:0.6;">${mant ? 'MANTENIMIENTO' : `${libres} CAMA(S) LIBRE(S)`}</div>
+                <div class="camas-rack">${cuadros || '<div style="font-size:.65rem;color:#c05621;font-weight:800;">Sin camas: créelas en Habitaciones</div>'}</div>
+            </div>`;
+    },
+
+    // Clic en una cama de un dormitorio (2.3.0)
+    async gestionarCama(habitacionId, camaId) {
+        const filas = this.habitacionesCache.filter(h => h.HabitacionID === habitacionId);
+        const base = filas[0];
+        if (!base) return;
+        const c = (base.Camas || []).find(x => x.CamaID === camaId);
+        if (!c) return;
+        const etiqueta = `${base.NroHabitacionBase || base.NroHabitacion} · Cama ${c.Codigo}`;
+        if (base.Estado === 'MANTENIMIENTO')
+            return Swal.fire({ icon: 'info', title: 'HABITACIÓN EN MANTENIMIENTO', html: `La habitación <b>${base.NroHabitacionBase}</b> está en mantenimiento.`, background: 'var(--hotel-bg)' });
+        if (c.Estado === 'OCUPADA') {
+            const fila = filas.find(f => f.CamaID === camaId);
+            if (!fila) return this.cargarRack();
+            this.habSeleccionada = fila;
+            return this.abrirFolioCheckout(fila);
+        }
+        if (c.Estado === 'DISPONIBLE') {
+            const hab = { ...base, Estado: 'DISPONIBLE', CamaID: c.CamaID, CamaCodigo: c.Codigo, NroHabitacion: etiqueta,
+                          PrecioDia: Number(c.PrecioDia || base.PrecioDia || 0), PrecioPeriodo: Number(c.PrecioPeriodo || base.PrecioPeriodo || 0),
+                          RecepcionID: null, Huesped: null };
+            this.habSeleccionada = hab;
+            return this.validarRiesgoSobreventa(hab);
+        }
+        if (c.Estado === 'LIMPIEZA') {
+            const puede = !window.Permisos || window.Permisos.puede('habitaciones', 2);
+            const r = await Swal.fire({
+                icon: 'info', title: `CAMA ${c.Codigo} EN LIMPIEZA`,
+                html: `Habitación <b>${base.NroHabitacionBase}</b>. ${puede ? '¿Ya está lista para el siguiente huésped?' : 'Housekeeping debe marcarla lista.'}`,
+                showCancelButton: puede, confirmButtonText: puede ? 'MARCAR LISTA (DISPONIBLE)' : 'ENTENDIDO', cancelButtonText: 'CANCELAR',
+                confirmButtonColor: 'var(--hotel-blue)', background: 'var(--hotel-bg)'
+            });
+            if (r.isConfirmed && puede) {
+                try {
+                    await api.post(`/habitaciones/camas/${c.CamaID}/estado`, { Estado: 'DISPONIBLE' });
+                    window.Toast.fire({ icon: 'success', title: `Cama ${c.Codigo} disponible` });
+                    this.cargarRack();
+                } catch (e) { Swal.fire({ icon: 'error', title: 'ERROR', text: e.response?.data?.error || 'No se pudo cambiar el estado' }); }
+            }
+            return;
+        }
+        Swal.fire({ icon: 'info', title: `CAMA ${c.Codigo} EN MANTENIMIENTO`, text: 'Cámbiela desde el módulo de Habitaciones.', background: 'var(--hotel-bg)' });
+    },
+
     calcularEstadisticas() {
-        const total = this.habitacionesCache.length;
-        const ocupadas = this.habitacionesCache.filter(h => h.Estado === 'OCUPADA').length;
+        // Por habitación (un dormitorio cuenta una vez: ocupado si tiene al menos una cama ocupada)
+        const unidades = this.unidadesRack();
+        const total = unidades.length;
+        const ocupadas = unidades.filter(h => h.Estado === 'OCUPADA').length;
         const pct = total > 0 ? Math.round((ocupadas / total) * 100) : 0;
         document.getElementById('pct-ocupacion').textContent = `${pct}%`;
         setTimeout(() => this.recordarVencidas(), 1000);
@@ -179,6 +275,13 @@ const RecepcionModule = {
 
     gestionarHabitacion(id) {
         const hab = this.habitacionesCache.find(h => h.HabitacionID === id);
+        if (hab && hab.EsDormitorio) {
+            // Dormitorio: se trabaja cama por cama (los cuadros de la tarjeta)
+            if (hab.Estado === 'MANTENIMIENTO') return this.gestionarCama(id, ((hab.Camas || [])[0] || {}).CamaID);
+            if (!(hab.Camas || []).length) return Swal.fire({ icon: 'info', title: 'DORMITORIO SIN CAMAS',
+                html: `La habitación <b>${hab.NroHabitacionBase}</b> se vende por cama, pero todavía no tiene camas. Créelas en <b>Habitaciones</b>.`, background: 'var(--hotel-bg)' });
+            return window.Toast.fire({ icon: 'info', title: 'Toque una cama: verde = libre, roja = ocupada, azul = limpieza' });
+        }
         this.habSeleccionada = hab;
 
         if (hab.Estado === 'DISPONIBLE') {
@@ -201,17 +304,20 @@ const RecepcionModule = {
 
     async validarRiesgoSobreventa(hab) {
         // 1. Refrescamos silenciosamente las reservas para tener el dato exacto de este segundo
-        await this.cargarReservas(); 
+        await this.cargarReservas();
 
         // 2. ¿Cuántos cuartos físicos quedan libres de esta categoría exacta?
-        const libres = this.habitacionesCache.filter(h =>
-            (h.Estado === 'DISPONIBLE' || h.Estado === 'LIMPIEZA') &&
-            h.Categoria === hab.Categoria
-        ).length;
+        const libres = hab.CamaID
+            ? this.unidadesRack().filter(h => h.EsDormitorio && h.Categoria === hab.Categoria && h.Estado !== 'MANTENIMIENTO')
+                .reduce((n, h) => n + (h.Camas || []).filter(c => c.Estado === 'DISPONIBLE' || c.Estado === 'LIMPIEZA').length, 0)
+            : this.habitacionesCache.filter(h =>
+                (h.Estado === 'DISPONIBLE' || h.Estado === 'LIMPIEZA') &&
+                h.Categoria === hab.Categoria
+            ).length;
 
         // 3. ¿Cuántas reservas tenemos programadas para llegar HOY de esta categoría?
         const hoyStr = new Date().toISOString().slice(0, 10);
-        const reservasPendientes = this.reservasCache.filter(r => 
+        const reservasPendientes = this.reservasCache.filter(r =>
             (r.Estado === 'PENDIENTE' || r.Estado === 'CONFIRMADA') &&
             (r.FechaLlegada || '').slice(0, 10) === hoyStr &&
             r.TipoNombre === hab.Categoria
@@ -223,7 +329,7 @@ const RecepcionModule = {
                 icon: 'warning',
                 title: '¡ALERTA DE SOBREVENTA!',
                 html: `<div style="text-align:left; font-size:0.95rem; color:#2c3e50;">
-                        Solo te queda <b>${libres}</b> habitación tipo <b>${hab.Categoria}</b> y tienes <b>${reservasPendientes}</b> reserva(s) para hoy.<br><br>
+                        Solo te queda <b>${libres}</b> ${hab.CamaID ? 'cama' : 'habitación'} tipo <b>${hab.Categoria}</b> y tienes <b>${reservasPendientes}</b> reserva(s) para hoy.<br><br>
                         Si le das este cuarto a un cliente de la calle, el cliente de la reserva se quedará sin habitación cuando llegue.<br><br>
                         <b>¿QUÉ DEBES HACER?</b><br>
                         Ve a la pestaña de Reservas y llama al cliente para confirmar. Si no viene, <b>cancela la reserva o márcala como "NO VINO"</b> para que el sistema libere este cuarto.
@@ -256,13 +362,13 @@ const RecepcionModule = {
         try {
             const sedeId = localStorage.getItem('currentSedeId') || JSON.parse(localStorage.getItem('user')).SedeID;
             const res = await api.get(`/parqueadero/espacios/${sedeId}`);
-            
+
             // Solo nos interesan los que están libres
             const libres = res.data.filter(e => e.Estado === 'LIBRE');
-            
+
             const selectParqueo = document.getElementById('in-espacio-parqueo');
             if (selectParqueo) {
-                selectParqueo.innerHTML = '<option value="">-- NO ASIGNAR (O SIN VEHÍCULO) --</option>' + 
+                selectParqueo.innerHTML = '<option value="">-- NO ASIGNAR (O SIN VEHÍCULO) --</option>' +
                     libres.map(e => `<option value="${e.EspacioID}">🚗 ESPACIO: ${e.CodigoEspacio} (${e.Zona || 'PRINCIPAL'})</option>`).join('');
             }
         } catch (error) {
@@ -302,22 +408,39 @@ const RecepcionModule = {
         const form = document.getElementById('formCheckIn');
         form.reset();
         this.cargarConsentimiento(null);
-        
-        this.acompanantesActuales = []; 
+
+        this.acompanantesActuales = [];
         this.renderAcompanantes();
-        
+
         document.getElementById('modalCheckInTitulo').textContent = `CHECK-IN: HABITACIÓN ${hab.NroHabitacion}`;
         document.getElementById('in-habitacionId').value = hab.HabitacionID;
+        // Dormitorio (2.3.0): en una cama compartida no se vende por momento
+        const selTipo = document.getElementById('in-tipoAlquiler');
+        if (selTipo) {
+            const optMom = [...selTipo.options].find(o => o.value === 'Momento');
+            if (optMom) { optMom.hidden = !!hab.CamaID; optMom.disabled = !!hab.CamaID; }
+            if (hab.CamaID && selTipo.value === 'Momento') selTipo.value = 'Dia';
+        }
 
         // Tarifa del día (Fase 5): se carga aparte y recalcula al llegar
         this.tarifaHab = null;
         this.tarifaReserva = null;
         this.cargarTarifaHab(hab.HabitacionID);
 
+        // Desayuno del tipo (2.4.0) y validación del WhatsApp (cualquier país)
+        this.desayunoTipo = null;
+        this.desayunoPersonasTocado = false;
+        this.renderDesayunoCheckIn();
+        this.cargarDesayunoHab(hab.HabitacionID);
+        if (window.TelefonoWA) {
+            TelefonoWA.vincular(document.getElementById('in-telefono'), document.getElementById('in-procedencia'), document.getElementById('ui-tel-wa'));
+            TelefonoWA.refrescar(document.getElementById('ui-tel-wa'));
+        }
+
         // Por defecto un check-in NO viene de reserva. Si llega de una, se setea después.
         const inResv = document.getElementById('in-reservaId');
         if (inResv) inResv.value = '';
-        
+
         const inDescuento = document.getElementById('in-descuento');
         if(inDescuento) inDescuento.value = 0;
 
@@ -326,12 +449,12 @@ const RecepcionModule = {
             inMigracion.checked = false;
             this.toggleMigracion();
         }
-        
-        document.getElementById('lbl-edad').textContent = 'EDAD: --'; 
-        this.gestionarCamposVoucher(); 
-        this.recalcularPrecios(); 
+
+        document.getElementById('lbl-edad').textContent = 'EDAD: --';
+        this.gestionarCamposVoucher();
+        this.recalcularPrecios();
         this.cargarEspaciosParqueoLibres(); // 🚗 SE CARGAN LOS PARQUEADEROS AL ABRIR
-        
+
         modal.classList.remove('hidden');
     },
 
@@ -345,11 +468,61 @@ const RecepcionModule = {
         } catch (e) { console.warn('Tarifa del día no disponible, se usa el precio de la ficha', e); }
     },
 
+    // ===== Desayuno (2.4.0) =====
+    async cargarDesayunoHab(habitacionId) {
+        try {
+            const res = await api.get(`/desayunos/habitacion/${habitacionId}`);
+            if (this.habSeleccionada && this.habSeleccionada.HabitacionID == habitacionId) {
+                this.desayunoTipo = res.data && res.data.habilitado ? res.data : null;
+                const chk = document.getElementById('in-desayuno-tomar');
+                if (chk) chk.checked = !!(this.desayunoTipo && this.desayunoTipo.Modo === 'INCLUIDO');
+                this.renderDesayunoCheckIn();
+            }
+        } catch (e) { this.desayunoTipo = null; this.renderDesayunoCheckIn(); }
+    },
+
+    renderDesayunoCheckIn(tocado) {
+        const box = document.getElementById('box-desayuno-checkin');
+        if (!box) return;
+        if (tocado) this.desayunoPersonasTocado = true;
+        const t = this.desayunoTipo;
+        const tipoAlq = (document.getElementById('in-tipoAlquiler') || {}).value;
+        const esMig = document.getElementById('in-es-migracion') && document.getElementById('in-es-migracion').checked;
+        if (!t || !t.Modo || t.Modo === 'NINGUNO' || tipoAlq === 'Momento' || esMig) { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        const hues = (parseInt(document.getElementById('in-adultos').value) || 1) + (parseInt(document.getElementById('in-ninos').value) || 0);
+        const chk = document.getElementById('in-desayuno-tomar');
+        const inP = document.getElementById('in-desayuno-personas');
+        const tope = t.Modo === 'INCLUIDO' ? Math.min(hues, t.Personas || hues) : hues;
+        if (!this.desayunoPersonasTocado || !(parseInt(inP.value) >= 1)) inP.value = tope;
+        inP.max = tope;
+        const lbl = document.getElementById('lbl-desayuno-checkin');
+        const nota = document.getElementById('ui-desayuno-nota');
+        const prod = t.Producto ? ` · ${t.Producto}` : '';
+        if (t.Modo === 'INCLUIDO') {
+            lbl.textContent = `☕ DESAYUNO INCLUIDO EN LA TARIFA${t.Personas ? ` (hasta ${t.Personas} persona${t.Personas > 1 ? 's' : ''})` : ''}`;
+            nota.textContent = chk.checked ? `Sin costo adicional${prod}` : 'El huésped no tomará el desayuno incluido';
+        } else {
+            const p = Number(t.Precio || 0);
+            lbl.textContent = `☕ AGREGAR DESAYUNO ($${p.toFixed(2)} por persona y día)`;
+            const n = parseInt(inP.value) || 0;
+            nota.textContent = chk.checked ? `Se carga al folio cada mañana que se sirve: ${n} × $${p.toFixed(2)} = $${(n * p).toFixed(2)} por día${prod}` : '';
+        }
+        document.getElementById('box-desayuno-personas').style.display = chk.checked ? 'flex' : 'none';
+    },
+
+    pedidoDesayuno() {
+        const box = document.getElementById('box-desayuno-checkin');
+        if (!box || box.style.display === 'none' || !this.desayunoTipo) return null;
+        return { tomar: document.getElementById('in-desayuno-tomar').checked,
+                 personas: parseInt(document.getElementById('in-desayuno-personas').value) || null };
+    },
+
     toggleMigracion() {
         const inMigracion = document.getElementById('in-es-migracion');
         const boxFecha = document.getElementById('box-fecha-migracion');
         const seccionPago = document.getElementById('seccion-pago-checkin');
-        
+
         if (inMigracion.checked) {
             seccionPago.style.display = 'none';
             boxFecha.style.display = 'block';
@@ -364,44 +537,44 @@ const RecepcionModule = {
     recalcularPrecios() {
         if (!this.habSeleccionada) return;
         const tipo = document.getElementById('in-tipoAlquiler').value;
-        const tiempo = parseInt(document.getElementById('in-tiempo').value) || 1; 
+        const tiempo = parseInt(document.getElementById('in-tiempo').value) || 1;
         const descuento = parseFloat(document.getElementById('in-descuento').value) || 0;
-        
+
         const esMigracion = document.getElementById('in-es-migracion').checked;
         const fechaInput = document.getElementById('in-fecha-ingreso-migracion').value;
-        
+
         let baseDate = (esMigracion && fechaInput) ? new Date(fechaInput + 'T12:00:00') : new Date();
 
         const lblTiempo = document.getElementById('lbl-tiempo-dinamico');
         const boxRango = document.getElementById('box-rango-fechas');
-        
+
         let precioUnitario = 0;
         let txtSalida = "";
 
         if (tipo === 'Momento') {
             precioUnitario = this.habSeleccionada.PrecioMomento;
-            lblTiempo.textContent = "CANTIDAD (MOMENTOS)"; 
+            lblTiempo.textContent = "CANTIDAD (MOMENTOS)";
             const horasBase = this.habSeleccionada.HorasMomento || 3;
             baseDate.setHours(baseDate.getHours() + (tiempo * horasBase));
             txtSalida = `${baseDate.toLocaleDateString()} a las ${baseDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        } 
+        }
         else if (tipo === 'Dia') {
             precioUnitario = this.habSeleccionada.PrecioDia;
             lblTiempo.textContent = "CANTIDAD (DÍAS)";
             const horaSalida = '12:00';
-            
+
             // LÓGICA DE DÍAS CORREGIDA
             // Si la hora actual es antes de las 8 AM (< 8), restamos 1 día al cálculo para que salga hoy (si tiempo es 1).
             const diasASumar = baseDate.getHours() < 8 ? (tiempo - 1) : tiempo;
             baseDate.setDate(baseDate.getDate() + diasASumar);
-            
+
             txtSalida = `${baseDate.toLocaleDateString()} a las ${horaSalida}`;
-        } 
+        }
         else if (tipo === 'Periodo') {
             precioUnitario = this.habSeleccionada.PrecioPeriodo;
             lblTiempo.textContent = "CANTIDAD (MES/QUINCENA)";
             const horaSalida = '12:00';
-            baseDate.setDate(baseDate.getDate() + (tiempo * 30)); 
+            baseDate.setDate(baseDate.getDate() + (tiempo * 30));
             txtSalida = `${baseDate.toLocaleDateString()} a las ${horaSalida}`;
         }
 
@@ -444,11 +617,22 @@ const RecepcionModule = {
 
         let totalFinal = Math.max(0, subtotal - descuento);
         document.getElementById('ui-total-hospedaje').textContent = `$${totalFinal.toFixed(2)}`;
-        document.getElementById('in-montoAbono').value = totalFinal.toFixed(2);
-        
+        // Anticipo de la reserva (2.2.0): ya está en caja y el folio lo cuenta como pagado → se cobra solo el resto.
+        const ant = (!esMigracion && tr && tr.anticipo > 0) ? tr.anticipo : 0;
+        document.getElementById('in-montoAbono').value = Math.max(0, totalFinal - ant).toFixed(2);
+        const uiAnt = document.getElementById('ui-anticipo-reserva');
+        if (uiAnt) {
+            let html = '';
+            if (ant > 0) html += `<div>Anticipo de la reserva ya en caja: <b>-$${ant.toFixed(2)}</b> · por cobrar ahora: <b>$${Math.max(0, totalFinal - ant).toFixed(2)}</b></div>`;
+            if (!esMigracion && tr && tr.anotadoSinCaja > 0) html += `<div style="color:#fbd38d">⚠ La reserva tenía $${tr.anotadoSinCaja.toFixed(2)} anotado SIN registro en caja. Si el huésped ya lo pagó, cóbrelo aquí con su comprobante.</div>`;
+            uiAnt.innerHTML = html;
+            uiAnt.style.display = html ? 'block' : 'none';
+        }
+
         if(boxRango) {
             boxRango.innerHTML = `<i class="fas fa-sign-out-alt"></i> Salida Estimada: <strong>${txtSalida}</strong>`;
         }
+        this.renderDesayunoCheckIn();
     },
 
     calcularEdad() {
@@ -461,7 +645,7 @@ const RecepcionModule = {
         let edad = hoy.getFullYear() - cumpleanos.getFullYear();
         const m = hoy.getMonth() - cumpleanos.getMonth();
         if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) edad--;
-        
+
         labelEdad.textContent = `EDAD: ${edad} AÑOS`;
         labelEdad.style.color = edad < 18 ? 'var(--hotel-danger)' : 'var(--hotel-success)';
     },
@@ -476,14 +660,15 @@ const RecepcionModule = {
 
             if (res.data.success) {
                 const c = res.data.cliente;
-                
+
                 // Llenamos los inputs con los datos recuperados (BD Local o Padrón CSV)
                 document.getElementById('in-nombre').value = c.NombreFull || '';
                 document.getElementById('in-telefono').value = c.Telefono || '';
                 document.getElementById('in-procedencia').value = c.Procedencia || '';
                 document.getElementById('in-correo').value = c.Correo || '';
                 this.cargarConsentimiento(c);
-                
+                if (window.TelefonoWA) TelefonoWA.refrescar(document.getElementById('ui-tel-wa'));
+
                 if (c.FechaNacimiento) {
                     document.getElementById('in-nacimiento').value = c.FechaNacimiento.split('T')[0];
                     this.calcularEdad();
@@ -491,7 +676,7 @@ const RecepcionModule = {
                     document.getElementById('in-nacimiento').value = '';
                     document.getElementById('lbl-edad').textContent = 'EDAD: --';
                 }
-                
+
                 // Validamos el origen de los datos para darle feedback visual al usuario
                 if (res.data.source === 'padron') {
                     window.Toast.fire({ icon: 'success', title: 'DATOS OBTENIDOS DEL SRI', text: 'Se auto-rellenaron datos del Padrón Nacional.' });
@@ -519,7 +704,7 @@ const RecepcionModule = {
                 document.getElementById('in-nacimiento').value = '';
                 document.getElementById('lbl-edad').textContent = 'EDAD: --';
                 this.cargarConsentimiento(null);
-                
+
                 window.Toast.fire({ icon: 'info', title: 'NUEVO CLIENTE', text: 'No existe en registros. Por favor, complete los datos manualmente.' });
             }
         } catch (e) {
@@ -555,6 +740,7 @@ const RecepcionModule = {
             </div>
         `).join('');
         document.getElementById('in-adultos').value = 1 + this.acompanantesActuales.length;
+        this.renderDesayunoCheckIn();
     },
 
     gestionarCamposVoucher() {
@@ -565,7 +751,7 @@ const RecepcionModule = {
             fileContainer.style.display = 'block';
         } else {
             fileContainer.style.display = 'none';
-            document.getElementById('voucherFileRec').value = ''; 
+            document.getElementById('voucherFileRec').value = '';
         }
     },
 
@@ -585,8 +771,8 @@ const RecepcionModule = {
         const grid = document.getElementById('grid-productos-pos');
         if(!grid) return;
 
-        const filtrados = this.productosPOS.filter(p => 
-            p.Nombre.toLowerCase().includes(filtro.toLowerCase()) || 
+        const filtrados = this.productosPOS.filter(p =>
+            p.Nombre.toLowerCase().includes(filtro.toLowerCase()) ||
             (p.CodigoBarras && p.CodigoBarras.includes(filtro))
         );
 
@@ -615,7 +801,7 @@ const RecepcionModule = {
             if (prod) {
                 this.agregarAlCarrito(prod.ProductoID);
                 document.getElementById('in-buscador-pos').value = '';
-                this.renderProductosPOS(); 
+                this.renderProductosPOS();
             } else {
                 window.Toast.fire({ icon: 'error', title: 'Producto no encontrado' });
             }
@@ -631,7 +817,7 @@ const RecepcionModule = {
         }
 
         const existente = this.carritoPOS.find(item => item.ProductoID === productoId);
-        
+
         if (existente) {
             if (existente.Cantidad + 1 > prod.StockActual) {
                 return window.Toast.fire({ icon: 'warning', title: 'Stock Insuficiente' });
@@ -646,7 +832,7 @@ const RecepcionModule = {
                 EsCortesia: false
             });
         }
-        
+
         window.Toast.fire({ icon: 'success', title: 'Agregado al carrito' });
         this.renderCarrito();
     },
@@ -656,7 +842,7 @@ const RecepcionModule = {
         const prodDB = this.productosPOS.find(p => p.ProductoID === item.ProductoID);
 
         const nuevaCant = item.Cantidad + delta;
-        
+
         if (nuevaCant <= 0) {
             this.eliminarDelCarrito(index);
             return;
@@ -692,7 +878,7 @@ const RecepcionModule = {
                         <div style="font-weight:800; color:var(--hotel-blue); font-size:0.8rem;">${item.Nombre}</div>
                         <div style="color:var(--hotel-success); font-weight:900;">$${parseFloat(item.PrecioVenta).toFixed(2)} c/u</div>
                     </div>
-                    
+
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button type="button" class="btn-neo" style="padding:5px 10px;" onclick="RecepcionModule.modificarCantidadCarrito(${index}, -1)"><i class="fas fa-minus"></i></button>
                         <strong style="font-size:1.1rem; color:var(--hotel-blue);">${item.Cantidad}</strong>
@@ -702,7 +888,7 @@ const RecepcionModule = {
                     <div style="flex:1; text-align:right; font-weight:900; font-size:1.1rem; color:var(--hotel-blue);">
                         $${subtotal.toFixed(2)}
                     </div>
-                    
+
                     <button type="button" class="btn-neo" style="padding:8px 12px; margin-left:10px; color:var(--hotel-danger);" onclick="RecepcionModule.eliminarDelCarrito(${index})"><i class="fas fa-trash"></i></button>
                 </div>
             `;
@@ -716,24 +902,24 @@ const RecepcionModule = {
 
         const habsOcupadas = this.habitacionesCache.filter(h => h.Estado === 'OCUPADA');
         const selectHab = document.getElementById('pos-habitacion-select');
-        
+
         if (selectHab) {
-            selectHab.innerHTML = '<option value="">-- VENTA EXTERNA (LOBBY) --</option>' + 
+            selectHab.innerHTML = '<option value="">-- VENTA EXTERNA (LOBBY) --</option>' +
                 habsOcupadas.map(h => `<option value="${h.RecepcionID}">HAB. ${h.NroHabitacion} - ${h.Huesped}</option>`).join('');
         }
 
         const total = this.carritoPOS.reduce((acc, item) => acc + (item.EsCortesia ? 0 : item.PrecioVenta * item.Cantidad), 0);
         document.getElementById('pos-monto-cobrar').textContent = `$${total.toFixed(2)}`;
         document.getElementById('pos-monto-recibido').value = total.toFixed(2);
-        
-        this.gestionarTipoVentaPOS(); 
+
+        this.gestionarTipoVentaPOS();
         document.getElementById('modalPagoPOS').classList.remove('hidden');
     },
 
     gestionarTipoVentaPOS() {
         const recepcionId = document.getElementById('pos-habitacion-select').value;
         const panelPago = document.getElementById('pos-panel-pago-inmediato');
-        
+
         if (recepcionId) {
             panelPago.style.display = 'none';
         } else {
@@ -752,7 +938,7 @@ const RecepcionModule = {
         const recepcionId = document.getElementById('pos-habitacion-select').value;
         const metodoPago = document.getElementById('pos-metodo-pago').value;
         const monto = parseFloat(document.getElementById('pos-monto-recibido').value) || 0;
-        
+
         const user = JSON.parse(localStorage.getItem('user'));
         const sedeId = localStorage.getItem('currentSedeId') || user.SedeID;
 
@@ -803,7 +989,7 @@ const RecepcionModule = {
                 const boxV = document.getElementById('pos-box-voucher');
                 if (boxV) boxV.style.display = 'none';
                 this.cerrarModalCobroPOS();
-                this.cargarProductosPOS(); 
+                this.cargarProductosPOS();
             }
         } catch (err) {
             const msg = err.response?.data?.error || "Error al procesar la venta";
@@ -828,7 +1014,7 @@ const RecepcionModule = {
 
             document.getElementById('modalCheckout').classList.remove('hidden');
 
-            this.cargarCodigoAccesoEnCheckout(hab.HabitacionID);
+            this.cargarCodigoAccesoEnCheckout(hab.HabitacionID, hab.CamaID ? hab.RecepcionID : null);
         } catch (err) {
             console.error(err);
             window.Toast.fire({ icon: 'error', title: 'Error obteniendo el Folio de la habitación' });
@@ -837,9 +1023,10 @@ const RecepcionModule = {
 
     // Cerradura inteligente — consulta y muestra el código de acceso vigente
     // de una habitación. No falla el flujo si no hay cerradura instalada aún.
-    async consultarCodigoAcceso(habitacionId) {
+    async consultarCodigoAcceso(habitacionId, recepcionId = null) {
         try {
-            const res = await api.get(`/cerraduras/habitacion/${habitacionId}/codigo`);
+            // Dormitorio (2.3.0): con el folio de una cama, el servidor devuelve el código de ESE huésped
+            const res = await api.get(`/cerraduras/habitacion/${habitacionId}/codigo${recepcionId ? `?recepcionId=${recepcionId}` : ''}`);
             return res.data;
         } catch (_) {
             return { success: false, tieneCerradura: false, codigo: null };
@@ -849,12 +1036,12 @@ const RecepcionModule = {
     // Tras el check-in: la asignación del código es fire-and-forget en el backend,
     // así que reintentamos un par de veces antes de mostrarlo (o desistir en silencio
     // si la habitación no tiene cerradura vinculada).
-    async mostrarCodigoAcceso(habitacionId) {
+    async mostrarCodigoAcceso(habitacionId, recepcionId = null) {
         // Por radio (Z-Wave) buscar slot libre + cargar el código puede tardar
         // varios segundos: ~30 s de espera con aviso visible.
         let avisado = false, data = {};
         for (let intento = 0; intento < 15; intento++) {
-            data = await this.consultarCodigoAcceso(habitacionId);
+            data = await this.consultarCodigoAcceso(habitacionId, recepcionId);
             if (!data.tieneCerradura) return; // sin cerradura instalada, no hay nada que mostrar
             // Stick desconectado: el código quedó en cola, no tiene sentido esperar
             if (data.codigo && data.pendiente && data.controladorEnLinea === false) break;
@@ -867,7 +1054,7 @@ const RecepcionModule = {
                 await Swal.fire({
                     title: 'CÓDIGO DE ACCESO GENERADO',
                     html: `<div style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:var(--hotel-blue);">${data.codigo}</div>
-                           ${this._botonesCodigoHTML(habitacionId)}`,
+                           ${this._botonesCodigoHTML(habitacionId, recepcionId)}`,
                     icon: 'success',
                     confirmButtonText: 'Entendido'
                 });
@@ -884,7 +1071,7 @@ const RecepcionModule = {
                 html: `<div style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:var(--hotel-blue);">${data.codigo}</div>
                        <p style="margin-top:12px;">${motivo} El código quedó en cola y se cargará automáticamente
                        al restablecerse la conexión. <b>Hasta entonces no abre la puerta.</b></p>
-                       ${this._botonesCodigoHTML(habitacionId)}`,
+                       ${this._botonesCodigoHTML(habitacionId, recepcionId)}`,
                 confirmButtonText: 'Entendido' });
         } else if (avisado) Swal.fire({ icon: 'warning', title: 'La cerradura no respondió',
             text: 'El código no se pudo cargar todavía. Revisa la cerradura en el módulo Cerraduras.',
@@ -893,19 +1080,19 @@ const RecepcionModule = {
 
     // En el modal de checkout: muestra el código vigente por si hay que repetírselo
     // al huésped durante la estadía (sin bloquear ni reintentar, solo informativo).
-    async cargarCodigoAccesoEnCheckout(habitacionId) {
+    async cargarCodigoAccesoEnCheckout(habitacionId, recepcionId = null) {
         const wrap = document.getElementById('out-codigo-acceso-wrap');
         if (!wrap) return;
         wrap.style.display = 'none';
-        const data = await this.consultarCodigoAcceso(habitacionId);
+        const data = await this.consultarCodigoAcceso(habitacionId, recepcionId);
         if (data.tieneCerradura && data.codigo) {
             document.getElementById('out-codigo-acceso').textContent = data.codigo;
             const acc = document.getElementById('out-codigo-acciones');
             if (acc) acc.innerHTML = `
-                <button type="button" title="Imprimir código" onclick="RecepcionModule.imprimirCodigo(${habitacionId})"
+                <button type="button" title="Imprimir código" onclick="RecepcionModule.imprimirCodigo(${habitacionId}, ${recepcionId || 'null'})"
                     style="border:none; background:#1a365d; color:#fff; border-radius:8px; padding:3px 8px; cursor:pointer; margin-left:8px;">
                     <i class="fas fa-print"></i></button>
-                <button type="button" title="Enviar por WhatsApp" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId})"
+                <button type="button" title="Enviar por WhatsApp" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId}, ${recepcionId || 'null'})"
                     style="border:none; background:#25d366; color:#fff; border-radius:8px; padding:3px 8px; cursor:pointer; margin-left:4px;">
                     <i class="fab fa-whatsapp"></i></button>`;
             wrap.style.display = '';
@@ -913,18 +1100,18 @@ const RecepcionModule = {
     },
 
     // ===== CÓDIGO DE ACCESO: imprimir ticket / enviar por WhatsApp =====
-    _botonesCodigoHTML(habitacionId) {
+    _botonesCodigoHTML(habitacionId, recepcionId = null) {
         const b = 'border:none; color:#fff; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:800; font-size:.78rem; margin:4px;';
         return `<div style="margin-top:14px;">
-            <button type="button" style="${b} background:#1a365d;" onclick="RecepcionModule.imprimirCodigo(${habitacionId})">
+            <button type="button" style="${b} background:#1a365d;" onclick="RecepcionModule.imprimirCodigo(${habitacionId}, ${recepcionId || 'null'})">
                 <i class="fas fa-print"></i> IMPRIMIR</button>
-            <button type="button" style="${b} background:#25d366;" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId})">
+            <button type="button" style="${b} background:#25d366;" onclick="RecepcionModule.enviarCodigoWhatsApp(${habitacionId}, ${recepcionId || 'null'})">
                 <i class="fab fa-whatsapp"></i> ENVIAR POR WHATSAPP</button>
         </div>`;
     },
 
-    async imprimirCodigo(habitacionId) {
-        const d = await this.consultarCodigoAcceso(habitacionId);
+    async imprimirCodigo(habitacionId, recepcionId = null) {
+        const d = await this.consultarCodigoAcceso(habitacionId, recepcionId);
         if (!d.codigo) return window.Toast.fire({ icon: 'warning', title: 'La habitación no tiene código vigente' });
         const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         pt.imprimir(`
@@ -946,8 +1133,8 @@ const RecepcionModule = {
             </div>`, { titulo: `Código hab. ${d.nroHabitacion}` });
     },
 
-    async enviarCodigoWhatsApp(habitacionId) {
-        const d = await this.consultarCodigoAcceso(habitacionId);
+    async enviarCodigoWhatsApp(habitacionId, recepcionId = null) {
+        const d = await this.consultarCodigoAcceso(habitacionId, recepcionId);
         if (!d.codigo) return window.Toast.fire({ icon: 'warning', title: 'La habitación no tiene código vigente' });
         const { value: telefono } = await Swal.fire({
             title: 'Enviar código por WhatsApp',
@@ -963,7 +1150,7 @@ const RecepcionModule = {
             inputValidator: v => (String(v || '').replace(/\D/g, '').length < 9) ? 'Escribe un número válido' : undefined,
             preConfirm: async tel => {
                 try {
-                    const r = await api.post(`/cerraduras/habitacion/${habitacionId}/codigo/whatsapp`, { telefono: tel });
+                    const r = await api.post(`/cerraduras/habitacion/${habitacionId}/codigo/whatsapp`, { telefono: tel, recepcionId: recepcionId || undefined });
                     return r.data.telefono || tel;
                 } catch (e) {
                     Swal.showValidationMessage(e.response?.data?.error || 'No se pudo enviar el mensaje');
@@ -987,12 +1174,20 @@ const RecepcionModule = {
 
         const btnMb = document.getElementById('btn-minibar');
         if (btnMb) btnMb.style.display = this.folioActual.recepcion.TieneMinibar ? 'inline-block' : 'none';
-        
+
+        // Extender estadía (2.3.1): por día o periodo, con permiso de editar en Recepción
+        const btnExt = document.getElementById('btn-extender-estadia');
+        const tipoAlq = this.folioActual.recepcion.TipoAlquiler;
+        const puedeExt = !window.Permisos || window.Permisos.puede('recepcion', 2);
+        if (btnExt) btnExt.style.display = (tipoAlq === 'Dia' || tipoAlq === 'Periodo') && puedeExt ? 'flex' : 'none';
+        this.cargarExtensiones();
+        this.cargarDesayunosFolio();
+
         let totalCargos = parseFloat(this.folioActual.recepcion.TotalHospedaje);
         let totalAbonos = 0;
-        
+
         let htmlConsumos = `<tr><td>Alojamiento (${this.folioActual.recepcion.TipoAlquiler})</td><td class="text-right">$${totalCargos.toFixed(2)}</td></tr>`;
-        
+
         // Origen del cargo (VentasDetalle.Origen, mig 12) — filas viejas vienen sin origen
         const ORIGEN = { RECEPCION: '🛎️ Recepción', MINIBAR: '🍷 Minibar', RESTAURANTE: '🍽️ Restaurante',
                          PARQUEADERO: '🚗 Parqueadero', POS: '🛒 POS' };
@@ -1030,7 +1225,7 @@ const RecepcionModule = {
 
         document.getElementById('out-total-cargos').textContent = `$${totalCargos.toFixed(2)}`;
         document.getElementById('out-total-abonos').textContent = `$${totalAbonos.toFixed(2)}`;
-        
+
         const uiSaldo = document.getElementById('out-saldo-pendiente');
         const inMonto = document.getElementById('out-montoAbono');
         const sectionPago = document.getElementById('section-pago-checkout');
@@ -1043,7 +1238,7 @@ const RecepcionModule = {
             uiSaldo.textContent = `$${saldoPendiente.toFixed(2)}`;
             uiSaldo.style.color = 'var(--hotel-danger)';
             inMonto.value = saldoPendiente.toFixed(2);
-            sectionPago.style.display = 'block'; 
+            sectionPago.style.display = 'block';
             if(btnAbonar) btnAbonar.style.display = 'flex';
         } else {
             uiSaldo.textContent = "$0.00";
@@ -1215,10 +1410,194 @@ const RecepcionModule = {
     },
 
     // ── NUEVA FUNCIÓN PARA ABONOS / PAGOS PARCIALES ──
+    // ── Extender estadía (2.3.1) ─────────────────────────────────────────────
+    // El mismo folio sigue abierto con salida posterior y el hospedaje de las noches nuevas (tarifa del sistema).
+    // No cobra nada: el saldo sube y se cobra con el abono o al salir. La cerradura no cambia (el código vive hasta la salida).
+    // Desayuno del folio (2.4.0): lo pactado, lo servido (y anulado) y el cambio con motivo
+    async cargarDesayunosFolio() {
+        const box = document.getElementById('out-desayunos');
+        if (!box || !this.folioActual) return;
+        box.style.display = 'none'; box.innerHTML = '';
+        try {
+            const { data } = await api.get(`/desayunos/folio/${this.folioActual.recepcion.RecepcionID}`);
+            if (!data || !data.habilitado) return;
+            const f = data.folio, t = data.tipo || {};
+            const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const tipoDisp = t.Modo && t.Modo !== 'NINGUNO';
+            if (!f.Modo && !tipoDisp && !(data.servidos || []).length) return;
+            const abierto = !f.FechaSalidaReal && f.TipoAlquiler !== 'Momento';
+            const puede = !window.Permisos || window.Permisos.puede('recepcion', 2);
+            const pactado = !f.Modo ? 'Sin desayuno' : f.Modo === 'INCLUIDO'
+                ? `Incluido x${f.Personas}` : `Opcional x${f.Personas} a $${Number(f.Precio || 0).toFixed(2)} c/u (se carga al servirlo)`;
+            const btn = abierto && puede && tipoDisp ? ` <a href="#" onclick="RecepcionModule.cambiarDesayunoFolio();return false;">cambiar</a>` : '';
+            const lista = (data.servidos || []).map(d => `<div style="margin-top:3px;${d.Estado === 'ANULADO' ? 'opacity:.6;text-decoration:line-through;' : ''}">` +
+                `${esc(d.FechaFmt)} · x${d.Personas}${Number(d.Cargo) > 0 ? ` · $${Number(d.Cargo).toFixed(2)}` : ''} · ${esc(d.NombreUsuario || '')} ${esc(d.RegistroFmt)}` +
+                `${d.Estado === 'ANULADO' ? ` · ANULADO (${esc(d.AnuladoPor)}: ${esc(d.MotivoAnulacion)})` : ''}</div>`).join('');
+            box.innerHTML = `<b style="color:#975a16">☕ DESAYUNO</b> · ${pactado}${btn}${lista}`;
+            box.style.display = 'block';
+        } catch (_) { /* sin migración 28 o sin permiso: no se muestra */ }
+    },
+
+    async cambiarDesayunoFolio() {
+        const r = this.folioActual && this.folioActual.recepcion;
+        if (!r) return;
+        let data;
+        try { data = (await api.get(`/desayunos/folio/${r.RecepcionID}`)).data; } catch (e) { return; }
+        const t = data.tipo || {}, f = data.folio;
+        const hues = (f.NroAdultos || 1) + (f.NroNinos || 0);
+        const tope = t.Modo === 'INCLUIDO' ? Math.min(hues, t.Personas || hues) : hues;
+        const txtTipo = t.Modo === 'INCLUIDO' ? `incluido en la tarifa (hasta ${tope})` : `opcional a $${Number(t.Precio || 0).toFixed(2)} por persona y día`;
+        const { value, isConfirmed } = await Swal.fire({
+            title: 'DESAYUNO DEL FOLIO',
+            html: `<div style="font-size:.8rem;color:#4a5568;margin-bottom:8px;">Tipo de habitación: desayuno ${txtTipo}. Lo ya servido no cambia.</div>` +
+                `<label style="display:flex;gap:8px;align-items:center;justify-content:center;font-weight:800;"><input type="checkbox" id="sw-des-tomar" ${f.Modo ? 'checked' : ''}> Con desayuno</label>` +
+                `<input id="sw-des-personas" type="number" min="1" max="${tope}" class="swal2-input" placeholder="Personas" value="${f.Personas || tope}">` +
+                `<input id="sw-des-motivo" class="swal2-input" placeholder="Motivo del cambio (obligatorio)">`,
+            showCancelButton: true, confirmButtonText: 'GUARDAR', cancelButtonText: 'CANCELAR',
+            preConfirm: async () => {
+                const motivo = document.getElementById('sw-des-motivo').value.trim();
+                if (motivo.length < 5) { Swal.showValidationMessage('Escriba el motivo (mínimo 5 caracteres)'); return false; }
+                try {
+                    return (await api.put(`/desayunos/folio/${r.RecepcionID}`, { tomar: document.getElementById('sw-des-tomar').checked,
+                        personas: parseInt(document.getElementById('sw-des-personas').value) || null, motivo })).data;
+                } catch (e) { Swal.showValidationMessage(e.response?.data?.error || 'No se pudo guardar'); return false; }
+            }
+        });
+        if (isConfirmed && value) { window.Toast.fire({ icon: 'success', title: value.sinCambios ? 'Sin cambios' : 'Desayuno actualizado' }); this.cargarDesayunosFolio(); }
+    },
+
+    async cargarExtensiones() {
+        const box = document.getElementById('out-extensiones');
+        if (!box || !this.folioActual) return;
+        box.style.display = 'none'; box.innerHTML = '';
+        try {
+            const { data } = await api.get(`/recepcion/extension/${this.folioActual.recepcion.RecepcionID}`);
+            const lista = (data.extensiones || []);
+            if (!lista.length) return;
+            const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const vigentes = lista.filter(x => !x.Anulada);
+            const ultima = vigentes.length ? vigentes[vigentes.length - 1] : null;
+            const puedeAnular = !window.Permisos || window.Permisos.puede('recepcion', 3);
+            box.innerHTML = '<b style="color:var(--hotel-blue)"><i class="fas fa-calendar-plus"></i> EXTENSIONES</b>' + lista.map(x => {
+                const u = x.TipoAlquiler === 'Periodo' ? 'mes(es)' : 'noche(s)';
+                const anul = x.Anulada ? ` <span style="color:#c0392b">· ANULADA (${esc(x.AnuladaPor)}: ${esc(x.MotivoAnulacion)})</span>` : '';
+                const btn = ultima && x.ExtensionID === ultima.ExtensionID && !x.CierreMaestroID && puedeAnular
+                    ? ` <a href="#" style="color:#c0392b" onclick="RecepcionModule.anularExtension(${x.ExtensionID});return false;">anular</a>` : '';
+                return `<div style="margin-top:4px;${x.Anulada ? 'opacity:.6;text-decoration:line-through;' : ''}">+${x.Unidades} ${u} · $${Number(x.Monto).toFixed(2)}` +
+                       ` · hasta ${esc(x.SalidaNuevaFmt)} · ${esc(x.NombreUsuario)} ${esc(x.FechaFmt)}` +
+                       (x.Motivo ? ` · <i>${esc(x.Motivo)}</i>` : '') + `</div>${anul}${btn}`;
+            }).join('');
+            box.style.display = 'block';
+        } catch (_) { /* sin migración 27 o sin permiso: no se muestra */ }
+    },
+
+    async extenderEstadia() {
+        if (!this.folioActual) return;
+        const rec = this.folioActual.recepcion;
+        const id = rec.RecepcionID;
+        const esPeriodo = rec.TipoAlquiler === 'Periodo';
+        const unidadTxt = esPeriodo ? 'meses' : 'noches';
+        let cot = null, timer = null;
+        const pedir = async () => {
+            const n = parseInt(document.getElementById('ext-n').value, 10);
+            const info = document.getElementById('ext-info');
+            const btn = Swal.getConfirmButton();
+            if (!(n >= 1)) { info.innerHTML = ''; btn.disabled = true; return; }
+            info.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculando...';
+            try {
+                const { data } = await api.get(`/recepcion/extension/${id}/cotizar?unidades=${n}`);
+                cot = data;
+                const m = document.getElementById('ext-monto');
+                if (!m.dataset.tocado) m.value = Number(data.lista).toFixed(2);
+                info.innerHTML = `<div style="text-align:left;line-height:1.6">Salida actual: <b>${data.salidaAnteriorFmt}</b><br>` +
+                    `Nueva salida: <b style="color:var(--hotel-blue)">${data.salidaNuevaFmt}</b><br>` +
+                    `Tarifa del sistema por ${n} ${unidadTxt}: <b>$${Number(data.lista).toFixed(2)}</b>` +
+                    (data.puede ? '' : `<div style="margin-top:8px;color:#c0392b;font-weight:700"><i class="fas fa-ban"></i> ${data.conflicto}</div>`) + '</div>';
+                btn.disabled = !data.puede;
+                revisarMonto();
+            } catch (e) {
+                cot = null; btn.disabled = true;
+                info.innerHTML = `<span style="color:#c0392b;font-weight:700">${(e.response && e.response.data && e.response.data.error) || 'No se pudo calcular.'}</span>`;
+            }
+        };
+        const revisarMonto = () => {
+            const m = parseFloat(document.getElementById('ext-monto').value);
+            const wrap = document.getElementById('ext-motivo-wrap');
+            wrap.style.display = cot && m < Number(cot.lista) - 0.009 ? 'block' : 'none';
+        };
+        const r = await Swal.fire({
+            title: 'EXTENDER ESTADÍA',
+            html: `<div style="font-size:.85rem;color:#4a5568;margin-bottom:10px">Folio #${id} · ${rec.NombreFull || ''}</div>
+                <label style="font-size:0.8rem;font-weight:bold;color:var(--hotel-blue);display:block;text-align:left;margin-bottom:5px;">${esPeriodo ? 'Meses (30 días) a agregar' : 'Noches a agregar'}</label>
+                <input id="ext-n" type="number" min="1" max="${esPeriodo ? 12 : 60}" value="1" class="swal2-input" style="margin:0 0 12px 0;width:100%">
+                <div id="ext-info" style="font-size:.85rem;margin-bottom:12px"></div>
+                <label style="font-size:0.8rem;font-weight:bold;color:var(--hotel-blue);display:block;text-align:left;margin-bottom:5px;">Monto a sumar al hospedaje</label>
+                <input id="ext-monto" type="number" step="0.01" min="0" class="swal2-input" style="margin:0 0 12px 0;width:100%">
+                <div id="ext-motivo-wrap" style="display:none;text-align:left">
+                    <label style="font-size:0.8rem;font-weight:bold;color:#c0392b;display:block;margin-bottom:5px;">Motivo (cobra menos que la tarifa del sistema)</label>
+                    <input id="ext-motivo" type="text" maxlength="300" class="swal2-input" style="margin:0;width:100%" placeholder="Ej.: tarifa de cliente frecuente">
+                </div>
+                <div style="font-size:.72rem;color:#718096;margin-top:12px;text-align:left"><i class="fas fa-info-circle"></i> No se cobra ahora: el saldo del folio sube y se cobra con un abono o al salir. El código de la cerradura sigue igual.</div>`,
+            showCancelButton: true, confirmButtonText: '<i class="fas fa-calendar-plus"></i> EXTENDER', cancelButtonText: 'CANCELAR',
+            background: 'var(--hotel-bg)', focusConfirm: false,
+            didOpen: () => {
+                Swal.getConfirmButton().disabled = true;
+                document.getElementById('ext-n').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(pedir, 350); });
+                const m = document.getElementById('ext-monto');
+                m.addEventListener('input', () => { m.dataset.tocado = '1'; revisarMonto(); });
+                pedir();
+            },
+            preConfirm: async () => {
+                if (!cot || !cot.puede) return false;
+                const monto = parseFloat(document.getElementById('ext-monto').value);
+                const motivo = document.getElementById('ext-motivo').value.trim();
+                if (!(monto >= 0)) { Swal.showValidationMessage('Monto inválido'); return false; }
+                if (monto < Number(cot.lista) - 0.009 && motivo.length < 5) { Swal.showValidationMessage('Indique el motivo del descuento (mínimo 5 caracteres)'); return false; }
+                try {
+                    const { data } = await api.post('/recepcion/extension', { recepcionId: id, unidades: cot.unidades, monto, motivo });
+                    return data;
+                } catch (e) {
+                    Swal.showValidationMessage((e.response && e.response.data && e.response.data.error) || 'No se pudo extender');
+                    return false;
+                }
+            }
+        });
+        if (!r.isConfirmed || !r.value) return;
+        const d = r.value;
+        await this.abrirFolioCheckout(this.habSeleccionada);
+        this.cargarRack();
+        const cobrar = await Swal.fire({
+            icon: 'success', title: 'ESTADÍA EXTENDIDA',
+            html: `Nueva salida: <b>${d.salidaNuevaFmt}</b><br>Hospedaje: $${Number(d.totalAntes).toFixed(2)} → <b>$${Number(d.totalDespues).toFixed(2)}</b>` +
+                  (d.saldo > 0.009 ? `<br>Saldo del folio: <b style="color:#c0392b">$${Number(d.saldo).toFixed(2)}</b>` : ''),
+            showCancelButton: d.saldo > 0.009, confirmButtonText: d.saldo > 0.009 ? '<i class="fas fa-hand-holding-usd"></i> COBRAR AHORA' : 'Entendido',
+            cancelButtonText: 'COBRAR AL SALIR'
+        });
+        if (cobrar.isConfirmed && d.saldo > 0.009) this.registrarAbonoParcial();
+    },
+
+    async anularExtension(extensionId) {
+        const r = await Swal.fire({
+            icon: 'warning', title: 'ANULAR EXTENSIÓN', input: 'text', inputPlaceholder: 'Motivo (mínimo 10 caracteres)',
+            text: 'La salida y el hospedaje vuelven a como estaban antes de esa extensión. Si el huésped ya la pagó, el folio quedará a favor.',
+            showCancelButton: true, confirmButtonText: 'ANULAR', cancelButtonText: 'CANCELAR', confirmButtonColor: '#c0392b',
+            preConfirm: async (motivo) => {
+                if (String(motivo || '').trim().length < 10) { Swal.showValidationMessage('Indique el motivo (mínimo 10 caracteres)'); return false; }
+                try { return (await api.post(`/recepcion/extension/${extensionId}/anular`, { motivo })).data; }
+                catch (e) { Swal.showValidationMessage((e.response && e.response.data && e.response.data.error) || 'No se pudo anular'); return false; }
+            }
+        });
+        if (!r.isConfirmed || !r.value) return;
+        window.Toast.fire({ icon: 'success', title: `Extensión anulada · salida ${r.value.salidaFmt}` });
+        await this.abrirFolioCheckout(this.habSeleccionada);
+        this.cargarRack();
+        if (r.value.saldo < -0.009) Swal.fire({ icon: 'info', title: 'FOLIO A FAVOR', text: `El huésped tiene $${Math.abs(r.value.saldo).toFixed(2)} a favor: devuélvalo desde Caja.` });
+    },
+
     async registrarAbonoParcial() {
         if (!this.folioActual) return;
         if (!this.cajaId) return Swal.fire({icon: 'error', title: 'CAJA CERRADA', text: 'Debe aperturar caja para recibir abonos parciales.'});
-        
+
         const saldoPendiente = parseFloat(document.getElementById('out-saldo-pendiente').textContent.replace('$', ''));
         if (saldoPendiente <= 0) return window.Toast.fire({icon: 'info', title: 'La cuenta no tiene saldo pendiente'});
 
@@ -1227,14 +1606,14 @@ const RecepcionModule = {
             html: `
                 <label style="font-size:0.8rem; font-weight:bold; color:var(--hotel-blue); display:block; text-align:left; margin-bottom:5px;">Monto a Abonar (Máx $${saldoPendiente.toFixed(2)})</label>
                 <input id="swal-monto" type="number" step="0.01" class="swal2-input" value="${saldoPendiente.toFixed(2)}" style="margin-bottom:15px; color:var(--hotel-success); font-weight:bold;">
-                
+
                 <label style="font-size:0.8rem; font-weight:bold; color:var(--hotel-blue); display:block; text-align:left; margin-bottom:5px;">Método de Pago</label>
                 <select id="swal-metodo" class="swal2-input" style="margin-bottom:15px;" onchange="document.getElementById('box-voucher-abono').style.display = ((window.MetodosPago ? MetodosPago.esNoEfectivo(this.value) : (this.value == '2' || this.value == '3'))) ? 'block' : 'none'" data-metodos-pago>
                     <option value="1">EFECTIVO</option>
                     <option value="2">TRANSFERENCIA</option>
                     <option value="3">TARJETA</option>
                 </select>
-                
+
                 <label style="font-size:0.8rem; font-weight:bold; color:var(--hotel-blue); display:block; text-align:left; margin-bottom:5px;">Referencia (Opcional)</label>
                 <input id="swal-ref" type="text" class="swal2-input" placeholder="Lote / Nro. Comprobante" style="margin-bottom:15px;">
 
@@ -1258,10 +1637,10 @@ const RecepcionModule = {
                 const metodo = document.getElementById('swal-metodo').value;
                 const ref = document.getElementById('swal-ref').value;
                 const voucherFile = document.getElementById('swal-voucher').files[0];
-                
+
                 if (!monto || monto <= 0) { Swal.showValidationMessage('Ingrese un monto válido'); return false; }
                 if (monto > saldoPendiente) { Swal.showValidationMessage('El abono no puede superar la deuda'); return false; }
-                
+
                 return { monto, metodoId: metodo, referencia: ref, voucherFile };
             }
         });
@@ -1275,7 +1654,7 @@ const RecepcionModule = {
                 formData.append('monto', formValues.monto);
                 formData.append('metodoId', formValues.metodoId);
                 formData.append('referencia', formValues.referencia);
-                
+
                 // Si subió archivo, lo adjuntamos
                 if (formValues.voucherFile) {
                     formData.append('voucher', formValues.voucherFile);
@@ -1283,7 +1662,7 @@ const RecepcionModule = {
 
                 // Enviamos usando multipart/form-data
                 const res = await api.post('/recepcion/abono', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                
+
                 if (res.data.success) {
                     window.Toast.fire({ icon: 'success', title: 'ABONO REGISTRADO' });
                     // Recargar el estado de cuenta y mantener la ventana abierta
@@ -1299,12 +1678,12 @@ const RecepcionModule = {
         const metodoSelect = document.getElementById('out-metodoPago');
         const fileContainer = document.getElementById('container-voucher-out');
         if(!metodoSelect || !fileContainer) return;
-        
+
         if((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoSelect.value) : (metodoSelect.value == '2' || metodoSelect.value == '3'))) {
             fileContainer.style.display = 'block';
         } else {
             fileContainer.style.display = 'none';
-            document.getElementById('voucherFileOut').value = ''; 
+            document.getElementById('voucherFileOut').value = '';
         }
     },
 
@@ -1392,6 +1771,9 @@ const RecepcionModule = {
                 acciones += `<button class="btn-mini gold" onclick="RecepcionModule.llamarReserva('${tel}', '${(r.NombreReserva || '').replace(/'/g, '')}')"><i class="fas fa-phone"></i> LLAMAR</button>`;
             }
             acciones += `<button class="btn-mini solid-blue" onclick="RecepcionModule.checkInDesdeReserva(${r.ReservaID})"><i class="fas fa-door-open"></i> CHECK-IN</button>`;
+            acciones += `<button class="btn-mini green" onclick="RecepcionModule.anticipoReserva(${r.ReservaID})"><i class="fas fa-hand-holding-usd"></i> ANTICIPO</button>`;
+        } else if ((Number(r.AnticipoCaja) || 0) > 0.009 || (Number(r.AnticipoPagado) || 0) > 0.009) {
+            acciones += `<button class="btn-mini" onclick="RecepcionModule.anticipoReserva(${r.ReservaID})"><i class="fas fa-hand-holding-usd"></i> ANTICIPO</button>`;
             acciones += `<button class="btn-mini red" onclick="RecepcionModule.marcarNoShow(${r.ReservaID})"><i class="fas fa-user-slash"></i> NO VINO</button>`;
             acciones += `<button class="btn-mini red" onclick="RecepcionModule.cancelarReserva(${r.ReservaID})"><i class="fas fa-times"></i> CANCELAR</button>`;
         }
@@ -1404,11 +1786,16 @@ const RecepcionModule = {
                     <div class="reserva-meta">${meta}</div>
                     ${contacto ? `<div class="reserva-contacto">${contacto}</div>` : ''}
                     ${r.Notas ? `<div class="reserva-contacto"><i class="fas fa-sticky-note"></i> ${r.Notas}</div>` : ''}
+                    ${AnticiposReserva.etiqueta(r) ? `<div class="reserva-contacto"><i class="fas fa-hand-holding-usd"></i> ${AnticiposReserva.etiqueta(r)}</div>` : ''}
                 </div>
                 <div class="reserva-badge badge-${r.Estado}">${r.Estado}</div>
                 ${acciones ? `<div class="reserva-acciones">${acciones}</div>` : ''}
             </div>
         `;
+    },
+
+    anticipoReserva(reservaId) {
+        return AnticiposReserva.abrir(reservaId, { alCambiar: () => this.cargarReservas() });
     },
 
     llamarReserva(tel, nombre) {
@@ -1493,10 +1880,19 @@ const RecepcionModule = {
 
             // Aseguramos rack fresco para ver cuartos libres del tipo reservado
             await this.cargarRack();
-            const libres = this.habitacionesCache.filter(h =>
-                (h.Estado === 'DISPONIBLE') &&
-                (h.Categoria === rv.TipoNombre)
-            );
+            // Dormitorio (2.3.0): se ofrecen las camas libres de los dormitorios de ese tipo
+            const libres = [];
+            for (const h of this.unidadesRack()) {
+                if (h.Categoria !== rv.TipoNombre) continue;
+                if (h.EsDormitorio) {
+                    if (h.Estado === 'MANTENIMIENTO') continue;
+                    for (const c of (h.Camas || []).filter(c => c.Estado === 'DISPONIBLE'))
+                        libres.push({ ...h, Estado: 'DISPONIBLE', CamaID: c.CamaID, CamaCodigo: c.Codigo,
+                                      NroHabitacion: `${h.NroHabitacionBase} · Cama ${c.Codigo}`,
+                                      PrecioDia: Number(c.PrecioDia || h.PrecioDia || 0), PrecioPeriodo: Number(c.PrecioPeriodo || h.PrecioPeriodo || 0),
+                                      RecepcionID: null, Huesped: null, _clave: `${h.HabitacionID}|${c.CamaID}` });
+                } else if (h.Estado === 'DISPONIBLE') libres.push({ ...h, _clave: String(h.HabitacionID) });
+            }
 
             if (libres.length === 0) {
                 return Swal.fire({
@@ -1509,7 +1905,7 @@ const RecepcionModule = {
 
             // El receptionista elige cuál cuarto físico asignar
             const opciones = {};
-            libres.forEach(h => { opciones[h.HabitacionID] = `Hab. ${h.NroHabitacion} (Piso ${h.Piso})`; });
+            libres.forEach(h => { opciones[h._clave] = `Hab. ${h.NroHabitacion} (Piso ${h.Piso})`; });
 
             const { value: habId, isConfirmed } = await Swal.fire({
                 title: 'ASIGNAR HABITACIÓN',
@@ -1527,7 +1923,8 @@ const RecepcionModule = {
 
             if (!isConfirmed || !habId) return;
 
-            const hab = this.habitacionesCache.find(h => h.HabitacionID == habId);
+            const hab = libres.find(h => h._clave === String(habId));
+            if (!hab) return;
             this.habSeleccionada = hab;
 
             // Abrimos el modal de check-in de siempre (resetea el form)
@@ -1560,7 +1957,10 @@ const RecepcionModule = {
             if (inNinos) inNinos.value = rv.NroNinos || 0;
 
             // Lo que se le cotizó al huésped al reservar se respeta (tarifa garantizada)
-            this.tarifaReserva = { total: parseFloat(rv.TotalEstimado) || 0, noches, codigo: rv.CodigoReserva };
+            const anticipoCaja = Math.round((parseFloat(rv.AnticipoCaja) || 0) * 100) / 100;
+            this.tarifaReserva = { total: parseFloat(rv.TotalEstimado) || 0, noches, codigo: rv.CodigoReserva,
+                                   anticipo: anticipoCaja,
+                                   anotadoSinCaja: Math.max(0, Math.round(((parseFloat(rv.AnticipoPagado) || 0) - anticipoCaja) * 100) / 100) };
 
             this.recalcularPrecios();
 
@@ -1633,7 +2033,7 @@ const RecepcionModule = {
 
             sel.innerHTML = '<option value="">-- Elige un tipo --</option>' + conCupo.map(t =>
                 `<option value="${t.TipoID}" data-total="${t.TotalEstimado}">
-                    ${t.Descripcion} · $${parseFloat(t.PrecioNoche ?? t.PrecioBase).toFixed(2)}/noche · ${t.Disponibles} libre(s) · Total $${parseFloat(t.TotalEstimado).toFixed(2)}
+                    ${t.Descripcion} · $${parseFloat(t.PrecioNoche ?? t.PrecioBase).toFixed(2)}/noche · ${t.Disponibles} ${t.UnidadVenta === 'CAMA' ? 'cama(s) libre(s), precio por cama' : 'libre(s)'} · Total $${parseFloat(t.TotalEstimado).toFixed(2)}
                 </option>`
             ).join('');
         } catch (err) {
@@ -1659,7 +2059,7 @@ const RecepcionModule = {
             nroAdultos: document.getElementById('nr-adultos').value,
             nroNinos: document.getElementById('nr-ninos').value,
             origen: document.getElementById('nr-origen').value,
-            anticipoPagado: document.getElementById('nr-anticipo').value,
+            anticipoPagado: 0,   // el anticipo se registra en caja aparte (diálogo con método y comprobante)
             notas: document.getElementById('nr-notas').value
         };
 
@@ -1667,16 +2067,20 @@ const RecepcionModule = {
         if (!payload.nombre || payload.nombre.trim().length < 3) return window.Toast.fire({ icon: 'warning', title: 'Ingresa el nombre de quien reserva' });
 
         try {
+            const anticipo = parseFloat(document.getElementById('nr-anticipo').value) || 0;
             const res = await api.post('/reservas/interna', payload);
             if (res.data.success) {
                 await Swal.fire({
                     icon: 'success',
                     title: 'RESERVA CREADA',
-                    html: `Código: <b style="color:var(--hotel-gold); font-size:1.3rem;">${res.data.codigoReserva}</b>`,
+                    html: `Código: <b style="color:var(--hotel-gold); font-size:1.3rem;">${res.data.codigoReserva}</b>` +
+                          (anticipo > 0 ? '<br><small>Ahora registre el anticipo en caja (método y comprobante).</small>' : ''),
                     background: 'var(--hotel-bg)'
                 });
                 this.cerrarModalNuevaReserva();
                 this.cargarReservas();
+                if (anticipo > 0 && res.data.reservaId)
+                    await AnticiposReserva.abrir(res.data.reservaId, { montoSugerido: anticipo, alCambiar: () => this.cargarReservas() });
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'NO SE PUDO GUARDAR', text: err.response?.data?.message || err.response?.data?.error || 'Error al crear la reserva' });
@@ -1700,10 +2104,10 @@ const RecepcionModule = {
 
             formCheckin.onsubmit = async (e) => {
                 e.preventDefault();
-                
+
                 const esMigracion = document.getElementById('in-es-migracion') ? document.getElementById('in-es-migracion').checked : false;
                 const abono = parseFloat(document.getElementById('in-montoAbono').value) || 0;
-                
+
                 if (!esMigracion && abono > 0 && !this.cajaId) {
                     return Swal.fire({ icon: 'error', title: 'CAJA CERRADA', text: 'Debe aperturar su turno de caja para recibir pagos.' });
                 }
@@ -1728,10 +2132,10 @@ const RecepcionModule = {
                     // Mediodía local: evita el corrimiento de día por zona horaria (UTC-5)
                     formData.append('fechaIngreso', fechaMig + 'T12:00:00');
                 }
-                
+
                 const tipoAlquiler = document.getElementById('in-tipoAlquiler').value;
                 const tiempoInput = parseInt(document.getElementById('in-tiempo').value) || 1;
-                
+
                 let tiempoEnvioBackend = tiempoInput;
                 if (tipoAlquiler === 'Momento') {
                     const horasBase = this.habSeleccionada.HorasMomento || 3;
@@ -1739,10 +2143,10 @@ const RecepcionModule = {
                 }
 
                 formData.append('tipoAlquiler', tipoAlquiler);
-                formData.append('tiempoAsignado', tiempoEnvioBackend); 
-                
+                formData.append('tiempoAsignado', tiempoEnvioBackend);
+
                 formData.append('totalHospedaje', total);
-                
+
                 // 🚗 AUTO-LINK: Vehículo y Parqueadero
                 formData.append('placaVehiculo', document.getElementById('in-placa').value);
                 formData.append('espacioParqueoId', document.getElementById('in-espacio-parqueo') ? document.getElementById('in-espacio-parqueo').value : '');
@@ -1750,6 +2154,8 @@ const RecepcionModule = {
                 formData.append('nroAdultos', document.getElementById('in-adultos').value);
                 formData.append('nroNinos', document.getElementById('in-ninos').value);
                 formData.append('acompanantes', JSON.stringify(this.acompanantesActuales));
+                const pedDes = this.pedidoDesayuno();
+                if (pedDes) formData.append('desayuno', JSON.stringify(pedDes));
 
                 const clienteObj = {
                     Documento: document.getElementById('in-documento').value,
@@ -1772,6 +2178,8 @@ const RecepcionModule = {
                 // ====== NUEVO: si el check-in viene de una reserva, lo enviamos ======
                 const reservaIdVal = document.getElementById('in-reservaId') ? document.getElementById('in-reservaId').value : '';
                 if (reservaIdVal) formData.append('reservaId', reservaIdVal);
+                // Dormitorio (2.3.0): la cama elegida
+                if (this.habSeleccionada && this.habSeleccionada.CamaID) formData.append('camaId', this.habSeleccionada.CamaID);
 
                 const fileInput = document.getElementById('voucherFileRec');
                 if (fileInput && fileInput.files[0]) formData.append('voucher', fileInput.files[0]);
@@ -1790,11 +2198,12 @@ const RecepcionModule = {
                         const txtIngreso = res.data.fechaEntradaFmt
                             ? `Ingreso registrado: ${res.data.fechaEntradaFmt}`
                             : 'La habitación ha sido ocupada.';
-                        await Swal.fire({ title: 'INGRESO EXITOSO', text: txtIngreso, icon: 'success' });
+                        const txtAnt = res.data.anticipoAplicado > 0 ? ` · Anticipo de la reserva aplicado: $${Number(res.data.anticipoAplicado).toFixed(2)}` : '';
+                        await Swal.fire({ title: 'INGRESO EXITOSO', text: txtIngreso + txtAnt, icon: 'success' });
 
                         // Cerradura inteligente: el código se genera fire-and-forget en el
                         // check-in, así que reintentamos un par de veces antes de mostrarlo.
-                        this.mostrarCodigoAcceso(this.habSeleccionada.HabitacionID);
+                        this.mostrarCodigoAcceso(this.habSeleccionada.HabitacionID, res.data.camaId ? res.data.recepcionId : null);
 
                         this.cerrarModal();
                         await this.cargarRack();
@@ -1837,7 +2246,7 @@ const RecepcionModule = {
 
             formCheckout.onsubmit = async (e) => {
                 e.preventDefault();
-                
+
                 const saldoPendiente = parseFloat(document.getElementById('out-saldo-pendiente').textContent.replace('$','')) || 0;
 
                 // Monto realmente cobrado en la salida (puede ser parcial o cero)
@@ -1853,13 +2262,13 @@ const RecepcionModule = {
                 const requiereFactura = document.getElementById('out-generar-factura') && document.getElementById('out-generar-factura').checked;
 
                 const metodoID = document.getElementById('out-metodoPago') ? document.getElementById('out-metodoPago').value : '1';
-                let formaPagoSRI = '01'; 
+                let formaPagoSRI = '01';
                 if ((window.MetodosPago ? MetodosPago.esNoEfectivo(metodoID) : (metodoID == '2' || metodoID == '3'))) {
-                    formaPagoSRI = '20'; 
+                    formaPagoSRI = '20';
                 }
 
-                let textoConfirmacion = requiereFactura 
-                    ? "La habitación pasará a estado de Limpieza, se cerrará la cuenta y se <b>EMITIRÁ FACTURA ELECTRÓNICA SRI</b>." 
+                let textoConfirmacion = requiereFactura
+                    ? "La habitación pasará a estado de Limpieza, se cerrará la cuenta y se <b>EMITIRÁ FACTURA ELECTRÓNICA SRI</b>."
                     : "La habitación pasará a estado de Limpieza y se cerrará la cuenta con <b>recibo interno</b>.";
 
                 if (deudaRestante > 0) {
@@ -1920,7 +2329,7 @@ const RecepcionModule = {
                                     SedeID: sedeId,
                                     FormaPago: formaPagoSRI
                                 });
-                                
+
                                 if (resFac.data.success) {
                                     await Swal.fire({ title: 'SALIDA Y FACTURACIÓN EXITOSA', text: 'El huésped se ha retirado y la factura fue firmada.', icon: 'success' });
                                 }
@@ -1931,7 +2340,7 @@ const RecepcionModule = {
                         } else {
                             await Swal.fire({ title: res.data.conDeuda ? 'SALIDA CON DEUDA REGISTRADA' : 'SALIDA EXITOSA', text: res.data.message || 'El huésped se ha retirado. Habitación en Limpieza y Parqueadero liberado.', icon: res.data.conDeuda ? 'warning' : 'success', background: 'var(--hotel-bg)' });
                         }
-                        
+
                         this.cerrarModalCheckout();
                         await this.cargarRack();
                     }

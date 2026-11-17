@@ -8,7 +8,7 @@ const HabitacionesModule = {
 
     async init() {
         console.log("HabitacionesModule: Ejecutando inicialización completa...");
-        
+
         const isSuperAdmin = window.App && window.App.isSuperAdmin();
         const user = JSON.parse(localStorage.getItem('user'));
 
@@ -41,10 +41,10 @@ const HabitacionesModule = {
         // 4. Validación de seguridad
         if (!this.sedeId && !isSuperAdmin) {
             if(window.Toast) {
-                window.Toast.fire({ 
-                    icon: 'error', 
+                window.Toast.fire({
+                    icon: 'error',
                     title: 'Restricción de Acceso',
-                    text: 'No se detectó una sede vinculada a su cuenta.' 
+                    text: 'No se detectó una sede vinculada a su cuenta.'
                 });
             }
             return;
@@ -118,13 +118,13 @@ const HabitacionesModule = {
         grid.innerHTML = pisosOrdenados.map(piso => `
             <div class="piso-container" style="width: 100%; margin-bottom: 40px;">
                 <h3 style="color: var(--hotel-blue); border-bottom: 2px solid var(--hotel-gold); padding-bottom: 10px; margin-bottom: 25px; font-weight: 900; display: flex; align-items: center; gap: 15px; text-transform: uppercase; letter-spacing: 1px;">
-                    <i class="fas fa-layer-group" style="color: var(--hotel-gold);"></i> 
+                    <i class="fas fa-layer-group" style="color: var(--hotel-gold);"></i>
                     Nivel ${piso}
                     <span style="font-size: 0.7rem; background: var(--hotel-blue); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 600;">
                         ${habitacionesPorPiso[piso].length} Unidades
                     </span>
                 </h3>
-                
+
                 <div class="habitaciones-piso-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px;">
                     ${habitacionesPorPiso[piso].map(h => {
                         // Definición de colores según el estado operativo
@@ -142,8 +142,12 @@ const HabitacionesModule = {
                             <div class="status-badge" style="background: ${colorStatus}; box-shadow: 0 0 10px ${colorStatus};"></div>
                             <p style="margin:0; font-size:0.65rem; opacity:0.8; font-weight: 800;">${h.TipoNombre || 'SIN CATEGORÍA'}</p>
                             <h3 style="margin:8px 0; font-size:1.8rem; color: var(--hotel-blue); font-weight: 900;">${h.NroHabitacion}</h3>
-                            <div style="margin-top:10px; color: #007bff; font-weight: 900; font-size: 1.2rem;">$${h.PrecioDia}</div>
+                            <div style="margin-top:10px; color: #007bff; font-weight: 900; font-size: 1.2rem;">$${h.PrecioDia}${h.UnidadVenta === 'CAMA' ? '<span style="font-size:.6rem;color:#6b46c1;"> /cama</span>' : ''}</div>
                             <div style="font-size:0.6rem; margin-top:8px; font-weight: 700; color: #7f8c8d; text-transform: uppercase;">${h.Estado}</div>
+                            ${h.UnidadVenta === 'CAMA' ? `
+                            <button class="btn-neo" style="margin-top:10px; padding:6px 10px; font-size:.68rem; color:#6b46c1; width:100%; justify-content:center;"
+                                    onclick="event.stopPropagation(); HabitacionesModule.gestionarCamas(${h.HabitacionID})">
+                                <i class="fas fa-bed"></i> CAMAS ${h.CamasOcupadas || 0}/${h.TotalCamas || 0}</button>` : ''}
                         </div>`;
                     }).join('')}
                 </div>
@@ -158,7 +162,10 @@ const HabitacionesModule = {
         // Renderizado de la tabla de categorías/tarifario
         body.innerHTML = this.tipos.map(t => `
             <tr style="background: #f1f3f5;">
-                <td style="padding:15px; border-radius:15px 0 0 15px; font-weight:800; color: var(--hotel-blue);">${t.Descripcion}</td>
+                <td style="padding:15px; border-radius:15px 0 0 15px; font-weight:800; color: var(--hotel-blue);">${t.Descripcion}
+                    ${t.UnidadVenta === 'CAMA' ? '<span style="margin-left:8px;font-size:.6rem;background:#6b46c1;color:#fff;padding:3px 8px;border-radius:10px;">POR CAMA</span>' : ''}
+                    ${t.DesayunoModo === 'INCLUIDO' ? `<span style="margin-left:8px;font-size:.6rem;background:#b7791f;color:#fff;padding:3px 8px;border-radius:10px;">☕ DESAYUNO INCLUIDO${t.DesayunoPersonas ? ' x' + t.DesayunoPersonas : ''}</span>`
+                      : t.DesayunoModo === 'OPCIONAL' ? `<span style="margin-left:8px;font-size:.6rem;background:#fff;color:#b7791f;border:1px solid #b7791f;padding:2px 8px;border-radius:10px;">☕ OPCIONAL $${Number(t.DesayunoPrecio || 0).toFixed(2)}</span>` : ''}</td>
                 <td style="color: #4a5568; font-weight: 600;"><i class="fas fa-users" style="margin-right: 8px; color: var(--hotel-gold);"></i>${t.CapacidadAdultos} Ad + ${t.CapacidadNiños} Ni</td>
                 <td style="font-weight:900; color:#007bff; font-size: 1.1rem;">$${t.PrecioBase}</td>
                 <td style="text-align:center; border-radius:0 15px 15px 0;">
@@ -177,7 +184,7 @@ const HabitacionesModule = {
     llenarSelectTipos() {
         const select = document.getElementById('tipoIdSelect');
         if (select) {
-            select.innerHTML = '<option value="">-- SELECCIONE CATEGORÍA --</option>' + 
+            select.innerHTML = '<option value="">-- SELECCIONE CATEGORÍA --</option>' +
                 this.tipos.map(t => `<option value="${t.TipoID}">${t.Descripcion}</option>`).join('');
         }
     },
@@ -209,7 +216,7 @@ const HabitacionesModule = {
 
         form.reset();
         document.getElementById('habitacionId').value = '';
-        
+
         if (data) {
             document.getElementById('habitacionId').value = data.HabitacionID;
             document.getElementById('nroHabitacion').value = data.NroHabitacion;
@@ -271,7 +278,40 @@ const HabitacionesModule = {
             document.getElementById('capAdultos').value = data.CapacidadAdultos;
             document.getElementById('capNinos').value = data.CapacidadNiños;
         }
+        const selUnidad = document.getElementById('unidadVentaTipo');
+        if (selUnidad) selUnidad.value = (data && data.UnidadVenta) || 'HABITACION';
+        // Desayuno (2.4.0)
+        const selDes = document.getElementById('desayunoModoTipo');
+        if (selDes) {
+            selDes.value = (data && data.DesayunoModo) || 'NINGUNO';
+            document.getElementById('desayunoPersonasTipo').value = data && data.DesayunoPersonas != null ? data.DesayunoPersonas : '';
+            document.getElementById('desayunoPrecioTipo').value = data && data.DesayunoPrecio != null ? data.DesayunoPrecio : '';
+            this.cargarProductosDesayuno(data ? data.DesayunoProductoID : null);
+            this.toggleDesayunoTipo();
+        }
         modal.classList.remove('hidden');
+    },
+
+    toggleDesayunoTipo() {
+        const modo = (document.getElementById('desayunoModoTipo') || {}).value || 'NINGUNO';
+        const box = document.getElementById('box-desayuno-tipo');
+        if (!box) return;
+        box.style.display = modo === 'NINGUNO' ? 'none' : 'block';
+        document.getElementById('box-desayuno-personas').style.display = modo === 'INCLUIDO' ? 'block' : 'none';
+        document.getElementById('box-desayuno-precio').style.display = modo === 'OPCIONAL' ? 'block' : 'none';
+    },
+
+    async cargarProductosDesayuno(seleccionado) {
+        const sel = document.getElementById('desayunoProductoTipo');
+        if (!sel) return;
+        try {
+            const res = await api.get(`/inventario/sede/${this.sedeId}`);
+            const prods = (res.data || []).filter(p => !['INSUMO'].includes(String(p.TipoItem || '').toUpperCase()));
+            const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            sel.innerHTML = '<option value="">— sin producto (no descarga inventario) —</option>' +
+                prods.map(p => `<option value="${p.ProductoID}">${esc(p.Nombre)}${p.EsPlatoReceta ? ' (receta)' : ''} · $${Number(p.PrecioVenta || 0).toFixed(2)}</option>`).join('');
+            sel.value = seleccionado ? String(seleccionado) : '';
+        } catch (e) { console.warn('Productos de desayuno no disponibles', e); }
     },
 
     async eliminarHab(id, nro) {
@@ -380,7 +420,7 @@ const HabitacionesModule = {
         if (formHab) {
             formHab.onsubmit = async (e) => {
                 e.preventDefault();
-                // Observación técnica: los elementos con 'disabled' son legibles mediante JS (.value), 
+                // Observación técnica: los elementos con 'disabled' son legibles mediante JS (.value),
                 // asegurando la persistencia sin alterar el mapeo del controlador de la base de datos.
                 const payload = {
                     HabitacionID: document.getElementById('habitacionId').value || null,
@@ -404,9 +444,11 @@ const HabitacionesModule = {
                         await this.cargarDatos();
                         if(window.Toast) window.Toast.fire({ icon: 'success', title: 'Inventario Actualizado' });
                     }
-                } catch (err) { 
+                } catch (err) {
                     console.error("Error en persistencia:", err);
-                    if(window.Toast) window.Toast.fire({ icon: 'error', title: 'Fallo al procesar registro' });
+                    const msg = err.response?.data?.error;
+                    if (msg) Swal.fire({ icon: 'warning', title: 'HABITACIÓN', text: msg });
+                    else if(window.Toast) window.Toast.fire({ icon: 'error', title: 'Fallo al procesar registro' });
                 }
             };
         }
@@ -422,8 +464,16 @@ const HabitacionesModule = {
                     PrecioBase: document.getElementById('precioBaseTipo').value,
                     CapacidadAdultos: document.getElementById('capAdultos').value,
                     CapacidadNiños: document.getElementById('capNinos').value,
-                    AmenidadesJSON: [] 
+                    AmenidadesJSON: [],
+                    UnidadVenta: document.getElementById('unidadVentaTipo') ? document.getElementById('unidadVentaTipo').value : undefined
                 };
+                // Desayuno (2.4.0): el servidor valida y deja el antes → después en la auditoría
+                if (document.getElementById('desayunoModoTipo')) {
+                    payload.DesayunoModo = document.getElementById('desayunoModoTipo').value;
+                    payload.DesayunoPersonas = document.getElementById('desayunoPersonasTipo').value;
+                    payload.DesayunoPrecio = document.getElementById('desayunoPrecioTipo').value;
+                    payload.DesayunoProductoID = document.getElementById('desayunoProductoTipo').value || null;
+                }
 
                 try {
                     const res = await api.post('/habitaciones/tipos', payload);
@@ -433,7 +483,9 @@ const HabitacionesModule = {
                         if(window.Toast) window.Toast.fire({ icon: 'success', title: 'Categoría Sincronizada' });
                     }
                 } catch (err) {
-                    if(window.Toast) window.Toast.fire({ icon: 'error', title: 'Fallo al procesar categoría' });
+                    const msg = err.response?.data?.error;
+                    if (msg) Swal.fire({ icon: 'warning', title: 'CATEGORÍA', text: msg });
+                    else if(window.Toast) window.Toast.fire({ icon: 'error', title: 'Fallo al procesar categoría' });
                 }
             };
         }
@@ -447,6 +499,104 @@ const HabitacionesModule = {
     editarTipo(id) {
         const item = this.tipos.find(t => t.TipoID === id);
         if (item) this.abrirModalTipo(item);
+    },
+
+    // ===== CAMAS de un dormitorio (2.3.0) =====
+    async gestionarCamas(habitacionId) {
+        const hab = this.habitaciones.find(h => h.HabitacionID === habitacionId);
+        if (!hab) return;
+        const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const puedeEditar = this.isAdmin || !window.Permisos || window.Permisos.puede('habitaciones', 2);
+        const puedeBorrar = this.isAdmin || (window.Permisos && window.Permisos.puede('habitaciones', 3));
+        let lista = [];
+        try { lista = (await api.get(`/habitaciones/camas/sede/${this.sedeId}`)).data.filter(c => c.HabitacionID === habitacionId); }
+        catch (e) { return Swal.fire({ icon: 'error', title: 'CAMAS', text: e.response?.data?.error || 'No se pudieron leer las camas' }); }
+        const color = { DISPONIBLE: '#27ae60', OCUPADA: '#c0392b', LIMPIEZA: '#3498db', MANTENIMIENTO: '#b7950b' };
+        const filas = lista.map(c => `
+            <tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:6px;font-weight:900;">${esc(c.Codigo)}</td>
+                <td style="padding:6px;">${esc(c.Descripcion || '')}</td>
+                <td style="padding:6px;">${c.PrecioDia != null ? '$' + Number(c.PrecioDia).toFixed(2) : `<span style="color:#a0aec0">$${Number(hab.PrecioDia || 0).toFixed(2)} (hab.)</span>`}</td>
+                <td style="padding:6px;"><span style="background:${color[c.Estado] || '#a0aec0'};color:#fff;border-radius:8px;padding:2px 7px;font-size:.65rem;font-weight:800;">${esc(c.Estado)}</span>
+                    ${c.Huesped ? `<div style="font-size:.65rem;color:#4a5568;">${esc(c.Huesped)}</div>` : ''}</td>
+                <td style="padding:6px;white-space:nowrap;">
+                    ${puedeEditar ? `<button type="button" class="btn-neo" style="padding:5px 8px;" title="Editar" onclick="HabitacionesModule.editarCama(${habitacionId}, ${c.CamaID})"><i class="fas fa-edit"></i></button>` : ''}
+                    ${puedeEditar && c.Estado !== 'OCUPADA' ? `<button type="button" class="btn-neo" style="padding:5px 8px;" title="Estado" onclick="HabitacionesModule.estadoCama(${habitacionId}, ${c.CamaID}, '${c.Estado}')"><i class="fas fa-broom"></i></button>` : ''}
+                    ${puedeBorrar && c.Estado !== 'OCUPADA' ? `<button type="button" class="btn-neo" style="padding:5px 8px;color:#e74c3c;" title="Quitar" onclick="HabitacionesModule.eliminarCama(${habitacionId}, ${c.CamaID}, '${esc(c.Codigo)}')"><i class="fas fa-trash"></i></button>` : ''}
+                </td></tr>`).join('');
+        const r = await Swal.fire({
+            title: `CAMAS · HAB. ${esc(hab.NroHabitacion)}`, width: 700,
+            html: `<div style="font-size:.8rem;color:#718096;margin-bottom:8px;">Cada cama tiene su check-in, su cuenta y su salida. Precio vacío = el de la habitación ($${Number(hab.PrecioDia || 0).toFixed(2)} por cama).</div>
+                   ${filas ? `<table style="width:100%;font-size:.8rem;text-align:left;border-collapse:collapse;">${filas}</table>` : '<p style="color:#c05621;font-weight:800;">Todavía no tiene camas.</p>'}`,
+            showConfirmButton: puedeEditar, confirmButtonText: '<i class="fas fa-plus"></i> AGREGAR CAMA',
+            showDenyButton: puedeEditar, denyButtonText: '<i class="fas fa-layer-group"></i> CREAR VARIAS', denyButtonColor: '#6b46c1',
+            showCancelButton: true, cancelButtonText: 'CERRAR', background: '#eef1f5'
+        });
+        if (r.isConfirmed) return this.editarCama(habitacionId, null);
+        if (r.isDenied) {
+            const { value: n } = await Swal.fire({ title: '¿Cuántas camas tiene la habitación?', input: 'number', inputValue: Math.max(lista.length, 4),
+                inputAttributes: { min: 1, max: 40 }, showCancelButton: true, confirmButtonText: 'CREAR', background: '#eef1f5',
+                text: 'Se crean las que falten con códigos 1, 2, 3...' });
+            if (n) {
+                try { const x = await api.post('/habitaciones/camas/generar', { HabitacionID: habitacionId, cantidad: parseInt(n) });
+                      window.Toast && window.Toast.fire({ icon: 'success', title: `${x.data.creadas} cama(s) creada(s) · total ${x.data.total}` }); }
+                catch (e) { await Swal.fire({ icon: 'warning', title: 'CAMAS', text: e.response?.data?.error || 'No se pudieron crear' }); }
+                await this.cargarDatos();
+            }
+            return this.gestionarCamas(habitacionId);
+        }
+    },
+
+    async editarCama(habitacionId, camaId) {
+        let c = {};
+        if (camaId) {
+            try { c = (await api.get(`/habitaciones/camas/sede/${this.sedeId}`)).data.find(x => x.CamaID === camaId) || {}; } catch (_) {}
+        }
+        const esc = t => String(t == null ? '' : t).replace(/"/g, '&quot;');
+        const r = await Swal.fire({
+            title: camaId ? `EDITAR CAMA ${esc(c.Codigo)}` : 'NUEVA CAMA', background: '#eef1f5',
+            html: `<div style="text-align:left">
+                <label class="label-hint">CÓDIGO (1, 2, A, B-arriba...)</label><input id="cm-cod" class="input-neo" maxlength="10" value="${esc(c.Codigo || '')}">
+                <label class="label-hint">DESCRIPCIÓN (opcional)</label><input id="cm-desc" class="input-neo" maxlength="60" value="${esc(c.Descripcion || '')}" placeholder="litera de abajo, junto a la ventana...">
+                <label class="label-hint">PRECIO POR NOCHE (vacío = el de la habitación)</label><input id="cm-precio" type="number" step="0.01" min="0" class="input-neo" value="${c.PrecioDia != null ? c.PrecioDia : ''}">
+                <label class="label-hint">ORDEN</label><input id="cm-orden" type="number" class="input-neo" value="${c.Orden || 0}"></div>`,
+            showCancelButton: true, confirmButtonText: 'GUARDAR', cancelButtonText: 'VOLVER',
+            preConfirm: async () => {
+                try {
+                    await api.post('/habitaciones/camas', { CamaID: camaId || null, HabitacionID: habitacionId,
+                        Codigo: document.getElementById('cm-cod').value, Descripcion: document.getElementById('cm-desc').value,
+                        PrecioDia: document.getElementById('cm-precio').value, Orden: document.getElementById('cm-orden').value });
+                    return true;
+                } catch (e) { return Swal.showValidationMessage(e.response?.data?.error || 'No se pudo guardar'); }
+            }
+        });
+        if (r.isConfirmed) await this.cargarDatos();
+        return this.gestionarCamas(habitacionId);
+    },
+
+    async estadoCama(habitacionId, camaId, actual) {
+        const { value: estado } = await Swal.fire({
+            title: 'ESTADO DE LA CAMA', input: 'select', background: '#eef1f5',
+            inputOptions: { DISPONIBLE: 'DISPONIBLE (lista)', LIMPIEZA: 'LIMPIEZA', MANTENIMIENTO: 'MANTENIMIENTO' }, inputValue: actual,
+            showCancelButton: true, confirmButtonText: 'GUARDAR'
+        });
+        if (estado && estado !== actual) {
+            try { await api.post(`/habitaciones/camas/${camaId}/estado`, { Estado: estado }); }
+            catch (e) { await Swal.fire({ icon: 'warning', title: 'CAMA', text: e.response?.data?.error || 'No se pudo cambiar' }); }
+            await this.cargarDatos();
+        }
+        return this.gestionarCamas(habitacionId);
+    },
+
+    async eliminarCama(habitacionId, camaId, codigo) {
+        const r = await Swal.fire({ icon: 'warning', title: `¿Quitar la cama ${codigo}?`, text: 'Si tiene historial se desactiva (no se pierde).',
+            showCancelButton: true, confirmButtonText: 'QUITAR', confirmButtonColor: '#e74c3c', background: '#eef1f5' });
+        if (r.isConfirmed) {
+            try { await api.delete(`/habitaciones/camas/${camaId}`); }
+            catch (e) { await Swal.fire({ icon: 'warning', title: 'CAMA', text: e.response?.data?.error || 'No se pudo quitar' }); }
+            await this.cargarDatos();
+        }
+        return this.gestionarCamas(habitacionId);
     }
 };
 

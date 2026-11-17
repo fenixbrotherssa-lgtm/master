@@ -191,8 +191,9 @@
             <p class="ayuda">Se usan en reservas, el portal público, el bot de WhatsApp y los recibos.</p>
             <div class="grid2">
                 <div>
-                    <div class="campo"><label>Hora de check-in</label><input type="time" data-param="HORA_CHECKIN"></div>
+                    <div class="campo"><label>Hora de check-in <small>(informativa)</small></label><input type="time" data-param="HORA_CHECKIN"></div>
                     <div class="campo"><label>Hora de check-out</label><input type="time" data-param="HORA_CHECKOUT"></div>
+                    <div class="campo"><label>Corte de madrugada <small>(entrar antes cuenta la noche anterior; 00:00 = sin corte)</small></label><input type="time" data-param="HORA_CORTE_MADRUGADA"></div>
                     <div class="campo"><label>Depósito para confirmar reserva (%)</label><input type="number" min="0" max="100" step="1" data-param="RESERVA_DEPOSITO_PCT"></div>
                     <div class="campo"><label>Propina sugerida en restaurante (%)</label><input type="number" min="0" max="100" step="1" data-param="PROPINA_SUGERIDA_PCT"></div>
                 </div>
@@ -200,7 +201,7 @@
                     <div class="campo"><label>Política de cancelación</label><textarea rows="8" data-param="POLITICA_CANCELACION" placeholder="Ej: Cancelación gratuita hasta 48 h antes de la llegada…"></textarea></div>
                 </div>
             </div>
-            <button class="cs-btn ok" onclick="ConfigSedeModule.guardarParametros(['HORA_CHECKIN','HORA_CHECKOUT','RESERVA_DEPOSITO_PCT','PROPINA_SUGERIDA_PCT','POLITICA_CANCELACION'])"><i class="fas fa-save"></i> Guardar políticas</button>
+            <button class="cs-btn ok" onclick="ConfigSedeModule.guardarParametros(['HORA_CHECKIN','HORA_CHECKOUT','HORA_CORTE_MADRUGADA','RESERVA_DEPOSITO_PCT','PROPINA_SUGERIDA_PCT','POLITICA_CANCELACION'])"><i class="fas fa-save"></i> Guardar políticas</button>
         </div>
     </div>
 </div>

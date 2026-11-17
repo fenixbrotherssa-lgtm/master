@@ -1,5 +1,7 @@
 const LoginModule = {
     init() {
+        const li = document.getElementById('login-idioma');
+        if (li && window.Idioma) li.innerHTML = Idioma.botonHTML('background:#e0e5ea; color:#007bff; border:none; padding:10px 16px; border-radius:15px; cursor:pointer; font-size:.85rem; font-weight:800; box-shadow: 6px 6px 12px #9eaab6, -6px -6px 12px #ffffff;');
         const btn = document.getElementById('btn-login-submit');
         const userField = document.getElementById('login-usuario');
         const passField = document.getElementById('login-password');

@@ -22,6 +22,25 @@ function setFormato(f) {
 
 function imprimir(contenidoHtml, opts) {
     opts = opts || {};
+    // 2.1.4: si este equipo tiene una impresora DIRECTA para el uso (térmica, matricial), el ticket va
+    // directo, sin cuadro de impresión. Lo de hoja A4 (formato:'a4') va al uso DOCUMENTO. Si no hay
+    // impresora configurada o falla, sigue el camino de siempre (ventana + cuadro de impresión).
+    const uso = opts.uso || (opts.formato === 'a4' ? 'DOCUMENTO' : 'RECIBO');
+    let Imp = null;
+    try { Imp = window.Impresion || require('./impresion'); } catch (_) { Imp = null; }
+    if (!opts._sinDirecta && Imp && Imp.esDirecta(uso)) {
+        Imp.ticket(uso, contenidoHtml, { titulo: opts.titulo, abrirCajon: !!opts.abrirCajon, copias: opts.copias })
+            .then(ok => {
+                if (ok) { window.Toast && window.Toast.fire({ icon: 'success', title: 'Enviado a la impresora' }); return; }
+                imprimir(contenidoHtml, Object.assign({}, opts, { _sinDirecta: true }));
+            })
+            .catch(err => {
+                window.Toast && window.Toast.fire({ icon: 'warning', title: 'No se pudo imprimir directo: se abre el cuadro de impresión',
+                    text: (err && err.message) || '' });
+                imprimir(contenidoHtml, Object.assign({}, opts, { _sinDirecta: true }));
+            });
+        return;
+    }
     const cfg = FORMATOS[opts.formato || getFormato()] || FORMATOS.termica80;
     const mono = cfg.mono;
 

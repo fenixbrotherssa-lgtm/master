@@ -94,12 +94,50 @@ const LicenciaModule = {
         Swal.fire({ title: 'Descargando la actualización...', text: 'Puede tardar unos minutos según el internet.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
             await api.post('/actualizaciones/aplicar', {}, { timeout: 15 * 60 * 1000 });
-            Swal.fire({ title: 'Instalando...', html: 'El servidor se está actualizando. Esta pantalla se recargará sola en unos 2 minutos.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            setTimeout(() => window.location.reload(), 120000);
+            // 2.1.4: antes se recargaba a los 2 minutos fijos, cuando el instalador aún no había detenido el
+            // servidor viejo: parecía que "no pasó nada". Ahora se sigue el proceso con /api/salud (público,
+            // devuelve la versión) y solo se recarga cuando responde la versión nueva.
+            await this.esperarVersion(version);
         } catch (err) {
             Swal.fire('No se actualizó', err.response?.data?.error || 'Error al descargar la actualización.', 'error');
         }
     },
+};
+
+LicenciaModule.esperarVersion = async function (version) {
+    const base = String((window.AppConfig && window.AppConfig.apiUrl) || '').replace(/\/+$/, '');
+    const paso = (titulo, texto) => Swal.fire({ title: titulo, html: texto, allowOutsideClick: false, showConfirmButton: false,
+        didOpen: () => Swal.showLoading() });
+    const salud = async () => {
+        try {
+            const r = await fetch(`${base}/salud`, { cache: 'no-store' });
+            const j = await r.json().catch(() => ({}));
+            return { arriba: true, version: j.version || null, db: !!j.db };
+        } catch (_) { return { arriba: false }; }
+    };
+    paso('Instalando...', 'Descarga lista. Esperando a que el instalador detenga el servidor.<br><small>No cierre esta pantalla.</small>');
+    const inicio = Date.now();
+    let seDetuvo = false;
+    while (Date.now() - inicio < 20 * 60 * 1000) {                        // tope: 20 minutos
+        await new Promise(r => setTimeout(r, 4000));
+        const s = await salud();
+        const min = Math.round((Date.now() - inicio) / 60000);
+        if (!s.arriba) {
+            if (!seDetuvo) { seDetuvo = true; paso('Instalando...', 'El servidor se detuvo y se está instalando la versión nueva.<br><small>Suele tardar entre 3 y 8 minutos.</small>'); }
+            continue;
+        }
+        if (s.version === version) {
+            await Swal.fire({ icon: 'success', title: `Servidor actualizado a ${version}`,
+                html: s.db ? 'Todo en orden. La pantalla se recargará.' : 'El servidor arrancó; la base de datos aún se está conectando. La pantalla se recargará.',
+                timer: 3500, showConfirmButton: false });
+            window.location.reload();
+            return;
+        }
+        if (seDetuvo) paso('Arrancando...', `El servidor volvió a responder (versión ${s.version || 'anterior'}). Esperando la versión ${version}...`);
+        else paso('Instalando...', `Preparando la instalación (${min} min).<br><small>El servidor actual sigue atendiendo hasta que el instalador lo detenga.</small>`);
+    }
+    Swal.fire('La actualización tarda más de lo normal',
+        'Revise en el servidor el archivo <b>C:\\ProgramData\\MasterHotel\\actualizaciones\\ultima_actualizacion.txt</b> y comuníquese con CasRodsoft.', 'warning');
 };
 
 module.exports = LicenciaModule;
