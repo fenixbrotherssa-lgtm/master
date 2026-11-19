@@ -579,6 +579,15 @@ const CajaModule = {
 
             const now = new Date().toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' });
 
+            // 2.4.1: el inventario completo hace la tira del ticket muy larga. Por defecto se imprime en
+            // HOJA NORMAL (cuadro de impresión de Windows); el ticket queda como opción (con o sin inventario).
+            const formato = await this._elegirFormatoEntrega(stockActual.length);
+            if (!formato) return;
+            if (formato.tipo === 'HOJA') {
+                return this._imprimirEntregaHoja({ cajaId, infoCaja, consumos, criticos, normales, now });
+            }
+            const conInventario = formato.inventario;
+
             // 2.1.4: con impresora directa configurada en este equipo, el ticket va directo (térmica / matricial)
             const _html = `
                 <html>
@@ -622,13 +631,16 @@ const CajaModule = {
 
                     <div class="hr"></div>
 
+                    ${conInventario ? `
                     <!-- STOCK ACTUAL AL CIERRE -->
                     <p class="section-title">📦 INVENTARIO AL CIERRE DEL TURNO</p>
                     ${filasCriticos}
                     ${criticos.length > 0 && normales.length > 0 ? '<div class="hr"></div>' : ''}
                     ${filasNormales}
 
-                    <div class="hr"></div>
+                    <div class="hr"></div>` : `
+                    <p style="font-size:10px; text-align:center;">(Inventario no incluido en el ticket)</p>
+                    <div class="hr"></div>`}
 
                     <!-- FIRMAS -->
                     <p style="margin-top:15px; font-size:11px;">Cajero que entrega:</p>
@@ -654,6 +666,115 @@ const CajaModule = {
             console.error(e);
             window.Toast.fire({ icon: 'error', title: 'Error al generar reporte de entrega' });
         }
+    },
+
+    // 2.4.1 — Formato de la entrega de turno: hoja normal (por defecto) o ticket (opcional).
+    async _elegirFormatoEntrega(nProductos) {
+        let ultimo = 'HOJA';
+        try { ultimo = localStorage.getItem('mh_entrega_turno_formato') || 'HOJA'; } catch (_) { /* sin almacenamiento */ }
+        let incluirInventario = false;
+        const r = await Swal.fire({
+            title: 'Imprimir entrega de turno',
+            html: `<p style="font-size:.9rem; color:#4a5568; margin:0 0 10px;">Incluye el resumen financiero, los consumos del turno y el inventario (${nProductos} productos).</p>
+                   <p style="font-size:.8rem; color:#718096; margin:0;"><b>Hoja normal</b>: cuadro de impresión de Windows (usted elige la impresora).<br><b>Ticket</b>: impresora de tickets de este equipo.</p>`,
+            input: 'checkbox',
+            inputValue: 0,
+            inputPlaceholder: 'En el ticket, incluir también el inventario (sale largo)',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-file-alt"></i> HOJA NORMAL',
+            denyButtonText: '<i class="fas fa-receipt"></i> TICKET',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#1a365d',
+            denyButtonColor: '#718096',
+            didOpen: () => {
+                const chk = Swal.getInput();
+                if (chk) chk.addEventListener('change', () => { incluirInventario = chk.checked; });
+                if (ultimo === 'TICKET') { const b = Swal.getDenyButton(); if (b) b.focus(); }
+            }
+        });
+        if (r.isConfirmed) {
+            try { localStorage.setItem('mh_entrega_turno_formato', 'HOJA'); } catch (_) { /* */ }
+            return { tipo: 'HOJA' };
+        }
+        if (r.isDenied) {
+            try { localStorage.setItem('mh_entrega_turno_formato', 'TICKET'); } catch (_) { /* */ }
+            return { tipo: 'TICKET', inventario: incluirInventario };
+        }
+        return null;
+    },
+
+    // Entrega de turno en hoja A4: inventario en 3 columnas, firmas en una fila. Siempre con el cuadro de Windows.
+    _imprimirEntregaHoja({ cajaId, infoCaja, consumos, criticos, normales, now }) {
+        const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const m = (n) => '$' + (parseFloat(n) || 0).toFixed(2);
+        const esperado = infoCaja.MontoApertura + infoCaja.TotalIngresos - infoCaja.TotalEgresos;
+        let totalConsumos = 0;
+        const filasConsumos = consumos.map(c => {
+            totalConsumos += parseFloat(c.SubtotalTotal) || 0;
+            return `<tr><td>${esc(c.Producto)}${c.HuboCortesia ? ' <small>(c/cortesía)</small>' : ''}</td><td class="r">${esc(c.CantidadTotal)}</td><td class="r">${m(c.SubtotalTotal)}</td></tr>`;
+        }).join('');
+        const item = (p, critico) => `<div class="inv${critico ? ' crit' : ''}"><span>${esc(p.Nombre)}</span><b>${esc(p.StockActual)}${critico ? ` <small>(mín ${esc(p.StockMinimo)})</small>` : ''}</b></div>`;
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Entrega de Turno #${cajaId}</title>
+            <style>
+                @page { size: A4; margin: 12mm; }
+                * { box-sizing: border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; font-size: 11px; margin: 0; }
+                .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1a365d; padding-bottom: 8px; margin-bottom: 12px; }
+                .head h1 { margin: 0; font-size: 18px; color: #1a365d; letter-spacing: 1px; }
+                .head .meta { text-align: right; font-size: 10.5px; line-height: 1.5; }
+                h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #1a365d; margin: 14px 0 6px; border-bottom: 1px solid #cbd5e0; padding-bottom: 3px; }
+                .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+                .kpi { border: 1px solid #cbd5e0; border-radius: 6px; padding: 7px 9px; }
+                .kpi span { display: block; font-size: 9px; text-transform: uppercase; color: #4a5568; }
+                .kpi b { font-size: 14px; }
+                .kpi.total { background: #edf2f7; border-color: #1a365d; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+                th { font-size: 9.5px; text-transform: uppercase; color: #4a5568; background: #f7fafc; }
+                .r { text-align: right; }
+                tfoot td { font-weight: 700; border-top: 1.5px solid #1a365d; }
+                .invgrid { column-count: 3; column-gap: 14px; }
+                .inv { display: flex; justify-content: space-between; gap: 6px; padding: 2.5px 0; border-bottom: 1px dotted #cbd5e0; break-inside: avoid; }
+                .inv span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .inv.crit { color: #b91c1c; }
+                .firmas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 46px; break-inside: avoid; }
+                .firmas div { border-top: 1px solid #111; padding-top: 4px; text-align: center; font-size: 10px; }
+                .pie { margin-top: 14px; text-align: center; font-size: 9px; color: #718096; }
+            </style></head>
+            <body onload="setTimeout(()=> { window.print(); window.close(); }, 600)">
+                <div class="head">
+                    <div><h1>REPORTE DE ENTREGA DE TURNO</h1><div style="font-size:12px; font-weight:600;">${esc(infoCaja.Sede)}</div></div>
+                    <div class="meta"><b>Turno #${cajaId}</b> · ${esc(infoCaja.Cajero)}<br>Apertura: ${esc(infoCaja.FechaAperturaFmt)}<br>
+                        Cierre: ${esc(infoCaja.FechaCierreFmt || 'TURNO ACTIVO')}<br>Impreso: ${esc(now)}</div>
+                </div>
+
+                <h2>Resumen financiero</h2>
+                <div class="kpis">
+                    <div class="kpi"><span>Fondo inicial</span><b>${m(infoCaja.MontoApertura)}</b></div>
+                    <div class="kpi"><span>Total ingresos</span><b>${m(infoCaja.TotalIngresos)}</b></div>
+                    <div class="kpi"><span>Total egresos</span><b>-${m(infoCaja.TotalEgresos)}</b></div>
+                    <div class="kpi total"><span>Total a entregar</span><b>${m(esperado)}</b></div>
+                </div>
+
+                <h2>Consumos POS del turno</h2>
+                ${consumos.length === 0 ? '<p style="color:#718096;">Sin consumos POS en este turno.</p>' : `
+                <table><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Subtotal</th></tr></thead>
+                    <tbody>${filasConsumos}</tbody>
+                    <tfoot><tr><td colspan="2">TOTAL CONSUMOS</td><td class="r">${m(totalConsumos)}</td></tr></tfoot></table>`}
+
+                <h2>Inventario al cierre del turno</h2>
+                ${criticos.length ? `<p style="font-weight:700; color:#b91c1c; margin:4px 0;">⚠ Bajo stock mínimo (${criticos.length})</p><div class="invgrid">${criticos.map(p => item(p, true)).join('')}</div>` : ''}
+                ${normales.length ? `<div class="invgrid" style="margin-top:${criticos.length ? 8 : 0}px;">${normales.map(p => item(p, false)).join('')}</div>` : ''}
+                ${!criticos.length && !normales.length ? '<p style="color:#718096;">Sin productos.</p>' : ''}
+
+                <div class="firmas"><div>Cajero que entrega</div><div>Cajero que recibe</div><div>Supervisor / Administrador</div></div>
+                <div class="pie">MasterHotel · Entrega de turno #${cajaId}</div>
+            </body></html>`;
+        const win = window.open('', '_blank', 'width=900,height=1000');
+        if (!win) return window.Toast.fire({ icon: 'error', title: 'No se pudo abrir la ventana de impresión' });
+        win.document.write(html);
+        win.document.close();
     },
 
     async prepararReapertura(cajaId) {

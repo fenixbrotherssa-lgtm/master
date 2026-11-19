@@ -21,14 +21,24 @@ const DashboardMovilModule = {
 
     getUser() { return JSON.parse(localStorage.getItem('user')); },
 
-    configurarFechasPorDefecto() {
+    // Fecha local (toISOString daba el día siguiente después de las 19:00 en Ecuador)
+    fmt(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; },
+
+    configurarFechasPorDefecto() { this.periodo('mes', false); },
+
+    // Chips de período (2.4.1): hoy / 7 días / este mes / mes anterior; "Filtros" abre sede y rango
+    periodo(p, cargar = true) {
         const hoy = new Date();
-        const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        const fmt = (d) => d.toISOString().split('T')[0];
+        let desde = new Date(hoy), hasta = new Date(hoy);
+        if (p === '7d') desde.setDate(hoy.getDate() - 6);
+        else if (p === 'mes') desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        else if (p === 'mesant') { desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1); hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0); }
         const inIni = document.getElementById('dash-fecha-inicio');
         const inFin = document.getElementById('dash-fecha-fin');
-        if (inIni && !inIni.value) inIni.value = fmt(primerDia);
-        if (inFin && !inFin.value) inFin.value = fmt(hoy);
+        if (inIni) inIni.value = this.fmt(desde);
+        if (inFin) inFin.value = this.fmt(hasta);
+        document.querySelectorAll('#dash-chips .dash-chip').forEach(b => b.classList.toggle('on', b.dataset.periodo === p));
+        if (cargar) this.cargar();
     },
 
     async cargarSedes() {
@@ -58,8 +68,21 @@ const DashboardMovilModule = {
     },
 
     setupListeners() {
+        document.querySelectorAll('#dash-chips .dash-chip').forEach(b => b.onclick = () => {
+            if (b.dataset.periodo === 'filtros') {
+                const f = document.getElementById('dash-filtros');
+                if (f) f.classList.toggle('on');
+                b.classList.toggle('on', f && f.classList.contains('on'));
+                return;
+            }
+            this.periodo(b.dataset.periodo);
+        });
+
         const btn = document.getElementById('dash-aplicar');
-        if (btn) btn.onclick = () => this.cargar();
+        if (btn) btn.onclick = () => {
+            document.querySelectorAll('#dash-chips .dash-chip').forEach(b => b.classList.toggle('on', b.dataset.periodo === 'filtros'));
+            this.cargar();
+        };
 
         const sel = document.getElementById('dash-sede');
         if (sel) sel.onchange = () => { if (!this.todasLasSedes) this.cargar(); };
@@ -100,7 +123,19 @@ const DashboardMovilModule = {
         const m = data.metricasHoteleras || {};
         const p = data.produccionAreas || {};
 
-        this.setText('dash-ocupacion', `${Math.round(m.OcupacionPorcentaje || 0)}%`);
+        const ocu = Math.max(0, Math.min(100, Math.round(m.OcupacionPorcentaje || 0)));
+        this.setText('dash-ocupacion', `${ocu}%`);
+        const anillo = document.getElementById('dash-anillo');
+        if (anillo) anillo.style.setProperty('--p', ocu);
+        this.setText('dash-tienda', this.money(p.TiendaRestaurante));
+        this.setText('dash-parqueo-sub', `Parqueo ${this.money(p.Parqueadero)}`);
+        const ini = document.getElementById('dash-fecha-inicio')?.value, fin = document.getElementById('dash-fecha-fin')?.value;
+        if (ini && fin) {
+            const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+            const f = s => { const [y, mm, d] = s.split('-').map(Number); return `${d} ${MES[mm - 1]}`; };
+            const todas = this.todasLasSedes ? ' · todas las sedes' : '';
+            this.setText('dash-rango-txt', (ini === fin ? f(ini) : `${f(ini)} — ${f(fin)}`) + todas);
+        }
         this.setText('dash-ocupacion-sub', `${m.HabitacionesOcupadas || 0} / ${m.TotalHabitaciones || 0} hab.`);
         this.setText('dash-total', this.money(p.TotalGlobal));
         this.setText('dash-hospedaje', this.money(m.IngresoHospedaje));
@@ -110,7 +145,7 @@ const DashboardMovilModule = {
         this.dona('dash-chart-areas', {
             labels: ['Hospedaje', 'Tienda/Rest.', 'Parqueo'],
             valores: [p.Hospedaje || 0, p.TiendaRestaurante || 0, p.Parqueadero || 0],
-            colores: ['#1a365d', '#27ae60', '#c5a059']
+            colores: ['#1a365d', '#10b981', '#c5a059']
         });
 
         const curva = data.curvaIngresos || [];
@@ -132,9 +167,9 @@ const DashboardMovilModule = {
                 ? `<tr><td colspan="3" style="text-align:center; opacity:0.5; padding:14px;">Sin datos</td></tr>`
                 : tipos.map(t => `
                     <tr>
-                        <td style="font-weight:800; color:#1a365d;">${t.TipoAlquiler || '-'}</td>
+                        <td style="font-weight:700; color:#0f172a;">${t.TipoAlquiler || '-'}</td>
                         <td style="text-align:center;">${t.Cantidad || 0}</td>
-                        <td style="text-align:right; font-weight:900; color:#27ae60;">${this.money(t.Ingreso)}</td>
+                        <td style="text-align:right; font-weight:800; color:#059669;">${this.money(t.Ingreso)}</td>
                     </tr>`).join('');
         }
     },
@@ -148,9 +183,9 @@ const DashboardMovilModule = {
         const cero = valores.every(v => !v);
         this.charts[id] = new Chart(cv.getContext('2d'), {
             type: 'doughnut',
-            data: { labels, datasets: [{ data: cero ? [1, 1, 1] : valores, backgroundColor: colores, borderWidth: 0 }] },
+            data: { labels, datasets: [{ data: cero ? [1, 1, 1] : valores, backgroundColor: cero ? ['#e2e8f0', '#e2e8f0', '#e2e8f0'] : colores, borderWidth: 0, spacing: 3, borderRadius: 6 }] },
             options: {
-                responsive: true, maintainAspectRatio: false, cutout: '60%',
+                responsive: true, maintainAspectRatio: false, cutout: '68%',
                 plugins: {
                     legend: { position: 'bottom', labels: { font: { weight: '700', size: 10 }, padding: 10 } },
                     tooltip: { callbacks: { label: (c) => `${c.label}: ${this.money(cero ? 0 : c.parsed)}` } }
@@ -165,11 +200,16 @@ const DashboardMovilModule = {
         this._destruir(id);
         this.charts[id] = new Chart(cv.getContext('2d'), {
             type: 'line',
-            data: { labels, datasets: [{ data: valores, borderColor: '#1a365d', backgroundColor: 'rgba(26,54,93,0.08)', fill: true, tension: 0.35, pointRadius: 2, pointBackgroundColor: '#c5a059', borderWidth: 2 }] },
+            data: { labels, datasets: [{ data: valores, borderColor: '#1a365d', backgroundColor: (ctx) => {
+                const a = ctx.chart.chartArea; if (!a) return 'rgba(26,54,93,0.08)';
+                const g = ctx.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+                g.addColorStop(0, 'rgba(59,111,176,0.35)'); g.addColorStop(1, 'rgba(59,111,176,0)'); return g;
+            }, fill: true, tension: 0.4, pointRadius: 0, pointHitRadius: 12, borderWidth: 2.5 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => this.money(c.parsed.y) } } },
-                scales: { y: { ticks: { callback: (v) => '$' + v, font: { size: 9 } } }, x: { ticks: { font: { size: 8 } } } }
+                scales: { y: { grid: { color: 'rgba(15,23,42,.05)' }, border: { display: false }, ticks: { callback: (v) => '$' + v, font: { size: 9 }, color: '#94a3b8' } },
+                          x: { grid: { display: false }, ticks: { font: { size: 8 }, color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } } }
             }
         });
     },
@@ -180,11 +220,12 @@ const DashboardMovilModule = {
         this._destruir(id);
         this.charts[id] = new Chart(cv.getContext('2d'), {
             type: 'bar',
-            data: { labels, datasets: [{ data: valores, backgroundColor: '#27ae60', borderRadius: 6 }] },
+            data: { labels, datasets: [{ data: valores, backgroundColor: '#10b981', borderRadius: 8, barThickness: 16 }] },
             options: {
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => this.money(c.parsed.x) } } },
-                scales: { x: { ticks: { callback: (v) => '$' + v, font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }
+                scales: { x: { grid: { color: 'rgba(15,23,42,.05)' }, border: { display: false }, ticks: { callback: (v) => '$' + v, font: { size: 9 }, color: '#94a3b8' } },
+                          y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#334155' } } }
             }
         });
     }

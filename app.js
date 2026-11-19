@@ -4,6 +4,7 @@ const api = require('./modules/api');
 require('./modules/metodosPago'); // llena los <select data-metodos-pago> con los métodos de la sede
 require('./modules/telefonoWA');  // validación en vivo del WhatsApp del huésped (cualquier país, 2.4.0)
 const Permisos = require('./modules/permisos'); // permisos por módulo del usuario (roles)
+const AvisoPersonal = require('./modules/avisoPersonal'); // aviso del administrador al personal (2.4.1)
 const { io } = require('socket.io-client');
 
 const App = {
@@ -249,6 +250,7 @@ const App = {
             const newSedeId = e.target.value;
             localStorage.setItem('currentSedeId', newSedeId);
             this.cargarSedeNombre();
+            AvisoPersonal.mostrar();
             if (callback) callback(newSedeId);
         };
     },
@@ -289,6 +291,10 @@ const App = {
                                 <span id="socket-status-indicator" style="width:10px; height:10px; border-radius:50%; background:#27ae60; display:inline-block; box-shadow:0 0 6px rgba(39,174,96,0.6); transition:background 0.3s;"></span>
                                 <span style="font-size:0.65rem; color:#718096; font-weight:700;">SERVIDOR</span>
                             </div>
+                            ${this.isSuperAdmin() ? `<button type="button" onclick="window.AvisoPersonal && AvisoPersonal.editar()" title="Aviso al personal (cuadro de diálogo al entrar)"
+                                style="background:#e0e0e4; color:#c5a059; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:1rem; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;">
+                                <i class="fas fa-bullhorn"></i>
+                            </button>` : ''}
                             ${window.Idioma ? Idioma.botonHTML('background:#e0e0e4; color:#007bff; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:.8rem; font-weight:800; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;') : ''}
                             <button id="btn-alertas-toggle" type="button" onclick="window.Alertas && Alertas.toggle()" title="Alertas sonoras / voz"
                                 style="background:#e0e0e4; color:#27ae60; border:none; padding:10px 14px; border-radius:15px; cursor:pointer; font-size:1rem; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;">
@@ -307,6 +313,9 @@ const App = {
         if (window.Alertas) Alertas.refrescarBoton();
         this.cargarSedeNombre();
         this.renderView('dashboard', 'viewport');
+        // Aviso del administrador: al entrar y en vivo si lo cambian
+        AvisoPersonal.escuchar();
+        setTimeout(() => AvisoPersonal.mostrar(), 1200);
     },
 
     renderView(viewName, targetId) {

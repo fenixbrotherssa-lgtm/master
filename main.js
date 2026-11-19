@@ -2,27 +2,98 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+// ---------------------------------------------------------------------------------------------
+// SERVIDOR ELEGIDO DESDE EL LOGIN (2.4.2). Se escribe UNA vez con el engranaje del login y queda en
+// la carpeta de datos del equipo (userData/servidor.json): no se pierde al actualizar ni al reinstalar,
+// y no hace falta permiso de administrador (antes había que editar resources/config.js a mano).
+// Orden: MH_API_URL (solo desarrollo) > servidor.json > config.js.
+// ---------------------------------------------------------------------------------------------
+let API_CONFIG = 'http://localhost:4000/api';   // lo que dice config.js (valor de fábrica)
+let PUERTO_CONFIG = 4000;
+let API_ACTUAL = API_CONFIG;
+const archivoServidor = () => path.join(app.getPath('userData'), 'servidor.json');
+
+// "192.168.1.10" → http://192.168.1.10:4000/api · "hotel.com" → https://hotel.com/api ·
+// "10.0.0.5:4100" → http://10.0.0.5:4100/api · "http(s)://..." se respeta (se quita un /api final).
+function apiDesdeDireccion(direccion) {
+    let d = String(direccion || '').trim().replace(/\s+/g, '');
+    if (!d) throw new Error('Escriba la IP o el dominio del servidor.');
+    if (d.length > 200) throw new Error('La dirección es demasiado larga.');
+    let url;
+    if (/^https?:\/\//i.test(d)) {
+        try { url = new URL(d); } catch (_) { throw new Error('La dirección no es válida.'); }
+    } else {
+        const host = d.split('/')[0];
+        const hostSinPuerto = host.replace(/:\d+$/, '');
+        const tienePuerto = /:\d+$/.test(host);
+        const esIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostSinPuerto);
+        const esDominio = !esIp && hostSinPuerto.includes('.') && hostSinPuerto.toLowerCase() !== 'localhost';
+        const base = esDominio && !tienePuerto ? `https://${host}` : `http://${tienePuerto ? host : host + ':' + PUERTO_CONFIG}`;
+        try { url = new URL(base); } catch (_) { throw new Error('La dirección no es válida.'); }
+    }
+    if (!url.hostname || !/^[a-z0-9.\-\[\]:]+$/i.test(url.hostname)) throw new Error('La dirección no es válida.');
+    const ruta = url.pathname.replace(/\/+$/, '').replace(/\/api$/i, '');
+    return `${url.protocol}//${url.host}${ruta}/api`;
+}
+
+function leerServidorGuardado() {
+    try {
+        const j = JSON.parse(fs.readFileSync(archivoServidor(), 'utf8'));
+        if (j && j.direccion) return { direccion: String(j.direccion), apiUrl: apiDesdeDireccion(j.direccion), fecha: j.fecha || null };
+    } catch (_) { /* no existe o está dañado: se usa config.js */ }
+    return null;
+}
+
+function resolverApi() {
+    if (!app.isPackaged && process.env.MH_API_URL) return process.env.MH_API_URL;
+    const g = leerServidorGuardado();
+    return g ? g.apiUrl : API_CONFIG;
+}
+
+{
+    const { ipcMain } = require('electron');
+    // index.html la pide al cargar (también tras recargar: los argumentos de la ventana no cambian)
+    ipcMain.on('mh:api-url', (e) => { e.returnValue = API_ACTUAL; });
+    ipcMain.handle('mh:servidor', () => {
+        const g = leerServidorGuardado();
+        return { guardado: g ? g.direccion : null, fecha: g ? g.fecha : null, apiUrl: API_ACTUAL, porDefecto: API_CONFIG,
+                 desarrollo: !app.isPackaged && !!process.env.MH_API_URL };
+    });
+    ipcMain.handle('mh:servidor-normalizar', (e, direccion) => apiDesdeDireccion(direccion));
+    ipcMain.handle('mh:servidor-guardar', (e, direccion) => {
+        if (direccion === null) {                       // volver al de fábrica (config.js)
+            try { fs.unlinkSync(archivoServidor()); } catch (_) { /* ya no estaba */ }
+        } else {
+            const apiUrl = apiDesdeDireccion(direccion);
+            fs.mkdirSync(path.dirname(archivoServidor()), { recursive: true });
+            fs.writeFileSync(archivoServidor(), JSON.stringify({ direccion: String(direccion).trim(), apiUrl, fecha: new Date().toISOString() }, null, 2), 'utf8');
+        }
+        API_ACTUAL = resolverApi();
+        return { apiUrl: API_ACTUAL };
+    });
+}
+
 function createWindow() {
     // 1. CARGA DINAMICA DE CONFIGURACION
     const configPath = app.isPackaged
         ? path.join(process.resourcesPath, 'config.js')
         : path.join(__dirname, 'config.js');
 
-    let apiFinal = 'http://localhost:4000/api';
     try {
         if (fs.existsSync(configPath)) {
             delete require.cache[require.resolve(configPath)];
             const config = require(configPath);
-            apiFinal = config.getApiUrl();
-            console.log("Configuracion cargada con exito:", apiFinal);
+            API_CONFIG = config.getApiUrl();
+            if (config.PORT) PUERTO_CONFIG = Number(config.PORT) || 4000;
+            console.log("Configuracion cargada con exito:", API_CONFIG);
         } else {
             console.warn("Archivo config no encontrado en: " + configPath);
         }
     } catch (err) {
         console.error("ERROR LEYENDO CONFIGURACION:", err.message);
     }
-    // Solo desarrollo: apuntar a otro backend sin tocar config.js (ej. un backend de prueba).
-    if (!app.isPackaged && process.env.MH_API_URL) apiFinal = process.env.MH_API_URL;
+    // El servidor elegido en el login manda sobre config.js; MH_API_URL (solo desarrollo) sobre ambos.
+    const apiFinal = API_ACTUAL = resolverApi();
 
     // 2. CREACION DE LA VENTANA
     const win = new BrowserWindow({

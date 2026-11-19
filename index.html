@@ -170,8 +170,14 @@
         window.App = window.App || {};
 
         // URL de API inyectada desde main.js (config.js). Fallback a localhost en desarrollo.
-        const apiUrlArg = process.argv.find(a => a.startsWith('--api-url='));
-        const RESOLVED_API_URL = apiUrlArg ? apiUrlArg.split('=')[1] : 'http://localhost:4000/api';
+        // El servidor lo decide main.js (servidor elegido en el login > config.js). Se pide por IPC para que una
+        // recarga tras cambiarlo tome el nuevo; el argumento --api-url queda de respaldo.
+        let RESOLVED_API_URL = null;
+        try { RESOLVED_API_URL = require('electron').ipcRenderer.sendSync('mh:api-url'); } catch (e) { /* sin IPC */ }
+        if (!RESOLVED_API_URL) {
+            const apiUrlArg = process.argv.find(a => a.startsWith('--api-url='));
+            RESOLVED_API_URL = apiUrlArg ? apiUrlArg.split('=')[1] : 'http://localhost:4000/api';
+        }
 
         window.AppConfig = {
             apiUrl: RESOLVED_API_URL,
@@ -205,6 +211,7 @@
         });
     </script>
 
+    <script src="./modules/servidor.js"></script>
     <script src="./modules/idioma.js"></script>
     <script src="./modules/alertas.js"></script>
     <script src="./app.js"></script>

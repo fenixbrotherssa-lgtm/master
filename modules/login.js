@@ -2,6 +2,11 @@ const LoginModule = {
     init() {
         const li = document.getElementById('login-idioma');
         if (li && window.Idioma) li.innerHTML = Idioma.botonHTML('background:#e0e5ea; color:#007bff; border:none; padding:10px 16px; border-radius:15px; cursor:pointer; font-size:.85rem; font-weight:800; box-shadow: 6px 6px 12px #9eaab6, -6px -6px 12px #ffffff;');
+        // Servidor del sistema: se elige una vez desde aqui y queda guardado en el equipo (modules/servidor.js)
+        if (window.Servidor && Servidor.disponible()) {
+            Servidor.pintarEnLogin(document.getElementById('login-servidor'));
+            Servidor.revisarAlInicio();
+        }
         const btn = document.getElementById('btn-login-submit');
         const userField = document.getElementById('login-usuario');
         const passField = document.getElementById('login-password');
@@ -85,6 +90,16 @@ const LoginModule = {
             btn.disabled = false;
             btn.innerText = "INGRESAR";
             btn.style.opacity = "1";
+
+            // Sin respuesta del servidor: ofrecer revisar/cambiar a que servidor apunta este equipo
+            if (!err.response && window.Servidor && Servidor.disponible()) {
+                const st = await Servidor.estado().catch(() => null);
+                const r = await Swal.fire({ icon: 'error', title: 'Sin conexión con el servidor',
+                    html: 'No se pudo conectar con <b>' + String((st && st.apiUrl) || '').replace(/[<>&]/g, '') + '</b>.<br>Revise que el servidor esté encendido y en la misma red.',
+                    showCancelButton: true, confirmButtonText: '<i class="fas fa-server"></i> CAMBIAR SERVIDOR', cancelButtonText: 'Reintentar' });
+                if (r.isConfirmed) Servidor.configurar();
+                return;
+            }
             
             const msg = err.response?.data?.message || "ERROR DE CONEXION AL SERVIDOR";
             
