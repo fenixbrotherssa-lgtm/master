@@ -120,7 +120,21 @@
             font-weight: bold !important;
         }
     </style>
-</head>
+    <style id="mh-boton-regresar">
+        /* Botón estándar de regreso (flecha dorada) — IGUAL en todas las pantallas. Manda sobre los estilos de cada vista:
+           <button class="btn-neo btn-back" onclick="App.renderView('dashboard','viewport')" title="Regresar"><i class="fas fa-arrow-left"></i></button> */
+        button.btn-back {
+            display: inline-flex !important; align-items: center !important; justify-content: center !important;
+            width: 45px !important; height: 45px !important; min-width: 45px !important; padding: 0 !important; margin: 0;
+            border: none !important; border-radius: 50% !important; background: #e0e0e4 !important;
+            color: #c5a059 !important; font-size: 1.1rem !important; cursor: pointer; flex-shrink: 0;
+            box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff !important; transition: all .25s ease !important;
+            visibility: visible !important; opacity: 1 !important;
+        }
+        button.btn-back:hover { box-shadow: 2px 2px 5px #bebebe, -2px -2px 5px #ffffff !important; transform: translateY(-1px); }
+        button.btn-back:active { box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff !important; transform: none; }
+        button.btn-back i { color: #c5a059 !important; margin: 0 !important; font-size: 1.1rem !important; }
+    </style></head>
 <body>
 
     <div id="app-loader">
